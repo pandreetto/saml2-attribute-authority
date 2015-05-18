@@ -2,6 +2,7 @@ package it.infn.security.saml.databinding.aegis;
 
 import it.infn.security.saml.utils.WrapperStreamWriter;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -53,18 +54,25 @@ public class ResponseType
             NamedNodeMap allAttrs = resElem.getAttributes();
             for (int k = 0; k < allAttrs.getLength(); k++) {
                 Attr tmpAttr = (Attr) allAttrs.item(k);
-                if (tmpAttr.getPrefix() != null && tmpAttr.getPrefix().equals("xmlns")) {
-                    continue;
+                String tmpPref = tmpAttr.getPrefix();
+                String tmpName = tmpAttr.getLocalName();
+
+                MessageWriter attrWriter = null;
+                if (tmpPref != null && tmpPref.equals(XMLConstants.XMLNS_ATTRIBUTE)) {
+                    /*
+                     * TODO workaround for the prefix ns1 instead of samlp
+                     *      verify signature
+                     */
+                    attrWriter = writer.getAttributeWriter(tmpName, XMLConstants.XMLNS_ATTRIBUTE_NS_URI);
+                } else {
+                    attrWriter = writer.getAttributeWriter(tmpName);
                 }
-                MessageWriter attrWriter = writer.getAttributeWriter(tmpAttr.getLocalName());
                 attrWriter.writeValue(tmpAttr.getValue());
             }
 
             TransformerFactory tfactory = TransformerFactory.newInstance();
             if (tfactory.getFeature(StAXResult.FEATURE) && tfactory.getFeature(DOMSource.FEATURE)) {
                 Transformer domToStax = tfactory.newTransformer();
-                // domToStax.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
-                // "yes");
                 ElementWriter eWriter = (ElementWriter) writer;
                 StAXResult stResult = new StAXResult(new WrapperStreamWriter(eWriter.getXMLStreamWriter()));
 

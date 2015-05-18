@@ -10,9 +10,13 @@ import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.Status;
+import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.ResponseBuilder;
+import org.opensaml.saml2.core.impl.StatusBuilder;
+import org.opensaml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 
 public class AttributeAuthorityServiceImpl
@@ -25,6 +29,9 @@ public class AttributeAuthorityServiceImpl
         AssertionBuilder assertionBuilder = (AssertionBuilder) builderFactory
                 .getBuilder(Assertion.DEFAULT_ELEMENT_NAME);
         IssuerBuilder issuerBuilder = (IssuerBuilder) builderFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
+        StatusBuilder statusBuilder = (StatusBuilder) builderFactory.getBuilder(Status.DEFAULT_ELEMENT_NAME);
+        StatusCodeBuilder statusCodeBuilder = (StatusCodeBuilder) builderFactory
+                .getBuilder(StatusCode.DEFAULT_ELEMENT_NAME);
 
         Assertion assertion = assertionBuilder.buildObject();
         assertion.setID("_" + UUID.randomUUID().toString());
@@ -34,12 +41,18 @@ public class AttributeAuthorityServiceImpl
         assertionIssuer.setValue("dummy issuer");
         assertionIssuer.setFormat(Issuer.UNSPECIFIED);
         assertion.setIssuer(assertionIssuer);
+        
+        Status status = statusBuilder.buildObject();
+        StatusCode statusCode = statusCodeBuilder.buildObject();
+        statusCode.setValue(StatusCode.SUCCESS_URI);
+        status.setStatusCode(statusCode);
 
         Response response = responseBuilder.buildObject();
         response.setID("_" + UUID.randomUUID().toString());
         response.setIssueInstant(new DateTime());
         response.setInResponseTo(arg1.getID());
 
+        response.setStatus(status);
         response.getAssertions().add(assertion);
 
         return response;
