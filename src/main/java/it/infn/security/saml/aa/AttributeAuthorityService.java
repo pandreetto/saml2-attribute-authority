@@ -12,13 +12,13 @@ import javax.jws.soap.SOAPBinding.Use;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Response;
 
-@WebService(name = "SAMLTest", targetNamespace = "http://saml.security.infn.it")
+@WebService(name = "AttributeAuthorityService", targetNamespace = "http://saml.security.infn.it")
 public interface AttributeAuthorityService {
 
     @WebMethod(operationName = "AttributeQuery")
     @SOAPBinding(style = Style.DOCUMENT, use = Use.LITERAL, parameterStyle = ParameterStyle.BARE)
     public @WebResult(name = "Response", targetNamespace = "urn:oasis:names:tc:SAML:2.0:protocol")
-    Response process(@WebParam(targetNamespace = "urn:oasis:names:tc:SAML:2.0:protocol")
-    AttributeQuery arg1);
+    Response attributeQuery(@WebParam(targetNamespace = "urn:oasis:names:tc:SAML:2.0:protocol")
+    AttributeQuery query);
 
 }
