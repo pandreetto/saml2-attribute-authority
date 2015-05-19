@@ -12,6 +12,7 @@ import org.apache.cxf.aegis.DatabindingException;
 import org.apache.cxf.aegis.type.AegisType;
 import org.apache.cxf.aegis.xml.MessageReader;
 import org.apache.cxf.aegis.xml.MessageWriter;
+import org.apache.ws.commons.schema.XmlSchema;
 import org.opensaml.Configuration;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.xml.XMLObject;
@@ -75,6 +76,12 @@ public class AttributeQueryType
     @Override
     public boolean isComplex() {
         return true;
+    }
+
+    public void writeSchema(XmlSchema root) {
+        /*
+         * TODO read schema from java resource with XmlSchemaCollection.read(resource)
+         */
     }
 
 }

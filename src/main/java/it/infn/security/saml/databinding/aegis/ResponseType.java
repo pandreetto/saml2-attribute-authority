@@ -15,6 +15,7 @@ import org.apache.cxf.aegis.type.AegisType;
 import org.apache.cxf.aegis.xml.MessageReader;
 import org.apache.cxf.aegis.xml.MessageWriter;
 import org.apache.cxf.aegis.xml.stax.ElementWriter;
+import org.apache.ws.commons.schema.XmlSchema;
 import org.opensaml.Configuration;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.xml.io.Marshaller;
@@ -95,6 +96,12 @@ public class ResponseType
     @Override
     public boolean isComplex() {
         return true;
+    }
+    
+    public void writeSchema(XmlSchema root) {
+        /*
+         * TODO read schema from java resource with XmlSchemaCollection.read(resource)
+         */
     }
 
 }
