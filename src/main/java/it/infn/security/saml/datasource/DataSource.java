@@ -6,6 +6,13 @@ import org.opensaml.saml2.core.Attribute;
 
 public interface DataSource {
 
-    public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs);
+    public void init()
+        throws DataSourceException;
+
+    public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs)
+        throws DataSourceException;
+
+    public void close()
+        throws DataSourceException;
 
 }

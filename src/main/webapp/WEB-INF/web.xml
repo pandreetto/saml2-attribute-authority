@@ -13,6 +13,12 @@
         </listener-class>
     </listener>
 
+    <listener>
+        <listener-class>
+            it.infn.security.saml.listener.DataSourceListener
+        </listener-class>
+    </listener>
+
     <servlet>
         <servlet-name>CXFServlet</servlet-name>
         <display-name>CXF Servlet</display-name>

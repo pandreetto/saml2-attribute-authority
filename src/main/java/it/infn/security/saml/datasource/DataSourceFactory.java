@@ -1,18 +1,22 @@
 package it.infn.security.saml.datasource;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.opensaml.saml2.core.Attribute;
-
 public class DataSourceFactory {
 
-    public static DataSource getDataSource() {
-        return new DataSource() {
-            public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs) {
-                return new ArrayList<Attribute>();
-            }
-        };
+    private static DataSource dataSource = null;
+
+    public static synchronized DataSource getDataSource()
+        throws DataSourceException {
+
+        if (dataSource == null) {
+            /*
+             * TODO class loading
+             */
+            dataSource = new it.infn.security.saml.datasource.mongodb.MongoDataSource();
+
+            dataSource.init();
+        }
+
+        return dataSource;
     }
 
 }
