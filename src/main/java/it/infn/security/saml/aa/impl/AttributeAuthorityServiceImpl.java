@@ -1,6 +1,8 @@
 package it.infn.security.saml.aa.impl;
 
 import it.infn.security.saml.aa.AttributeAuthorityService;
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.handler.SAML2Handler;
@@ -35,21 +37,21 @@ public class AttributeAuthorityServiceImpl
         ResponseBuilder responseBuilder = (ResponseBuilder) builderFactory.getBuilder(Response.DEFAULT_ELEMENT_NAME);
 
         Response response = responseBuilder.buildObject();
-        response.setID("_" + UUID.randomUUID().toString());
-        response.setIssueInstant(new DateTime());
-        response.setInResponseTo(query.getID());
 
         IssuerBuilder issuerBuilder = (IssuerBuilder) builderFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
         Issuer responseIssuer = issuerBuilder.buildObject();
-
-        /*
-         * TODO retrieve format end value from configuration
-         */
-        responseIssuer.setFormat(Issuer.UNSPECIFIED);
-        responseIssuer.setValue("issuer-TBD");
-        response.setIssuer(responseIssuer);
+        
+        AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
         try {
+
+            response.setID("_" + UUID.randomUUID().toString());
+            response.setIssueInstant(new DateTime());
+            response.setInResponseTo(query.getID());
+
+            responseIssuer.setFormat(configuration.getAuthorityIDFormat());
+            responseIssuer.setValue(configuration.getAuthorityID());
+            response.setIssuer(responseIssuer);
 
             DataSource dataSource = DataSourceFactory.getDataSource();
             SAML2Handler handler = SAML2HandlerFactory.getHandler();
