@@ -8,6 +8,10 @@ import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.handler.SAML2Handler;
 import it.infn.security.saml.handler.SAML2HandlerException;
 import it.infn.security.saml.handler.SAML2HandlerFactory;
+import it.infn.security.saml.iam.AccessManager;
+import it.infn.security.saml.iam.AccessManagerFactory;
+import it.infn.security.saml.iam.IdentityManager;
+import it.infn.security.saml.iam.IdentityManagerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,16 +38,22 @@ public class AttributeAuthorityServiceImpl
     public Response attributeQuery(AttributeQuery query) {
 
         XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
-        ResponseBuilder responseBuilder = (ResponseBuilder) builderFactory.getBuilder(Response.DEFAULT_ELEMENT_NAME);
 
+        ResponseBuilder responseBuilder = (ResponseBuilder) builderFactory.getBuilder(Response.DEFAULT_ELEMENT_NAME);
         Response response = responseBuilder.buildObject();
 
         IssuerBuilder issuerBuilder = (IssuerBuilder) builderFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
         Issuer responseIssuer = issuerBuilder.buildObject();
-        
-        AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
         try {
+
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+
+            identityManager.authenticate();
+
+            accessManager.authorizeAttributeQuery(query);
 
             response.setID("_" + UUID.randomUUID().toString());
             response.setIssueInstant(new DateTime());

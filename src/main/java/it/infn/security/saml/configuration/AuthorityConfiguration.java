@@ -7,6 +7,12 @@ public interface AuthorityConfiguration {
     public void init(Map<String, String> parameters)
         throws ConfigurationException;
 
+    public String getDataSourceClass()
+        throws ConfigurationException;
+
+    public String getSAMLsHandlerClass()
+        throws ConfigurationException;
+
     public String getAuthorityID()
         throws ConfigurationException;
 

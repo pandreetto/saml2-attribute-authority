@@ -16,6 +16,10 @@ public class PropertyFileConfiguration
 
     private static final String AUTHORITY_ID_FORMAT = "authority_id_format";
 
+    private static final String DATASOURCE_CLASS = "datasource_class";
+
+    private static final String SAMLHANDLER_CLASS = "samlhandler_class";
+
     private Properties properties;
 
     public void init(Map<String, String> parameters)
@@ -36,6 +40,24 @@ public class PropertyFileConfiguration
 
         } catch (Exception ex) {
             throw new ConfigurationException("Cannot load file", ex);
+        }
+    }
+
+    public String getDataSourceClass()
+        throws ConfigurationException {
+        try {
+            return properties.getProperty(DATASOURCE_CLASS);
+        } catch (Exception ex) {
+            throw new ConfigurationException("Missing " + DATASOURCE_CLASS);
+        }
+    }
+
+    public String getSAMLsHandlerClass()
+        throws ConfigurationException {
+        try {
+            return properties.getProperty(SAMLHANDLER_CLASS);
+        } catch (Exception ex) {
+            throw new ConfigurationException("Missing " + SAMLHANDLER_CLASS);
         }
     }
 
