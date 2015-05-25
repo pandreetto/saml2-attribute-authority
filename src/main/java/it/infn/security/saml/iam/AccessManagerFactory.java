@@ -1,5 +1,7 @@
 package it.infn.security.saml.iam;
 
+import javax.security.auth.Subject;
+
 import org.opensaml.saml2.core.AttributeQuery;
 
 public class AccessManagerFactory {
@@ -13,7 +15,7 @@ public class AccessManagerFactory {
                 public void init() {
                 }
 
-                public void authorizeAttributeQuery(AttributeQuery query) {
+                public void authorizeAttributeQuery(Subject subject, AttributeQuery query) {
                 }
 
                 public void close() {

@@ -7,6 +7,12 @@ public interface AuthorityConfiguration {
     public void init(Map<String, String> parameters)
         throws ConfigurationException;
 
+    public String getIdentityManagerClass()
+        throws ConfigurationException;
+
+    public String getAccessManagerClass()
+        throws ConfigurationException;
+
     public String getDataSourceClass()
         throws ConfigurationException;
 

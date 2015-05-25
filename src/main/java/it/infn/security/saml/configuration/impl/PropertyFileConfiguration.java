@@ -20,6 +20,10 @@ public class PropertyFileConfiguration
 
     private static final String SAMLHANDLER_CLASS = "samlhandler_class";
 
+    private static final String IDENTITY_MAN_CLASS = "identity_manager_class";
+
+    private static final String ACCESS_MAN_CLASS = "access_manager_class";
+
     private Properties properties;
 
     public void init(Map<String, String> parameters)
@@ -41,6 +45,19 @@ public class PropertyFileConfiguration
         } catch (Exception ex) {
             throw new ConfigurationException("Cannot load file", ex);
         }
+    }
+
+    public String getIdentityManagerClass()
+        throws ConfigurationException {
+        return properties.getProperty(IDENTITY_MAN_CLASS, "it.infn.security.saml.iam.impl.TLSIdentityManager");
+    }
+
+    public String getAccessManagerClass()
+        throws ConfigurationException {
+        /*
+         * TODO missing standard implementation
+         */
+        return properties.getProperty(ACCESS_MAN_CLASS, "");
     }
 
     public String getDataSourceClass()

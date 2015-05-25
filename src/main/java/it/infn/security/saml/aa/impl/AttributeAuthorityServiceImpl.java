@@ -16,6 +16,8 @@ import it.infn.security.saml.iam.IdentityManagerFactory;
 import java.util.List;
 import java.util.UUID;
 
+import javax.security.auth.Subject;
+
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
 import org.opensaml.saml2.core.Attribute;
@@ -51,9 +53,9 @@ public class AttributeAuthorityServiceImpl
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
 
-            identityManager.authenticate();
+            Subject subject = identityManager.authenticate();
 
-            accessManager.authorizeAttributeQuery(query);
+            accessManager.authorizeAttributeQuery(subject, query);
 
             response.setID("_" + UUID.randomUUID().toString());
             response.setIssueInstant(new DateTime());
