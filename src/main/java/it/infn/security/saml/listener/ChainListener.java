@@ -34,6 +34,10 @@ public class ChainListener
             AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
             config.init(pTable);
 
+            IdentityListener idListener = new IdentityListener();
+            idListener.contextInitialized(event);
+            AccessListener accessListener = new AccessListener();
+            accessListener.contextInitialized(event);
             DataSourceListener dsListener = new DataSourceListener();
             dsListener.contextInitialized(event);
 
@@ -51,6 +55,13 @@ public class ChainListener
 
             DataSourceListener dsListener = new DataSourceListener();
             dsListener.contextDestroyed(event);
+            AccessListener accessListener = new AccessListener();
+            accessListener.contextInitialized(event);
+            IdentityListener idListener = new IdentityListener();
+            idListener.contextDestroyed(event);
+
+            AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
+            config.close();
 
         } catch (Throwable th) {
             /*
