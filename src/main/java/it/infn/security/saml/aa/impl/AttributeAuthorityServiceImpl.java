@@ -8,6 +8,7 @@ import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.handler.SAML2Handler;
 import it.infn.security.saml.handler.SAML2HandlerException;
 import it.infn.security.saml.handler.SAML2HandlerFactory;
+import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
@@ -55,7 +56,7 @@ public class AttributeAuthorityServiceImpl
 
             Subject subject = identityManager.authenticate();
 
-            accessManager.authorizeAttributeQuery(subject, query);
+            AccessConstraints constraints = accessManager.authorizeAttributeQuery(subject, query);
 
             response.setID("_" + UUID.randomUUID().toString());
             response.setIssueInstant(new DateTime());
@@ -72,7 +73,8 @@ public class AttributeAuthorityServiceImpl
 
             String sbjID = handler.getSubjectID(query);
             
-            List<Attribute> userAttrs = dataSource.findAttributes(sbjID, query.getAttributes());
+            List<Attribute> queryAttrs = constraints.filterAttributes(query.getAttributes());
+            List<Attribute> userAttrs = dataSource.findAttributes(sbjID, queryAttrs);
 
             handler.fillInResponse(response, userAttrs, query);
 

@@ -9,7 +9,7 @@ public interface AccessManager {
     public void init()
         throws AccessManagerException;
 
-    public void authorizeAttributeQuery(Subject subject, AttributeQuery query)
+    public AccessConstraints authorizeAttributeQuery(Subject subject, AttributeQuery query)
         throws AccessManagerException;
 
     public void close()

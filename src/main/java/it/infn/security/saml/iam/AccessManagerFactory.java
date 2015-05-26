@@ -15,7 +15,8 @@ public class AccessManagerFactory {
                 public void init() {
                 }
 
-                public void authorizeAttributeQuery(Subject subject, AttributeQuery query) {
+                public AccessConstraints authorizeAttributeQuery(Subject subject, AttributeQuery query) {
+                    return new AccessConstraints();
                 }
 
                 public void close() {
