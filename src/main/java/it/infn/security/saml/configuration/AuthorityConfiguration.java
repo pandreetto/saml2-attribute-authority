@@ -25,6 +25,9 @@ public interface AuthorityConfiguration {
     public String getAuthorityIDFormat()
         throws ConfigurationException;
 
+    public String getDataSourceParam(String name)
+        throws ConfigurationException;
+
     public void close()
         throws ConfigurationException;
 

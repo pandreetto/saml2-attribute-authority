@@ -71,8 +71,8 @@ public class AttributeAuthorityServiceImpl
             handler.checkRequest(query);
 
             String sbjID = handler.getSubjectID(query);
-
-            List<Attribute> userAttrs = dataSource.findAttributes(sbjID, null);
+            
+            List<Attribute> userAttrs = dataSource.findAttributes(sbjID, query.getAttributes());
 
             handler.fillInResponse(response, userAttrs, query);
 

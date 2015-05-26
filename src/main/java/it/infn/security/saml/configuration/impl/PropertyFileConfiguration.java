@@ -62,34 +62,43 @@ public class PropertyFileConfiguration
 
     public String getDataSourceClass()
         throws ConfigurationException {
-        try {
-            return properties.getProperty(DATASOURCE_CLASS);
-        } catch (Exception ex) {
+        String result = properties.getProperty(DATASOURCE_CLASS);
+        if (result == null) {
             throw new ConfigurationException("Missing " + DATASOURCE_CLASS);
         }
+        return result;
     }
 
     public String getSAMLsHandlerClass()
         throws ConfigurationException {
-        try {
-            return properties.getProperty(SAMLHANDLER_CLASS);
-        } catch (Exception ex) {
+        String result = properties.getProperty(SAMLHANDLER_CLASS);
+        if (result == null) {
             throw new ConfigurationException("Missing " + SAMLHANDLER_CLASS);
         }
+        return result;
     }
 
     public String getAuthorityID()
         throws ConfigurationException {
-        try {
-            return properties.getProperty(AUTHORITY_ID);
-        } catch (Exception ex) {
+        String result = properties.getProperty(AUTHORITY_ID);
+        if (result == null) {
             throw new ConfigurationException("Missing " + AUTHORITY_ID);
         }
+        return result;
     }
 
     public String getAuthorityIDFormat()
         throws ConfigurationException {
         return properties.getProperty(AUTHORITY_ID_FORMAT, Issuer.UNSPECIFIED);
+    }
+
+    public String getDataSourceParam(String name)
+        throws ConfigurationException {
+        String result = properties.getProperty(name);
+        if (result == null) {
+            throw new ConfigurationException("Missing " + name);
+        }
+        return result;
     }
 
     public void close()
