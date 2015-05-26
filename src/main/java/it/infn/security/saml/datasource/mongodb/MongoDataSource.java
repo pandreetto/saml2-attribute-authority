@@ -84,8 +84,7 @@ public class MongoDataSource
                 if (tmpValues != null && tmpValues.size() > 0) {
                     for (XMLObject xObj : tmpValues) {
                         Bson tmpq = Filters.eq(NAME_FIELD, tmpName);
-                        String refValue = xObj.getDOM().getTextContent();
-                        System.out.println("--- reference value " + refValue);
+                        String refValue = xObj.getDOM().getTextContent().trim();
                         tmpq = Filters.and(tmpq, Filters.eq(VALUE_FIELD, refValue));
                         orList.add(tmpq);
                     }
