@@ -1,5 +1,7 @@
 package it.infn.security.saml.configuration;
 
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 
 public interface AuthorityConfiguration {
@@ -26,6 +28,12 @@ public interface AuthorityConfiguration {
         throws ConfigurationException;
 
     public String getDataSourceParam(String name)
+        throws ConfigurationException;
+
+    public X509Certificate getServiceCertificate()
+        throws ConfigurationException;
+
+    public PrivateKey getServicePrivateKey()
         throws ConfigurationException;
 
     public void close()

@@ -3,11 +3,16 @@ package it.infn.security.saml.configuration.impl;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.ConfigurationException;
 
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Properties;
 
 import org.opensaml.saml2.core.Issuer;
+
+import eu.emi.security.authn.x509.impl.PEMCredential;
 
 public class PropertyFileConfiguration
     implements AuthorityConfiguration {
@@ -24,7 +29,15 @@ public class PropertyFileConfiguration
 
     private static final String ACCESS_MAN_CLASS = "access_manager_class";
 
+    private static final String CERT_FILENAME = "service_certificate";
+
+    private static final String KEY_FILENAME = "service_key";
+
     private Properties properties;
+
+    private X509Certificate serviceCert = null;
+
+    private PrivateKey serviceKey = null;
 
     public void init(Map<String, String> parameters)
         throws ConfigurationException {
@@ -45,6 +58,43 @@ public class PropertyFileConfiguration
         } catch (Exception ex) {
             throw new ConfigurationException("Cannot load file", ex);
         }
+
+        String certFile = properties.getProperty(CERT_FILENAME);
+        String pkFile = properties.getProperty(KEY_FILENAME);
+
+        if (certFile != null && pkFile != null) {
+            FileInputStream cis = null;
+            FileInputStream kis = null;
+
+            try {
+                cis = new FileInputStream(certFile);
+                kis = new FileInputStream(pkFile);
+
+                PEMCredential credential = new PEMCredential(kis, cis, (char[]) null);
+                serviceCert = credential.getCertificate();
+                serviceKey = credential.getKey();
+
+            } catch (Throwable th) {
+                throw new ConfigurationException("Cannot load credentials", th);
+            } finally {
+                try {
+                    cis.close();
+                } catch (Exception ex) {
+                    /*
+                     * TODO log
+                     */
+                }
+
+                try {
+                    kis.close();
+                } catch (Exception ex) {
+                    /*
+                     * TODO log
+                     */
+                }
+            }
+        }
+
     }
 
     public String getIdentityManagerClass()
@@ -99,6 +149,22 @@ public class PropertyFileConfiguration
             throw new ConfigurationException("Missing " + name);
         }
         return result;
+    }
+
+    public X509Certificate getServiceCertificate()
+        throws ConfigurationException {
+        if (serviceCert == null) {
+            throw new ConfigurationException("Missing " + CERT_FILENAME);
+        }
+        return serviceCert;
+    }
+
+    public PrivateKey getServicePrivateKey()
+        throws ConfigurationException {
+        if (serviceKey == null) {
+            throw new ConfigurationException("Missing " + KEY_FILENAME);
+        }
+        return serviceKey;
     }
 
     public void close()
