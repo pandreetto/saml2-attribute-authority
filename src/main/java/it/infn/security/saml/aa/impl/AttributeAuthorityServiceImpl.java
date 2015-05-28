@@ -41,21 +41,19 @@ import org.opensaml.saml2.core.impl.ResponseBuilder;
 import org.opensaml.saml2.core.impl.StatusBuilder;
 import org.opensaml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.saml2.core.impl.StatusMessageBuilder;
+import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.credential.Credential;
-import org.opensaml.xml.security.keyinfo.KeyInfoGenerator;
-import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorFactory;
-import org.opensaml.xml.security.keyinfo.KeyInfoGeneratorManager;
-import org.opensaml.xml.security.x509.X509KeyInfoGeneratorFactory;
-import org.opensaml.xml.signature.KeyInfo;
 import org.opensaml.xml.signature.Signature;
 import org.opensaml.xml.signature.SignatureException;
+import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.signature.Signer;
 import org.opensaml.xml.signature.impl.SignatureBuilder;
+import org.opensaml.xml.validation.ValidationException;
 
 public class AttributeAuthorityServiceImpl
     implements AttributeAuthorityService {
@@ -80,13 +78,11 @@ public class AttributeAuthorityServiceImpl
             DataSource dataSource = DataSourceFactory.getDataSource();
             SAML2Handler handler = SAML2HandlerFactory.getHandler();
 
-            /*
-             * TODO validate signature
-             */
-
             handler.checkRequest(query);
 
             Subject requester = identityManager.authenticate();
+
+            verifySignature(query, requester);
 
             AccessConstraints constraints = accessManager.authorizeAttributeQuery(requester, query);
 
@@ -97,7 +93,7 @@ public class AttributeAuthorityServiceImpl
 
             handler.fillInResponse(response, userAttrs, query);
 
-            signAssertions(response, requester);
+            signAssertions(response);
 
             Status status = this.newStatus();
             response.setStatus(status);
@@ -203,21 +199,12 @@ public class AttributeAuthorityServiceImpl
 
     }
 
-    private void signAssertions(Response response, Subject requester)
+    private void signAssertions(Response response)
         throws SecurityException, ConfigurationException, SignatureException, MarshallingException {
 
         List<Assertion> assertions = response.getAssertions();
         if (assertions.size() == 0) {
             throw new SecurityException("Missing assertion in response");
-        }
-
-        X509Certificate subjectCertificate = null;
-        Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
-        for (X509Certificate[] peerChain : allChain) {
-            subjectCertificate = peerChain[0];
-        }
-        if (subjectCertificate == null) {
-            throw new SecurityException("Cannot retrieve peer certificate");
         }
 
         AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
@@ -226,17 +213,6 @@ public class AttributeAuthorityServiceImpl
         PrivateKey srvKey = config.getServicePrivateKey();
         Credential credential = SecurityHelper.getSimpleCredential(srvCert, srvKey);
 
-        Credential peerCredential = SecurityHelper.getSimpleCredential(subjectCertificate, null);
-
-        X509KeyInfoGeneratorFactory x509KeyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
-        x509KeyInfoGeneratorFactory.setEmitEntityCertificate(true);
-
-        KeyInfoGeneratorManager keyInfoGeneratorManager = new KeyInfoGeneratorManager();
-        keyInfoGeneratorManager.registerFactory(x509KeyInfoGeneratorFactory);
-
-        KeyInfoGeneratorFactory keyInfoGeneratorFactory = keyInfoGeneratorManager.getFactory(peerCredential);
-        KeyInfoGenerator keyInfoGenerator = keyInfoGeneratorFactory.newInstance();
-
         for (Assertion assertion : assertions) {
             SignatureBuilder signatureBuilder = (SignatureBuilder) builderFactory
                     .getBuilder(Signature.DEFAULT_ELEMENT_NAME);
@@ -244,9 +220,6 @@ public class AttributeAuthorityServiceImpl
             assertionSignature.setSigningCredential(credential);
             assertionSignature.setCanonicalizationAlgorithm(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
             assertionSignature.setSignatureAlgorithm(XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1);
-
-            KeyInfo serviceKeyInfo = keyInfoGenerator.generate(credential);
-            assertionSignature.setKeyInfo(serviceKeyInfo);
 
             assertion.setSignature(assertionSignature);
             /*
@@ -258,6 +231,42 @@ public class AttributeAuthorityServiceImpl
             Signer.signObject(assertionSignature);
 
         }
+    }
+
+    private void verifySignature(AttributeQuery query, Subject requester)
+        throws SecurityException, ConfigurationException, ValidationException {
+
+        Signature signature = query.getSignature();
+        if (signature == null) {
+            /*
+             * if signature is mandatory the check must be specified in
+             * SAML2Handler
+             */
+            return;
+        }
+
+        SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
+        profileValidator.validate(signature);
+
+        X509Certificate subjectCertificate = null;
+        Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
+        for (X509Certificate[] peerChain : allChain) {
+            subjectCertificate = peerChain[0];
+        }
+        if (subjectCertificate == null) {
+            /*
+             * TODO get the certificate from <KeyInfo/>
+             * even if is not mandatory for SAML XMLSig profile
+             * certificate requires validation
+             */
+            throw new SecurityException("Cannot retrieve peer certificate");
+        }
+
+        Credential peerCredential = SecurityHelper.getSimpleCredential(subjectCertificate, null);
+
+        SignatureValidator signatureValidator = new SignatureValidator(peerCredential);
+        signatureValidator.validate(signature);
+
     }
 
 }
