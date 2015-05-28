@@ -1,49 +1,34 @@
 package it.infn.security.saml.handler;
 
-import org.opensaml.saml2.core.StatusCode;
+import it.infn.security.saml.aa.CodedException;
 
 public class SAML2HandlerException
-    extends Exception {
+    extends CodedException {
 
     public static final long serialVersionUID = 1432039307;
 
-    private String code;
-
-    private String subcode;
-
     public SAML2HandlerException(String msg, String code, String subcode) {
-        super(msg);
-        this.code = code;
-        this.subcode = subcode;
+        super(msg, code, subcode);
     }
 
     public SAML2HandlerException(String msg, String code) {
-        this(msg, code, (String) null);
+        super(msg, code);
     }
 
     public SAML2HandlerException(String msg) {
-        this(msg, StatusCode.RESPONDER_URI, (String) null);
+        super(msg);
     }
 
     public SAML2HandlerException(String msg, String code, String subcode, Throwable th) {
-        super(msg, th);
-        this.code = code;
-        this.subcode = subcode;
+        super(msg, code, subcode, th);
     }
 
     public SAML2HandlerException(String msg, String code, Throwable th) {
-        this(msg, code, (String) null, th);
+        super(msg, code, th);
     }
 
     public SAML2HandlerException(String msg, Throwable th) {
-        this(msg, StatusCode.RESPONDER_URI, (String) null, th);
+        super(msg, th);
     }
 
-    public String getStatusCode() {
-        return code;
-    }
-
-    public String getSubStatusCode() {
-        return subcode;
-    }
 }

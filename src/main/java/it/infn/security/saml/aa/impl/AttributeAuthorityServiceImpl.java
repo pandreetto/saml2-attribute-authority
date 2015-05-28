@@ -1,13 +1,13 @@
 package it.infn.security.saml.aa.impl;
 
 import it.infn.security.saml.aa.AttributeAuthorityService;
+import it.infn.security.saml.aa.CodedException;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.handler.SAML2Handler;
-import it.infn.security.saml.handler.SAML2HandlerException;
 import it.infn.security.saml.handler.SAML2HandlerFactory;
 import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
@@ -27,6 +27,7 @@ import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.signature.XMLSignature;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
+import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
@@ -72,6 +73,10 @@ public class AttributeAuthorityServiceImpl
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
 
+            if (query.getVersion() != SAMLVersion.VERSION_20) {
+                throw new CodedException("Unsupported version", StatusCode.VERSION_MISMATCH_URI);
+            }
+
             DataSource dataSource = DataSourceFactory.getDataSource();
             SAML2Handler handler = SAML2HandlerFactory.getHandler();
 
@@ -93,6 +98,9 @@ public class AttributeAuthorityServiceImpl
             handler.fillInResponse(response, userAttrs, query);
 
             signAssertions(response, requester);
+
+            Status status = this.newStatus();
+            response.setStatus(status);
 
             return response;
 
@@ -146,6 +154,17 @@ public class AttributeAuthorityServiceImpl
 
     }
 
+    private Status newStatus() {
+        StatusBuilder statusBuilder = (StatusBuilder) builderFactory.getBuilder(Status.DEFAULT_ELEMENT_NAME);
+        Status status = statusBuilder.buildObject();
+        StatusCodeBuilder statusCodeBuilder = (StatusCodeBuilder) builderFactory
+                .getBuilder(StatusCode.DEFAULT_ELEMENT_NAME);
+        StatusCode statusCode = statusCodeBuilder.buildObject();
+        statusCode.setValue(StatusCode.SUCCESS_URI);
+        status.setStatusCode(statusCode);
+        return status;
+    }
+
     private Status newStatus(Throwable th) {
 
         StatusBuilder statusBuilder = (StatusBuilder) builderFactory.getBuilder(Status.DEFAULT_ELEMENT_NAME);
@@ -163,11 +182,8 @@ public class AttributeAuthorityServiceImpl
                 .getBuilder(StatusCode.DEFAULT_ELEMENT_NAME);
         StatusCode statusCode = statusCodeBuilder.buildObject();
 
-        /*
-         * TODO handle specific exceptions
-         */
-        if (th.getClass() == SAML2HandlerException.class) {
-            SAML2HandlerException handlerEx = (SAML2HandlerException) th;
+        if (th.getClass() == CodedException.class) {
+            CodedException handlerEx = (CodedException) th;
             statusCode.setValue(handlerEx.getStatusCode());
 
             String subCode = handlerEx.getSubStatusCode();

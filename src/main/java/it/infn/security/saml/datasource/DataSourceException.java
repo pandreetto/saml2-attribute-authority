@@ -1,49 +1,34 @@
 package it.infn.security.saml.datasource;
 
-import org.opensaml.saml2.core.StatusCode;
+import it.infn.security.saml.aa.CodedException;
 
 public class DataSourceException
-    extends Exception {
+    extends CodedException {
 
     public static final long serialVersionUID = 1432129668;
 
-    private String code;
-
-    private String subcode;
-
     public DataSourceException(String msg, String code, String subcode) {
-        super(msg);
-        this.code = code;
-        this.subcode = subcode;
+        super(msg, code, subcode);
     }
 
     public DataSourceException(String msg, String code) {
-        this(msg, code, (String) null);
+        super(msg, code);
     }
 
     public DataSourceException(String msg) {
-        this(msg, StatusCode.RESPONDER_URI, (String) null);
+        super(msg);
     }
 
     public DataSourceException(String msg, String code, String subcode, Throwable th) {
-        super(msg, th);
-        this.code = code;
-        this.subcode = subcode;
+        super(msg, code, subcode, th);
     }
 
     public DataSourceException(String msg, String code, Throwable th) {
-        this(msg, code, (String) null, th);
+        super(msg, code, th);
     }
 
     public DataSourceException(String msg, Throwable th) {
-        this(msg, StatusCode.RESPONDER_URI, (String) null, th);
+        super(msg, th);
     }
 
-    public String getStatusCode() {
-        return code;
-    }
-
-    public String getSubStatusCode() {
-        return subcode;
-    }
 }
