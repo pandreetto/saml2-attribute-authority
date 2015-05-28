@@ -1,5 +1,8 @@
 package it.infn.security.saml.listener;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 
@@ -8,6 +11,8 @@ import javax.servlet.ServletContextListener;
 
 public class IdentityListener
     implements ServletContextListener {
+
+    private static final Logger logger = Logger.getLogger(IdentityListener.class.getName());
 
     public void contextInitialized(ServletContextEvent event) {
 
@@ -23,9 +28,9 @@ public class IdentityListener
             }
 
         } catch (Throwable th) {
-            /*
-             * TODO missing log
-             */
+
+            logger.log(Level.SEVERE, th.getMessage(), th);
+
         }
 
     }

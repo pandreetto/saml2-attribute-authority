@@ -12,12 +12,16 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.xml.security.SecurityHelper;
 
 public class PropertyFileConfiguration
     implements AuthorityConfiguration {
+
+    private static final Logger logger = Logger.getLogger(PropertyFileConfiguration.class.getName());
 
     private static final String AUTHORITY_ID = "authority_id";
 
@@ -77,9 +81,9 @@ public class PropertyFileConfiguration
                 serviceKey = SecurityHelper.decodePrivateKey(new File(pkFile), (char[]) null);
 
             } catch (Throwable th) {
-                /*
-                 * TODO log
-                 */
+
+                logger.log(Level.SEVERE, th.getMessage(), th);
+
             } finally {
                 try {
                     bis.close();

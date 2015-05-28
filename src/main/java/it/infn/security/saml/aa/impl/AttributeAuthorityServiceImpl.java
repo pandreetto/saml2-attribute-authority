@@ -20,6 +20,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
 
@@ -57,6 +59,8 @@ import org.opensaml.xml.validation.ValidationException;
 
 public class AttributeAuthorityServiceImpl
     implements AttributeAuthorityService {
+
+    private static final Logger logger = Logger.getLogger(AttributeAuthorityServiceImpl.class.getName());
 
     public static final XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
 
@@ -102,7 +106,7 @@ public class AttributeAuthorityServiceImpl
 
         } catch (Throwable th) {
 
-            th.printStackTrace();
+            logger.log(Level.SEVERE, th.getMessage(), th);
 
             Response response = this.newResponse(query.getID());
 
@@ -141,9 +145,7 @@ public class AttributeAuthorityServiceImpl
             responseIssuer.setFormat(configuration.getAuthorityIDFormat());
             responseIssuer.setValue(configuration.getAuthorityID());
         } catch (ConfigurationException cfgEx) {
-            /*
-             * TODO log
-             */
+            logger.log(Level.SEVERE, "Cannot get issuer details from configuration", cfgEx);
         }
 
         return responseIssuer;
@@ -255,9 +257,8 @@ public class AttributeAuthorityServiceImpl
         }
         if (subjectCertificate == null) {
             /*
-             * TODO get the certificate from <KeyInfo/>
-             * even if is not mandatory for SAML XMLSig profile
-             * certificate requires validation
+             * TODO get the certificate from <KeyInfo/> even if is not mandatory
+             * for SAML XMLSig profile certificate requires validation
              */
             throw new SecurityException("Cannot retrieve peer certificate");
         }
@@ -266,6 +267,7 @@ public class AttributeAuthorityServiceImpl
 
         SignatureValidator signatureValidator = new SignatureValidator(peerCredential);
         signatureValidator.validate(signature);
+        logger.fine("Signature verified for " + subjectCertificate.getSubjectX500Principal().getName());
 
     }
 

@@ -4,6 +4,7 @@ import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerException;
 
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +14,8 @@ import org.apache.cxf.phase.PhaseInterceptorChain;
 
 public class TLSIdentityManager
     implements IdentityManager {
+
+    private static final Logger logger = Logger.getLogger(TLSIdentityManager.class.getName());
 
     public TLSIdentityManager() {
 
@@ -36,10 +39,7 @@ public class TLSIdentityManager
             throw new IdentityManagerException("User not authenticated");
         }
 
-        /*
-         * TODO log the authentication
-         */
-        System.out.println("--- User authenticated " + certificateChain[0].getSubjectX500Principal().getName());
+        logger.info("User authenticated" + certificateChain[0].getSubjectX500Principal().getName());
 
         Subject result = new Subject();
         result.getPublicCredentials().add(certificateChain);

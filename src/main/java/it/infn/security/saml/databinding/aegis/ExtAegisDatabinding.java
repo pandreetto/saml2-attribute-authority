@@ -1,5 +1,8 @@
 package it.infn.security.saml.databinding.aegis;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.cxf.aegis.AegisContext;
 import org.apache.cxf.aegis.databinding.AegisDatabinding;
 import org.apache.cxf.aegis.type.TypeMapping;
@@ -7,6 +10,8 @@ import org.opensaml.DefaultBootstrap;
 
 public class ExtAegisDatabinding
     extends AegisDatabinding {
+
+    private static final Logger logger = Logger.getLogger(ExtAegisDatabinding.class.getName());
 
     public ExtAegisDatabinding() {
         super();
@@ -21,9 +26,9 @@ public class ExtAegisDatabinding
             tMap.register(new ResponseType());
 
         } catch (Throwable th) {
-            /*
-             * TODO log exception
-             */
+
+            logger.log(Level.SEVERE, th.getMessage(), th);
+
         }
 
     }
