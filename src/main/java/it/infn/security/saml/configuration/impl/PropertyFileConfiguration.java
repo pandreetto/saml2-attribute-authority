@@ -3,16 +3,18 @@ package it.infn.security.saml.configuration.impl;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.ConfigurationException;
 
+import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.security.PrivateKey;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Properties;
 
 import org.opensaml.saml2.core.Issuer;
-
-import eu.emi.security.authn.x509.impl.PEMCredential;
+import org.opensaml.xml.security.SecurityHelper;
 
 public class PropertyFileConfiguration
     implements AuthorityConfiguration {
@@ -63,38 +65,29 @@ public class PropertyFileConfiguration
         String pkFile = properties.getProperty(KEY_FILENAME);
 
         if (certFile != null && pkFile != null) {
-            FileInputStream cis = null;
-            FileInputStream kis = null;
-
+            BufferedInputStream bis = null;
             try {
-                cis = new FileInputStream(certFile);
-                kis = new FileInputStream(pkFile);
 
-                PEMCredential credential = new PEMCredential(kis, cis, (char[]) null);
-                serviceCert = credential.getCertificate();
-                serviceKey = credential.getKey();
-
-            } catch (Throwable th) {
-                throw new ConfigurationException("Cannot load credentials", th);
-            } finally {
-                try {
-                    cis.close();
-                } catch (Exception ex) {
-                    /*
-                     * TODO log
-                     */
+                bis = new BufferedInputStream(new FileInputStream(certFile));
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                if (bis.available() > 0) {
+                    serviceCert = (X509Certificate) cf.generateCertificate(bis);
                 }
 
+                serviceKey = SecurityHelper.decodePrivateKey(new File(pkFile), (char[]) null);
+
+            } catch (Throwable th) {
+                /*
+                 * TODO log
+                 */
+            } finally {
                 try {
-                    kis.close();
-                } catch (Exception ex) {
-                    /*
-                     * TODO log
-                     */
+                    bis.close();
+                } catch (Throwable th) {
+
                 }
             }
         }
-
     }
 
     public String getIdentityManagerClass()
