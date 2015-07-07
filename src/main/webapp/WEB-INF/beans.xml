@@ -28,14 +28,16 @@
         </jaxws:dataBinding>
     </jaxws:endpoint>
 
-    <jaxrs:server id="attributeManagerService"
+    <jaxrs:server id="identityManagerService"
         address="/manager">
         <jaxrs:serviceBeans>
-            <ref bean="attributeManagerBean" />
+            <ref bean="userManagerBean" />
+            <ref bean="groupManagerBean" />
         </jaxrs:serviceBeans>
     </jaxrs:server>
  
-    <bean id="attributeManagerBean" class="it.infn.security.saml.aa.AttributeManager" />
+    <bean id="userManagerBean" class="it.infn.security.saml.aa.UserResourceManager" />
+    <bean id="groupManagerBean" class="it.infn.security.saml.aa.GroupResourceManager" />
     
 </beans>
 
