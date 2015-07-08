@@ -1,5 +1,10 @@
 package it.infn.security.saml.aa;
 
+import it.infn.security.saml.datasource.DataSource;
+import it.infn.security.saml.datasource.DataSourceFactory;
+
+import java.util.logging.Logger;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -12,21 +17,18 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.encoder.Encoder;
-import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.exceptions.BadRequestException;
 import org.wso2.charon.core.exceptions.FormatNotSupportedException;
-import org.wso2.charon.core.extensions.UserManager;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.protocol.SCIMResponse;
-import org.wso2.charon.core.protocol.endpoints.AbstractResourceEndpoint;
 import org.wso2.charon.core.protocol.endpoints.GroupResourceEndpoint;
 import org.wso2.charon.core.schema.SCIMConstants;
-import org.wso2.charon.utils.DefaultCharonManager;
 import org.wso2.charon.utils.jaxrs.JAXRSResponseBuilder;
 
 @Path("/Groups")
 public class GroupResourceManager {
+
+    private static final Logger logger = Logger.getLogger(GroupResourceManager.class.getName());
 
     public GroupResourceManager() {
 
@@ -39,24 +41,20 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
-        Encoder encoder = null;
         SCIMResponse scimResponse = null;
         try {
-            DefaultCharonManager defaultCharonManager = DefaultCharonManager.getInstance();
             if (format == null) {
                 format = SCIMConstants.APPLICATION_JSON;
             }
-            encoder = defaultCharonManager.getEncoder(SCIMConstants.identifyFormat(format));
 
-            /*
-             * TODO user from authentication driver
-             */
-            UserManager userManager = DefaultCharonManager.getInstance().getUserManager("");
+            DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.get(id, format, userManager);
 
-        } catch (AbstractCharonException ex) {
-            scimResponse = AbstractResourceEndpoint.encodeSCIMException(encoder, ex);
+        } catch (Exception ex) {
+            /*
+             * TODO exception handling
+             */
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -68,10 +66,8 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
 
-        Encoder encoder = null;
         SCIMResponse scimResponse = null;
         try {
-            DefaultCharonManager defaultCharonManager = DefaultCharonManager.getInstance();
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
@@ -79,17 +75,15 @@ public class GroupResourceManager {
             if (outputFormat == null) {
                 outputFormat = SCIMConstants.APPLICATION_JSON;
             }
-            encoder = defaultCharonManager.getEncoder(SCIMConstants.identifyFormat(outputFormat));
 
-            /*
-             * TODO user from authentication driver
-             */
-            UserManager userManager = DefaultCharonManager.getInstance().getUserManager("");
+            DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
-        } catch (AbstractCharonException ex) {
-            scimResponse = AbstractResourceEndpoint.encodeSCIMException(encoder, ex);
+        } catch (Exception ex) {
+            /*
+             * TODO exception handling
+             */
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -102,24 +96,20 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
-        Encoder encoder = null;
         SCIMResponse scimResponse = null;
         try {
-            DefaultCharonManager defaultCharonManager = DefaultCharonManager.getInstance();
             if (format == null) {
                 format = SCIMConstants.APPLICATION_JSON;
             }
-            encoder = defaultCharonManager.getEncoder(SCIMConstants.identifyFormat(format));
 
-            /*
-             * TODO user from authentication driver
-             */
-            UserManager userManager = DefaultCharonManager.getInstance().getUserManager("");
+            DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.delete(id, userManager, format);
 
-        } catch (AbstractCharonException ex) {
-            scimResponse = AbstractResourceEndpoint.encodeSCIMException(encoder, ex);
+        } catch (Exception ex) {
+            /*
+             * TODO exception handling
+             */
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -133,19 +123,15 @@ public class GroupResourceManager {
             @QueryParam("startIndex") String startIndex, @QueryParam("count") String count,
             @QueryParam("sortBy") String sortBy, @QueryParam("sortOrder") String sortOrder) {
 
-        Encoder encoder = null;
         SCIMResponse scimResponse = null;
         try {
-            DefaultCharonManager defaultCharonManager = DefaultCharonManager.getInstance();
             if (format == null) {
                 format = SCIMConstants.APPLICATION_JSON;
             }
-            encoder = defaultCharonManager.getEncoder(SCIMConstants.identifyFormat(format));
 
-            /*
-             * TODO user from authentication driver
-             */
-            UserManager userManager = DefaultCharonManager.getInstance().getUserManager("");
+            logger.info("Calling getGroup, format " + SCIMConstants.identifyFormat(format));
+
+            DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
 
             if (searchAttribute != null) {
@@ -164,8 +150,10 @@ public class GroupResourceManager {
                 throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
             }
 
-        } catch (AbstractCharonException ex) {
-            scimResponse = AbstractResourceEndpoint.encodeSCIMException(encoder, ex);
+        } catch (Exception ex) {
+            /*
+             * TODO exception handling
+             */
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -179,10 +167,8 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
 
-        Encoder encoder = null;
         SCIMResponse scimResponse = null;
         try {
-            DefaultCharonManager defaultCharonManager = DefaultCharonManager.getInstance();
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
@@ -190,18 +176,16 @@ public class GroupResourceManager {
             if (outputFormat == null) {
                 outputFormat = SCIMConstants.APPLICATION_JSON;
             }
-            encoder = defaultCharonManager.getEncoder(SCIMConstants.identifyFormat(outputFormat));
 
-            /*
-             * TODO user from authentication driver
-             */
-            UserManager userManager = DefaultCharonManager.getInstance().getUserManager("");
+            DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat,
                     userManager);
 
-        } catch (AbstractCharonException ex) {
-            scimResponse = AbstractResourceEndpoint.encodeSCIMException(encoder, ex);
+        } catch (Exception ex) {
+            /*
+             * TODO exception handling
+             */
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);

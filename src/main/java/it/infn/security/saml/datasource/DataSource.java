@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.opensaml.saml2.core.Attribute;
 
-public interface DataSource {
+public interface DataSource extends org.wso2.charon.core.extensions.UserManager {
 
     public void init()
         throws DataSourceException;

@@ -18,6 +18,11 @@ import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
+import org.wso2.charon.core.exceptions.CharonException;
+import org.wso2.charon.core.exceptions.DuplicateResourceException;
+import org.wso2.charon.core.exceptions.NotFoundException;
+import org.wso2.charon.core.objects.Group;
+import org.wso2.charon.core.objects.User;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -124,6 +129,111 @@ public class MongoDataSource
         throws DataSourceException {
 
         mongoClient.close();
+
+    }
+
+    public User getUser(String userId)
+        throws CharonException {
+        return null;
+    }
+
+    public List<User> listUsers()
+        throws CharonException {
+        return null;
+    }
+
+    public List<User> listUsersByAttribute(org.wso2.charon.core.attributes.Attribute attribute) {
+        return null;
+    }
+
+    public List<User> listUsersByFilter(String filter, String operation, String value)
+        throws CharonException {
+        return null;
+    }
+
+    public List<User> listUsersBySort(String sortBy, String sortOrder) {
+        return null;
+    }
+
+    public List<User> listUsersWithPagination(int startIndex, int count) {
+        return null;
+    }
+
+    public User updateUser(User user)
+        throws CharonException {
+        return null;
+    }
+
+    public User updateUser(List<org.wso2.charon.core.attributes.Attribute> updatedAttributes) {
+        return null;
+    }
+
+    public void deleteUser(String userId)
+        throws NotFoundException, CharonException {
+
+    }
+
+    public User createUser(User user)
+        throws CharonException, DuplicateResourceException {
+        return null;
+    }
+
+    public User createUser(User user, boolean isBulkUserAdd)
+        throws CharonException, DuplicateResourceException {
+        return null;
+    }
+
+    public Group getGroup(String groupId)
+        throws CharonException {
+        return null;
+    }
+
+    public List<Group> listGroups()
+        throws CharonException {
+        return null;
+    }
+
+    public List<Group> listGroupsByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
+        throws CharonException {
+        return null;
+    }
+
+    public List<Group> listGroupsByFilter(String filter, String operation, String value)
+        throws CharonException {
+        return null;
+    }
+
+    public List<Group> listGroupsBySort(String sortBy, String sortOrder)
+        throws CharonException {
+        return null;
+    }
+
+    public List<Group> listGroupsWithPagination(int startIndex, int count) {
+        return null;
+    }
+
+    public Group createGroup(Group group)
+        throws CharonException, DuplicateResourceException {
+        return null;
+    }
+
+    public Group updateGroup(Group oldGroup, Group group)
+        throws CharonException {
+        return null;
+    }
+
+    public Group patchGroup(Group oldGroup, Group group)
+        throws CharonException {
+        return null;
+    }
+
+    public Group updateGroup(List<org.wso2.charon.core.attributes.Attribute> attributes)
+        throws CharonException {
+        return null;
+    }
+
+    public void deleteGroup(String groupId)
+        throws NotFoundException, CharonException {
 
     }
 
