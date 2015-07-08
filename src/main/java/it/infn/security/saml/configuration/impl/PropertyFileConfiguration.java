@@ -39,6 +39,10 @@ public class PropertyFileConfiguration
 
     private static final String KEY_FILENAME = "service_key";
 
+    private static final String CONF_PROPERTY = "saml.aa.configuration.file";
+
+    private static final String DEF_CONFFILE = "/etc/saml2-attribute-authority/configuration.xml";
+
     private Properties properties;
 
     private X509Certificate serviceCert = null;
@@ -48,11 +52,13 @@ public class PropertyFileConfiguration
     public void init(Map<String, String> parameters)
         throws ConfigurationException {
 
-        if (!parameters.containsKey("conffile")) {
-            throw new ConfigurationException("Missing configuration file in context");
+        String filename = null;
+        if (parameters.containsKey("conffile")) {
+            filename = parameters.get("conffile");
+        } else {
+            filename = System.getProperty(CONF_PROPERTY, DEF_CONFFILE);
         }
 
-        String filename = parameters.get("conffile");
         properties = new Properties();
 
         try {
@@ -62,7 +68,7 @@ public class PropertyFileConfiguration
             reader.close();
 
         } catch (Exception ex) {
-            throw new ConfigurationException("Cannot load file", ex);
+            throw new ConfigurationException("Cannot load file " + filename, ex);
         }
 
         String certFile = properties.getProperty(CERT_FILENAME);
