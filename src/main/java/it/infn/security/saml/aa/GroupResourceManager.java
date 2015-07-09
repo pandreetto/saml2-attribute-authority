@@ -2,7 +2,9 @@ package it.infn.security.saml.aa;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.utils.SCIMUtils;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.DELETE;
@@ -52,9 +54,7 @@ public class GroupResourceManager {
             scimResponse = groupResourceEndpoint.get(id, format, userManager);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -81,9 +81,7 @@ public class GroupResourceManager {
             scimResponse = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -107,9 +105,7 @@ public class GroupResourceManager {
             scimResponse = groupResourceEndpoint.delete(id, userManager, format);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -125,11 +121,9 @@ public class GroupResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            if (format == null) {
-                format = SCIMConstants.APPLICATION_JSON;
-            }
+            format = SCIMUtils.normalizeFormat(format);
 
-            logger.info("Calling getGroup, format " + SCIMConstants.identifyFormat(format));
+            logger.info("Calling getGroup, format " + format);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
@@ -151,9 +145,8 @@ public class GroupResourceManager {
             }
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -183,9 +176,7 @@ public class GroupResourceManager {
                     userManager);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);

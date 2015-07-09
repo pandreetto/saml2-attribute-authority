@@ -2,7 +2,9 @@ package it.infn.security.saml.aa;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.utils.SCIMUtils;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.DELETE;
@@ -53,9 +55,7 @@ public class UserResourceManager {
             scimResponse = userResourceEndpoint.get(id, format, userManager);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -71,7 +71,7 @@ public class UserResourceManager {
         try {
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new Exception(error);
+                throw new FormatNotSupportedException(error);
             }
             if (outputFormat == null) {
                 outputFormat = SCIMConstants.APPLICATION_JSON;
@@ -81,9 +81,7 @@ public class UserResourceManager {
             scimResponse = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -107,9 +105,7 @@ public class UserResourceManager {
             scimResponse = userResourceEndpoint.delete(id, userManager, format);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -125,11 +121,9 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            if (format == null) {
-                format = SCIMConstants.APPLICATION_JSON;
-            }
+            format = SCIMUtils.normalizeFormat(format);
 
-            logger.info("Calling getUser, format " + SCIMConstants.identifyFormat(format));
+            logger.info("Calling getUser, format " + format);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
@@ -151,9 +145,8 @@ public class UserResourceManager {
             }
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);
@@ -183,9 +176,7 @@ public class UserResourceManager {
                     userManager);
 
         } catch (Exception ex) {
-            /*
-             * TODO exception handling
-             */
+            scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
         return new JAXRSResponseBuilder().buildResponse(scimResponse);

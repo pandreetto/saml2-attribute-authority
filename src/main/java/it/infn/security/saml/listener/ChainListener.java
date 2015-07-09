@@ -17,6 +17,14 @@ public class ChainListener
 
     private static final Logger logger = Logger.getLogger(ChainListener.class.getName());
 
+    private IdentityListener idListener;
+
+    private AccessListener accessListener;
+
+    private DataSourceListener dsListener;
+
+    private SCIMListener scimListener;
+
     @SuppressWarnings("unchecked")
     public void contextInitialized(ServletContextEvent event) {
 
@@ -38,12 +46,14 @@ public class ChainListener
             AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
             config.init(pTable);
 
-            IdentityListener idListener = new IdentityListener();
+            idListener = new IdentityListener();
             idListener.contextInitialized(event);
-            AccessListener accessListener = new AccessListener();
+            accessListener = new AccessListener();
             accessListener.contextInitialized(event);
-            DataSourceListener dsListener = new DataSourceListener();
+            dsListener = new DataSourceListener();
             dsListener.contextInitialized(event);
+            scimListener = new SCIMListener();
+            scimListener.contextInitialized(event);
 
         } catch (Throwable th) {
 
@@ -57,11 +67,9 @@ public class ChainListener
 
         try {
 
-            DataSourceListener dsListener = new DataSourceListener();
+            scimListener.contextDestroyed(event);
             dsListener.contextDestroyed(event);
-            AccessListener accessListener = new AccessListener();
             accessListener.contextInitialized(event);
-            IdentityListener idListener = new IdentityListener();
             idListener.contextDestroyed(event);
 
             AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
