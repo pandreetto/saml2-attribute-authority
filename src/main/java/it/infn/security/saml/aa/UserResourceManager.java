@@ -2,11 +2,16 @@ package it.infn.security.saml.aa;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.iam.AccessManager;
+import it.infn.security.saml.iam.AccessManagerFactory;
+import it.infn.security.saml.iam.IdentityManager;
+import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.security.auth.Subject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -45,9 +50,13 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            if (format == null) {
-                format = SCIMConstants.APPLICATION_JSON;
-            }
+            
+            format = SCIMUtils.normalizeFormat(format);
+            
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeShowUser(requester, id);
 
             DataSource userManager = DataSourceFactory.getDataSource();
 
@@ -55,6 +64,7 @@ public class UserResourceManager {
             scimResponse = userResourceEndpoint.get(id, format, userManager);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
@@ -69,18 +79,25 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
+            
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
             }
-            if (outputFormat == null) {
-                outputFormat = SCIMConstants.APPLICATION_JSON;
-            }
+            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
+            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeCreateUser(requester);
+            
             DataSource userManager = DataSourceFactory.getDataSource();
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
@@ -96,15 +113,20 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            if (format == null) {
-                format = SCIMConstants.APPLICATION_JSON;
-            }
+            
+            format = SCIMUtils.normalizeFormat(format);
+            
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeDeleteUser(requester, id);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.delete(id, userManager, format);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
@@ -121,9 +143,13 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
+            
             format = SCIMUtils.normalizeFormat(format);
 
-            logger.info("Calling getUser, format " + format);
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeListUsers(requester);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
@@ -162,13 +188,18 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
+            
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
             }
-            if (outputFormat == null) {
-                outputFormat = SCIMConstants.APPLICATION_JSON;
-            }
+            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
+            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+            
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeModifyUser(requester, id);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
@@ -176,6 +207,7 @@ public class UserResourceManager {
                     userManager);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 

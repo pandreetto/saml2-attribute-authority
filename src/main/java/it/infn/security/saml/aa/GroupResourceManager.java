@@ -2,11 +2,16 @@ package it.infn.security.saml.aa;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.iam.AccessManager;
+import it.infn.security.saml.iam.AccessManagerFactory;
+import it.infn.security.saml.iam.IdentityManager;
+import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.security.auth.Subject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -45,15 +50,20 @@ public class GroupResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            if (format == null) {
-                format = SCIMConstants.APPLICATION_JSON;
-            }
+
+            format = SCIMUtils.normalizeFormat(format);
+
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeShowGroup(requester, id);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.get(id, format, userManager);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
@@ -68,19 +78,25 @@ public class GroupResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
+
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
             }
-            if (outputFormat == null) {
-                outputFormat = SCIMConstants.APPLICATION_JSON;
-            }
+            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
+            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeCreateGroup(requester);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
@@ -96,15 +112,20 @@ public class GroupResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            if (format == null) {
-                format = SCIMConstants.APPLICATION_JSON;
-            }
+
+            format = SCIMUtils.normalizeFormat(format);
+
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeDeleteGroup(requester, id);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.delete(id, userManager, format);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
@@ -121,9 +142,13 @@ public class GroupResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
+
             format = SCIMUtils.normalizeFormat(format);
 
-            logger.info("Calling getGroup, format " + format);
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeListGroups(requester);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
@@ -166,9 +191,14 @@ public class GroupResourceManager {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
             }
-            if (outputFormat == null) {
-                outputFormat = SCIMConstants.APPLICATION_JSON;
-            }
+
+            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
+            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+
+            IdentityManager identityManager = IdentityManagerFactory.getManager();
+            AccessManager accessManager = AccessManagerFactory.getManager();
+            Subject requester = identityManager.authenticate();
+            accessManager.authorizeModifyGroup(requester, id);
 
             DataSource userManager = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
@@ -176,6 +206,7 @@ public class GroupResourceManager {
                     userManager);
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
