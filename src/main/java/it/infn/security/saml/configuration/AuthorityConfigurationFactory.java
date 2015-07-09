@@ -4,10 +4,18 @@ public class AuthorityConfigurationFactory {
 
     private static AuthorityConfiguration configuration = null;
 
-    public static synchronized AuthorityConfiguration getConfiguration() {
+    public static AuthorityConfiguration getConfiguration() {
 
         if (configuration == null) {
-            configuration = new it.infn.security.saml.configuration.impl.PropertyFileConfiguration();
+
+            synchronized (AuthorityConfigurationFactory.class) {
+
+                if (configuration == null) {
+                    configuration = new it.infn.security.saml.configuration.impl.PropertyFileConfiguration();
+                }
+
+            }
+
         }
 
         return configuration;

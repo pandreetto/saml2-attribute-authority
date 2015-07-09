@@ -7,23 +7,31 @@ public class DataSourceFactory {
 
     private static DataSource dataSource = null;
 
-    public static synchronized DataSource getDataSource()
+    public static DataSource getDataSource()
         throws DataSourceException {
 
         if (dataSource == null) {
-            
-            try {
-                AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
-                
-                Class<?> cls = Class.forName(config.getDataSourceClass());
-                dataSource = (DataSource) cls.newInstance();
-                
-            } catch(Exception ex) {
-                throw new DataSourceException("Cannot load data source", ex);
+
+            synchronized (DataSourceFactory.class) {
+
+                if (dataSource == null) {
+
+                    try {
+                        AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
+
+                        Class<?> cls = Class.forName(config.getDataSourceClass());
+                        dataSource = (DataSource) cls.newInstance();
+
+                    } catch (Exception ex) {
+                        throw new DataSourceException("Cannot load data source", ex);
+                    }
+
+                    dataSource.init();
+
+                }
+
             }
 
-            dataSource.init();
-            
         }
 
         return dataSource;

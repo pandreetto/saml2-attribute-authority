@@ -7,20 +7,30 @@ public class SAML2HandlerFactory {
 
     private static SAML2Handler handler = null;
 
-    public static synchronized SAML2Handler getHandler()
+    public static SAML2Handler getHandler()
         throws SAML2HandlerException {
 
         if (handler == null) {
-            try {
 
-                AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
+            synchronized (SAML2HandlerFactory.class) {
 
-                Class<?> cls = Class.forName(config.getSAMLsHandlerClass());
-                handler = (SAML2Handler) cls.newInstance();
+                if (handler == null) {
 
-            } catch (Exception ex) {
-                throw new SAML2HandlerException("Cannot load saml handler", ex);
+                    try {
+
+                        AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
+
+                        Class<?> cls = Class.forName(config.getSAMLsHandlerClass());
+                        handler = (SAML2Handler) cls.newInstance();
+
+                    } catch (Exception ex) {
+                        throw new SAML2HandlerException("Cannot load saml handler", ex);
+                    }
+
+                }
+
             }
+
         }
 
         return handler;
