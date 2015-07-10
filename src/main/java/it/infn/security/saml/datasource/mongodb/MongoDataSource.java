@@ -7,9 +7,11 @@ import it.infn.security.saml.datasource.DataSourceException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import org.opensaml.Configuration;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeValue;
@@ -23,18 +25,26 @@ import org.wso2.charon.core.exceptions.DuplicateResourceException;
 import org.wso2.charon.core.exceptions.NotFoundException;
 import org.wso2.charon.core.objects.Group;
 import org.wso2.charon.core.objects.User;
+import org.wso2.charon.core.schema.SCIMConstants;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 
 public class MongoDataSource
     implements DataSource {
 
-    private final static String ATTR_COLL = "attributes";
+    private static final Logger logger = Logger.getLogger(MongoDataSource.class.getName());
 
-    private final static String UID_FIELD = "uid";
+    private final static String USERS_COLLECTION = "users";
+
+    private final static String ATTRIBUTE_COLLECTION = "attributes";
+
+    private final static String RESID_FIELD = "_" + SCIMConstants.CommonSchemaConstants.ID;
+
+    private final static String REFID_FIELD = "users_id";
 
     private final static String NAME_FIELD = "name";
 
@@ -74,9 +84,25 @@ public class MongoDataSource
         XSStringBuilder attributeValueBuilder = (XSStringBuilder) builderFactory.getBuilder(XSString.TYPE_NAME);
 
         MongoDatabase db = mongoClient.getDatabase(dbName);
-        MongoCollection<Document> attrColl = db.getCollection(ATTR_COLL);
 
-        Bson query = Filters.eq(UID_FIELD, id);
+        MongoCollection<Document> usersColl = db.getCollection(USERS_COLLECTION);
+        MongoCollection<Document> attrColl = db.getCollection(ATTRIBUTE_COLLECTION);
+
+        logger.finer("Query for " + id + " on " + SCIMConstants.UserSchemaConstants.USER_NAME);
+        Bson eQuery = Filters.eq(SCIMConstants.UserSchemaConstants.USER_NAME, id);
+        MongoCursor<Document> crsr = usersColl.find(eQuery).iterator();
+        if (!crsr.hasNext()) {
+            logger.info("Entity not found " + id);
+            /*
+             * TODO empty list or exception?
+             */
+            return result;
+        }
+
+        ObjectId objId = crsr.next().getObjectId(RESID_FIELD);
+        logger.finer("Found oid " + objId.toHexString());
+
+        Bson aQuery = Filters.eq(REFID_FIELD, objId);
 
         if (requiredAttrs != null && requiredAttrs.size() > 0) {
 
@@ -102,12 +128,12 @@ public class MongoDataSource
 
             if (orList.size() > 0) {
                 Bson tmpq = Filters.or(orList);
-                query = Filters.and(query, tmpq);
+                aQuery = Filters.and(aQuery, tmpq);
             }
 
         }
 
-        for (Document attrItem : attrColl.find(query)) {
+        for (Document attrItem : attrColl.find(aQuery)) {
 
             Attribute attribute = attributeBuilder.buildObject();
             attribute.setName(attrItem.getString(NAME_FIELD));
@@ -134,6 +160,17 @@ public class MongoDataSource
 
     public User getUser(String userId)
         throws CharonException {
+
+        MongoDatabase db = mongoClient.getDatabase(dbName);
+        MongoCollection<Document> usersColl = db.getCollection(USERS_COLLECTION);
+
+        ObjectId objId = new ObjectId(userId);
+        Bson query = Filters.eq(RESID_FIELD, objId);
+        MongoCursor<Document> crsr = usersColl.find(query).iterator();
+        if (crsr.hasNext()) {
+            return userFromDocument(crsr.next());
+        }
+        logger.fine("Cannot find user " + userId);
         return null;
     }
 
@@ -235,6 +272,16 @@ public class MongoDataSource
     public void deleteGroup(String groupId)
         throws NotFoundException, CharonException {
 
+    }
+
+    private User userFromDocument(Document document)
+        throws CharonException {
+        User result = new User();
+
+        result.setId(document.getObjectId(RESID_FIELD).toHexString());
+        result.setUserName(document.getString(SCIMConstants.UserSchemaConstants.USER_NAME));
+
+        return result;
     }
 
 }
