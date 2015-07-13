@@ -155,9 +155,11 @@ public class UserResourceManager {
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
-                scimResponse = userResourceEndpoint.listByAttribute(searchAttribute, userManager, format);
+                //scimResponse = userResourceEndpoint.listByAttribute(searchAttribute, userManager, format);
+                throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
             } else if (filter != null) {
-                scimResponse = userResourceEndpoint.listByFilter(filter, userManager, format);
+                //scimResponse = userResourceEndpoint.listByFilter(filter, userManager, format);
+                throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
             } else if (startIndex != null && count != null) {
                 scimResponse = userResourceEndpoint.listWithPagination(Integer.valueOf(startIndex),
                         Integer.valueOf(count), userManager, format);

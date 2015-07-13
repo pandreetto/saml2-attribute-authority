@@ -6,6 +6,7 @@ import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ import org.wso2.charon.core.objects.User;
 import org.wso2.charon.core.schema.SCIMConstants;
 
 import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -40,11 +42,19 @@ public class MongoDataSource
 
     private final static String USERS_COLLECTION = "users";
 
+    private final static String GROUPS_COLLECTION = "groups";
+
+    private final static String MEMBRS_COLLECTION = "members";
+
     private final static String ATTRIBUTE_COLLECTION = "attributes";
 
     private final static String RESID_FIELD = "_" + SCIMConstants.CommonSchemaConstants.ID;
 
     private final static String REFID_FIELD = "users_id";
+
+    private final static String SOURCE_FIELD = "source";
+
+    private final static String TARGET_FIELD = "target";
 
     private final static String NAME_FIELD = "name";
 
@@ -168,7 +178,7 @@ public class MongoDataSource
         Bson query = Filters.eq(RESID_FIELD, objId);
         MongoCursor<Document> crsr = usersColl.find(query).iterator();
         if (crsr.hasNext()) {
-            return userFromDocument(crsr.next());
+            return userFromDocument(crsr.next(), db);
         }
         logger.fine("Cannot find user " + userId);
         return null;
@@ -274,12 +284,53 @@ public class MongoDataSource
 
     }
 
-    private User userFromDocument(Document document)
+    private List<ObjectId> getIndirectGroups(MongoCollection<Document> membColl, List<ObjectId> inGrps) {
+        HashSet<ObjectId> collected = new HashSet<ObjectId>();
+        List<ObjectId> tmpl = inGrps;
+
+        while (tmpl.size() > 0) {
+            Bson query1 = Filters.in(SOURCE_FIELD, tmpl);
+            Bson query2 = Filters.eq(TYPE_FIELD, 1);
+            Bson query = Filters.and(query1, query2);
+            FindIterable<Document> crsr = membColl.find(query);
+            tmpl = new ArrayList<ObjectId>();
+            for (Document membItem : crsr) {
+                ObjectId grpOid = membItem.getObjectId(TARGET_FIELD);
+                if (!collected.contains(grpOid)) {
+                    logger.finer("Found indirect group " + grpOid);
+                    tmpl.add(grpOid);
+                    collected.add(grpOid);
+                }
+            }
+        }
+        return new ArrayList<ObjectId>(collected);
+    }
+
+    private List<String> convertOidsIntoStrings(List<ObjectId> inList) {
+        ArrayList<String> result = new ArrayList<String>(inList.size());
+        for (ObjectId oid : inList) {
+            result.add(oid.toHexString());
+        }
+        return result;
+    }
+
+    private User userFromDocument(Document document, MongoDatabase db)
         throws CharonException {
         User result = new User();
 
         result.setId(document.getObjectId(RESID_FIELD).toHexString());
         result.setUserName(document.getString(SCIMConstants.UserSchemaConstants.USER_NAME));
+
+        MongoCollection<Document> membColl = db.getCollection(MEMBRS_COLLECTION);
+
+        ArrayList<ObjectId> grpIds = new ArrayList<ObjectId>();
+        Bson query = Filters.eq(SOURCE_FIELD, document.getObjectId(RESID_FIELD));
+        for (Document membItem : membColl.find(query)) {
+            grpIds.add(membItem.getObjectId(TARGET_FIELD));
+        }
+        result.setDirectGroups(convertOidsIntoStrings(grpIds));
+
+        result.setIndirectGroups(convertOidsIntoStrings(getIndirectGroups(membColl, grpIds)));
 
         return result;
     }
