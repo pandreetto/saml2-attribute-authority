@@ -8,6 +8,7 @@ import it.infn.security.saml.datasource.DataSourceException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bson.Document;
@@ -28,7 +29,9 @@ import org.wso2.charon.core.objects.Group;
 import org.wso2.charon.core.objects.User;
 import org.wso2.charon.core.schema.SCIMConstants;
 
+import com.mongodb.ErrorCategory;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -222,12 +225,56 @@ public class MongoDataSource
 
     public User createUser(User user)
         throws CharonException, DuplicateResourceException {
-        return null;
+        return createUser(user, false);
     }
 
     public User createUser(User user, boolean isBulkUserAdd)
         throws CharonException, DuplicateResourceException {
-        return null;
+
+        try {
+
+            MongoDatabase db = mongoClient.getDatabase(dbName);
+            MongoCollection<Document> usersColl = db.getCollection(USERS_COLLECTION);
+            MongoCollection<Document> membColl = db.getCollection(MEMBRS_COLLECTION);
+
+            ObjectId userOid = new ObjectId();
+            usersColl.insertOne(documentFromUser(user, userOid));
+            logger.info("Created user " + user.getUserName() + " with id " + userOid.toHexString());
+
+            /*
+             * TODO verify charon api getGroups
+             */
+            List<ObjectId> grpOidList = retrieveGroups(user.getGroups(), db);
+            for (ObjectId grpOid : grpOidList) {
+                Document mDoc = new Document();
+                mDoc.append(SOURCE_FIELD, userOid);
+                mDoc.append(TARGET_FIELD, grpOid);
+                mDoc.append(TYPE_FIELD, 0);
+                logger.info("Binding user " + user.getUserName() + " to " + grpOid.toHexString());
+                membColl.insertOne(mDoc);
+            }
+
+            return user;
+
+        } catch (MongoException mEx) {
+
+            ErrorCategory errCat = ErrorCategory.fromErrorCode(mEx.getCode());
+            if (errCat == ErrorCategory.DUPLICATE_KEY) {
+                throw new DuplicateResourceException();
+            } else {
+                throw new CharonException("Query execution error");
+            }
+
+        } catch (Exception ex) {
+
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            throw new CharonException("Cannot cannot create user " + user.getUserName());
+
+        } finally {
+            /*
+             * TODO roll-back
+             */
+        }
     }
 
     public Group getGroup(String groupId)
@@ -332,6 +379,43 @@ public class MongoDataSource
 
         result.setIndirectGroups(convertOidsIntoStrings(getIndirectGroups(membColl, grpIds)));
 
+        return result;
+    }
+
+    private Document documentFromUser(User user, ObjectId userOid)
+        throws CharonException {
+
+        Document uDoc = new Document();
+
+        uDoc.append(RESID_FIELD, userOid);
+        uDoc.append(SCIMConstants.UserSchemaConstants.USER_NAME, user.getUserName());
+        uDoc.append(SCIMConstants.UserSchemaConstants.NAME, user.getGivenName() + " " + user.getFamilyName());
+        /*
+         * TODO complete schema
+         */
+
+        return uDoc;
+
+    }
+
+    private List<ObjectId> retrieveGroups(List<String> grpIds, MongoDatabase db) {
+        if (grpIds == null) {
+            logger.warning("Group list is null");
+            return new ArrayList<ObjectId>(0);
+        }
+
+        ArrayList<ObjectId> result = new ArrayList<ObjectId>(grpIds.size());
+        for (String tmps : grpIds) {
+            result.add(new ObjectId(tmps));
+        }
+
+        MongoCollection<Document> groupsColl = db.getCollection(GROUPS_COLLECTION);
+        Bson query = Filters.in(RESID_FIELD, result);
+
+        result = new ArrayList<ObjectId>(grpIds.size());
+        for (Document grpDoc : groupsColl.find(query)) {
+            result.add(grpDoc.getObjectId(RESID_FIELD));
+        }
         return result;
     }
 
