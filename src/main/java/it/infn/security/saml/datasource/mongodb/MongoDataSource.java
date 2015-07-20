@@ -22,6 +22,9 @@ import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
+import org.wso2.charon.core.attributes.ComplexAttribute;
+import org.wso2.charon.core.attributes.MultiValuedAttribute;
+import org.wso2.charon.core.attributes.SimpleAttribute;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.DuplicateResourceException;
 import org.wso2.charon.core.exceptions.NotFoundException;
@@ -59,11 +62,18 @@ public class MongoDataSource
 
     private final static String TARGET_FIELD = "target";
 
-    private final static String NAME_FIELD = "name";
-
-    private final static String VALUE_FIELD = "value";
-
     private final static String TYPE_FIELD = "type";
+
+    /*
+     * Definitions for specific attribute structures
+     */
+    private final static String SPID_ATTR_NAME = "SPIDAttributes";
+
+    private final static String KEY_FIELD = "key";
+
+    private final static String CONTENT_FIELD = "content";
+
+    private final static String FORMAT_FIELD = "format";
 
     private MongoClient mongoClient;
 
@@ -127,14 +137,14 @@ public class MongoDataSource
 
                 if (tmpValues != null && tmpValues.size() > 0) {
                     for (XMLObject xObj : tmpValues) {
-                        Bson tmpq = Filters.eq(NAME_FIELD, tmpName);
+                        Bson tmpq = Filters.eq(KEY_FIELD, tmpName);
                         String refValue = xObj.getDOM().getTextContent().trim();
-                        tmpq = Filters.and(tmpq, Filters.eq(VALUE_FIELD, refValue));
+                        tmpq = Filters.and(tmpq, Filters.eq(CONTENT_FIELD, refValue));
                         orList.add(tmpq);
                     }
 
                 } else {
-                    orList.add(Filters.eq(NAME_FIELD, tmpName));
+                    orList.add(Filters.eq(KEY_FIELD, tmpName));
                 }
 
             }
@@ -149,12 +159,12 @@ public class MongoDataSource
         for (Document attrItem : attrColl.find(aQuery)) {
 
             Attribute attribute = attributeBuilder.buildObject();
-            attribute.setName(attrItem.getString(NAME_FIELD));
-            attribute.setNameFormat(attrItem.getString(TYPE_FIELD));
+            attribute.setName(attrItem.getString(KEY_FIELD));
+            attribute.setNameFormat(attrItem.getString(FORMAT_FIELD));
 
             XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
                     XSString.TYPE_NAME);
-            attributeValue.setValue(attrItem.getString(VALUE_FIELD));
+            attributeValue.setValue(attrItem.getString(CONTENT_FIELD));
             attribute.getAttributeValues().add(attributeValue);
 
             result.add(attribute);
@@ -236,6 +246,7 @@ public class MongoDataSource
             MongoDatabase db = mongoClient.getDatabase(dbName);
             MongoCollection<Document> usersColl = db.getCollection(USERS_COLLECTION);
             MongoCollection<Document> membColl = db.getCollection(MEMBRS_COLLECTION);
+            MongoCollection<Document> attrColl = db.getCollection(ATTRIBUTE_COLLECTION);
 
             ObjectId userOid = new ObjectId();
             usersColl.insertOne(documentFromUser(user, userOid));
@@ -252,6 +263,23 @@ public class MongoDataSource
                 mDoc.append(TYPE_FIELD, 0);
                 logger.info("Binding user " + user.getUserName() + " to " + grpOid.toHexString());
                 membColl.insertOne(mDoc);
+            }
+
+            org.wso2.charon.core.attributes.Attribute extAttribute = user.getAttribute(SPID_ATTR_NAME);
+            for (org.wso2.charon.core.attributes.Attribute subAttr : ((MultiValuedAttribute) extAttribute)
+                    .getValuesAsSubAttributes()) {
+                ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
+                SimpleAttribute keyAttr = (SimpleAttribute) cplxAttr.getSubAttribute(KEY_FIELD);
+                SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(CONTENT_FIELD);
+                SimpleAttribute frmtAttr = (SimpleAttribute) cplxAttr.getSubAttribute(FORMAT_FIELD);
+
+                Document mDoc = new Document();
+                mDoc.append(REFID_FIELD, userOid);
+                mDoc.append(KEY_FIELD, keyAttr.getValue().toString());
+                mDoc.append(CONTENT_FIELD, cntAttr.getValue().toString());
+                mDoc.append(FORMAT_FIELD, frmtAttr.getValue().toString());
+                attrColl.insertOne(mDoc);
+
             }
 
             return user;
