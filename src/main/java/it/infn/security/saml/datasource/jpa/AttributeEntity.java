@@ -2,7 +2,10 @@ package it.infn.security.saml.datasource.jpa;
 
 import java.io.Serializable;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -14,13 +17,10 @@ public class AttributeEntity
 
     public static final long serialVersionUID = 1437726660;
 
-    @Id
-    @Column(name = "attr_key", nullable = false)
-    private String key;
-
-    @Id
-    @Column(name = "attr_content", nullable = false)
-    private String content;
+    @EmbeddedId
+    @AttributeOverrides({ @AttributeOverride(name = "key", column = @Column(name = "attr_key")),
+            @AttributeOverride(name = "content", column = @Column(name = "attr_content")) })
+    AttributeEntityId attributeId;
 
     @Column(name = "attr_descrition", nullable = false)
     private String description;
@@ -28,20 +28,12 @@ public class AttributeEntity
     public AttributeEntity() {
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public void setAttributeId(AttributeEntityId attrId) {
+        attributeId = attrId;
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getContent() {
-        return content;
+    public AttributeEntityId getAttributeId() {
+        return attributeId;
     }
 
     public void setDescription(String descr) {
@@ -58,19 +50,11 @@ public class AttributeEntity
         }
 
         AttributeEntity tmpAttr = (AttributeEntity) other;
-        if (tmpAttr.key != this.key || tmpAttr.content != this.content) {
-            return false;
-        }
-
-        return true;
+        return tmpAttr.attributeId.equals(this.attributeId);
     }
 
     public int hashCode() {
-        // Same algorithm as in java.util.List#hashCode()
-        int result = 1;
-        result = 31 * result + (key == null ? 0 : key.hashCode());
-        result = 31 * result + (content == null ? 0 : content.hashCode());
-        return result;
+        return attributeId.hashCode();
     }
 
 }

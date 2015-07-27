@@ -7,6 +7,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -25,7 +26,8 @@ public class ResourceEntity {
     };
 
     @Id
-    private String id;
+    @GeneratedValue
+    private Long id;
 
     @Column(name = "resource_type", nullable = false)
     private ResourceType type;
@@ -47,11 +49,11 @@ public class ResourceEntity {
     public ResourceEntity() {
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 

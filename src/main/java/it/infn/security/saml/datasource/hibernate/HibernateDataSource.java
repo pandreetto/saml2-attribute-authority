@@ -5,6 +5,7 @@ import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
+import it.infn.security.saml.datasource.jpa.AttributeEntityId;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
@@ -134,14 +135,14 @@ public class HibernateDataSource
             UserEntity gUser = itrt.next();
             for (AttributeEntity attrEnt : gUser.getAttributes()) {
                 Attribute attribute = attributeBuilder.buildObject();
-                attribute.setName(attrEnt.getKey());
+                attribute.setName(attrEnt.getAttributeId().getKey());
                 /*
                  * TODO put the correct string format
                  */
                 attribute.setNameFormat("String");
                 XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
                         XSString.TYPE_NAME);
-                attributeValue.setValue(attrEnt.getContent());
+                attributeValue.setValue(attrEnt.getAttributeId().getContent());
                 attribute.getAttributeValues().add(attributeValue);
                 result.add(attribute);
             }
@@ -217,14 +218,8 @@ public class HibernateDataSource
 
             session.beginTransaction();
 
-            logger.info("Trying to save user");
             UserEntity eUser = new UserEntity();
-            /*
-             * TODO use auto-generated id
-             */
-            eUser.setId("uuid:" + System.currentTimeMillis());
             eUser.setType(ResourceType.USER);
-
             eUser.setUserName(user.getUserName());
             eUser.setCommonName(user.getGivenName() + " " + user.getFamilyName());
 
@@ -239,15 +234,17 @@ public class HibernateDataSource
                 SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(ATTR_DESCR_FIELD);
 
                 AttributeEntity attrEnt = new AttributeEntity();
-                attrEnt.setKey(keyAttr.getStringValue());
-                attrEnt.setContent(cntAttr.getStringValue());
+                AttributeEntityId attrEntId = new AttributeEntityId();
+                attrEntId.setKey(keyAttr.getStringValue());
+                attrEntId.setContent(cntAttr.getStringValue());
+                attrEnt.setAttributeId(attrEntId);
                 attrEnt.setDescription(descrAttr.getStringValue());
 
                 /*
                  * TODO check for attribute auto-saving
                  */
-                if (session.get(AttributeEntity.class, attrEnt) == null) {
-                    logger.info("Saving attribute " + attrEnt.getKey());
+                if (session.get(AttributeEntity.class, attrEntId) == null) {
+                    logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
                     session.save(attrEnt);
                 }
 
@@ -257,8 +254,8 @@ public class HibernateDataSource
 
             eUser.setAttributes(eUserAttrs);
 
-            logger.info("Ready to save user");
-            session.save(eUser);
+            Long genId = (Long) session.save(eUser);
+            logger.info("Created user " + user.getUserName() + " with id " + genId.toString());
 
             session.getTransaction().commit();
 
@@ -266,6 +263,9 @@ public class HibernateDataSource
 
         } catch (Throwable th) {
 
+            /*
+             * TODO check rollback
+             */
             session.getTransaction().rollback();
 
             logger.log(Level.SEVERE, "Query execution error", th);
