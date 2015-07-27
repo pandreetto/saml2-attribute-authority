@@ -1,13 +1,9 @@
 package it.infn.security.saml.datasource.hibernate;
 
-import it.infn.security.saml.configuration.AuthorityConfiguration;
-import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
-import it.infn.security.saml.datasource.jpa.GroupEntity;
-import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 
@@ -65,31 +61,9 @@ public class HibernateDataSource
 
         try {
 
-            AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
-
-            org.hibernate.cfg.Configuration hiberCfg = new org.hibernate.cfg.Configuration();
-            hiberCfg.setProperty("hibernate.connection.driver_class", config.getDataSourceParam("jdbc_driver"));
-            hiberCfg.setProperty("hibernate.connection.url", config.getDataSourceParam("database_url"));
-            hiberCfg.setProperty("hibernate.connection.username", config.getDataSourceParam("database_user"));
-            hiberCfg.setProperty("hibernate.connection.password", config.getDataSourceParam("database_pwd"));
-            hiberCfg.setProperty("hibernate.connection.pool_size", config.getDataSourceParam("database_pool_size"));
-
-            /*
-             * TODO move in the conffile
-             */
-            hiberCfg.setProperty("hibernate.current_session_context_class", "thread");
-            hiberCfg.setProperty("hibernate.cache.provider_class", "org.hibernate.cache.internal.NoCacheProvider");
-            hiberCfg.setProperty("hibernate.show_sql", "true");
-            hiberCfg.setProperty("hibernate.hbm2ddl.auto", "update");
-
-            hiberCfg.addAnnotatedClass(ResourceEntity.class);
-            hiberCfg.addAnnotatedClass(AttributeEntity.class);
-            hiberCfg.addAnnotatedClass(UserEntity.class);
-            hiberCfg.addAnnotatedClass(GroupEntity.class);
-
             StandardServiceRegistryBuilder serviceRegistryBuilder = new StandardServiceRegistryBuilder();
-            serviceRegistryBuilder.applySettings(hiberCfg.getProperties());
-            sessionFactory = hiberCfg.buildSessionFactory(serviceRegistryBuilder.build());
+            serviceRegistryBuilder.applySettings(HibernateUtils.getHibernateConfig().getProperties());
+            sessionFactory = HibernateUtils.getHibernateConfig().buildSessionFactory(serviceRegistryBuilder.build());
 
         } catch (Throwable th) {
             logger.log(Level.SEVERE, "Cannot initialize database", th);
