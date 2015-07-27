@@ -73,7 +73,7 @@ public class MongoDataSource
 
     private final static String CONTENT_FIELD = "content";
 
-    private final static String FORMAT_FIELD = "format";
+    private final static String ATTR_DESCR_FIELD = "description";
 
     private MongoClient mongoClient;
 
@@ -160,7 +160,10 @@ public class MongoDataSource
 
             Attribute attribute = attributeBuilder.buildObject();
             attribute.setName(attrItem.getString(KEY_FIELD));
-            attribute.setNameFormat(attrItem.getString(FORMAT_FIELD));
+            /*
+             * TODO put the correct string format
+             */
+            attribute.setNameFormat("String");
 
             XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
                     XSString.TYPE_NAME);
@@ -271,13 +274,13 @@ public class MongoDataSource
                 ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
                 SimpleAttribute keyAttr = (SimpleAttribute) cplxAttr.getSubAttribute(KEY_FIELD);
                 SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(CONTENT_FIELD);
-                SimpleAttribute frmtAttr = (SimpleAttribute) cplxAttr.getSubAttribute(FORMAT_FIELD);
+                SimpleAttribute frmtAttr = (SimpleAttribute) cplxAttr.getSubAttribute(ATTR_DESCR_FIELD);
 
                 Document mDoc = new Document();
                 mDoc.append(REFID_FIELD, userOid);
                 mDoc.append(KEY_FIELD, keyAttr.getValue().toString());
                 mDoc.append(CONTENT_FIELD, cntAttr.getValue().toString());
-                mDoc.append(FORMAT_FIELD, frmtAttr.getValue().toString());
+                mDoc.append(ATTR_DESCR_FIELD, frmtAttr.getValue().toString());
                 attrColl.insertOne(mDoc);
 
             }
