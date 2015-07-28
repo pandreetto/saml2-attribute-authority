@@ -160,10 +160,7 @@ public class MongoDataSource
 
             Attribute attribute = attributeBuilder.buildObject();
             attribute.setName(attrItem.getString(KEY_FIELD));
-            /*
-             * TODO put the correct string format
-             */
-            attribute.setNameFormat("String");
+            attribute.setNameFormat(Attribute.BASIC);
 
             XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
                     XSString.TYPE_NAME);
