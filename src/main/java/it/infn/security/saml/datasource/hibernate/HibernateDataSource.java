@@ -4,10 +4,12 @@ import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
+import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -88,80 +90,98 @@ public class HibernateDataSource
 
             session.beginTransaction();
 
-            ArrayList<String> qArgs = new ArrayList<String>();
-            StringBuffer queryStr = new StringBuffer("select qAttributes");
-            queryStr.append(" from UserEntity as qUser inner join qUser.attributes as qAttributes");
+            String qStr = "SELECT qUser.id FROM UserEntity as qUser WHERE qUser.userName = :uName";
+            Query query2 = session.createQuery(qStr).setString("uName", id);
+            Long userId = (Long) query2.uniqueResult();
+            if (userId == null) {
+                logger.info("Entity not found " + id);
+                /*
+                 * TODO empty list or error?
+                 */
+                // session.getTransaction().commit();
+                throw new DataSourceException("User not found");
+            }
 
-            queryStr.append(" where qUser.userName = ?");
-            qArgs.add(id);
+            HashSet<Long> allIds = getAllGroupIds(session, userId);
+            allIds.add(userId);
+
+            HashMap<String, Object> qArgs = new HashMap<String, Object>();
+            StringBuffer queryStr = new StringBuffer("SELECT qAttributes");
+            queryStr.append(" FROM ResourceEntity as qRes INNER JOIN qRes.attributes as qAttributes");
+
+            queryStr.append(" WHERE qRes.id IN (:resourceIds)");
+            qArgs.put("resourceIds", allIds);
 
             if (requiredAttrs != null && requiredAttrs.size() > 0) {
-                queryStr.append(" and (");
-                boolean foundFirst = false;
+                queryStr.append(" AND (");
+                int keyNum = 0;
                 for (Attribute reqAttr : requiredAttrs) {
                     String tmpName = reqAttr.getName();
                     List<XMLObject> tmpValues = reqAttr.getAttributeValues();
 
-                    if (foundFirst) {
-                        queryStr.append(" or");
-                    } else {
-                        foundFirst = true;
+                    if (keyNum > 0) {
+                        queryStr.append(" OR");
                     }
+                    String keyTag = "key_" + keyNum;
+                    keyNum++;
 
                     if (tmpValues != null && tmpValues.size() > 0) {
+                        int cntNum = 0;
                         for (XMLObject xObj : tmpValues) {
+
+                            if (cntNum > 0) {
+                                queryStr.append(" OR");
+                            }
                             String refValue = xObj.getDOM().getTextContent().trim();
 
-                            queryStr.append(" (qAttributes.attributeId.key = ?");
-                            qArgs.add(tmpName);
-                            queryStr.append(" and qAttributes.attributeId.content = ?)");
-                            qArgs.add(refValue);
+                            queryStr.append(" (qAttributes.attributeId.key = :").append(keyTag);
+                            qArgs.put(keyTag, tmpName);
+
+                            String cntTag = "cnt_" + keyNum + "_" + cntNum;
+                            queryStr.append(" AND qAttributes.attributeId.content = :");
+                            queryStr.append(cntTag).append(")");
+                            qArgs.put(cntTag, refValue);
+                            cntNum++;
                         }
                     } else {
-                        queryStr.append(" qAttributes.attributeId.key = ?");
-                        qArgs.add(tmpName);
+                        queryStr.append(" qAttributes.attributeId.key = :").append(keyTag);
+                        qArgs.put(keyTag, tmpName);
                     }
                 }
 
                 queryStr.append(")");
             }
 
-            logger.info("Executing query: " + queryStr.toString());
             Query query = session.createQuery(queryStr.toString());
-            for (int k = 0; k < qArgs.size(); k++) {
-                query.setString(k, qArgs.get(k));
-            }
+            query.setProperties(qArgs);
 
             @SuppressWarnings("unchecked")
             List<AttributeEntity> filteredAttrs = query.list();
 
-            if (filteredAttrs.size() == 0) {
-                Query query2 = session.createQuery("from UserEntity as qUser where qUser.userName = :uName");
-                UserEntity gUser = (UserEntity) query2.setString("uName", id).uniqueResult();
-                if (gUser == null) {
-                    logger.info("Entity not found " + id);
-                    /*
-                     * TODO empty list or error?
-                     */
-                    session.getTransaction().commit();
-                    return result;
-                }
-            }
-
+            HashMap<String, Attribute> resultTable = new HashMap<String, Attribute>();
             for (AttributeEntity attrEnt : filteredAttrs) {
-                Attribute attribute = attributeBuilder.buildObject();
-                attribute.setName(attrEnt.getAttributeId().getKey());
-                attribute.setNameFormat(Attribute.BASIC);
+
+                String attrKey = attrEnt.getAttributeId().getKey();
+                Attribute attribute = null;
+                if (resultTable.containsKey(attrKey)) {
+                    attribute = resultTable.get(attrKey);
+                } else {
+                    attribute = attributeBuilder.buildObject();
+                    attribute.setName(attrKey);
+                    attribute.setNameFormat(Attribute.BASIC);
+                    resultTable.put(attrKey, attribute);
+                }
+
                 XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
                         XSString.TYPE_NAME);
                 attributeValue.setValue(attrEnt.getAttributeId().getContent());
                 attribute.getAttributeValues().add(attributeValue);
-                result.add(attribute);
+
             }
 
-            /*
-             * TODO attributes from groups
-             */
+            for (Attribute tmpAttr : resultTable.values()) {
+                result.add(tmpAttr);
+            }
 
             session.getTransaction().commit();
 
@@ -183,7 +203,30 @@ public class HibernateDataSource
 
     public User getUser(String userId)
         throws CharonException {
-        return null;
+
+        User result = null;
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+            UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, Long.parseLong(userId));
+            if (usrEnt == null) {
+                logger.info("Entity not found " + userId);
+                /*
+                 * TODO empty list or error?
+                 */
+                // session.getTransaction().commit();
+                throw new DataSourceException("User not found");
+            }
+
+            result = userFromEntity(session, usrEnt);
+            session.getTransaction().commit();
+
+        } catch (Throwable th) {
+            session.getTransaction().rollback();
+        }
+        return result;
     }
 
     public List<User> listUsers()
@@ -343,6 +386,84 @@ public class HibernateDataSource
     public void deleteGroup(String groupId)
         throws NotFoundException, CharonException {
 
+    }
+
+    private HashSet<ResourceEntity> getDirectGroups(Session session, ResourceEntity resource) {
+        StringBuffer queryStr = new StringBuffer("SELECT resource.groups");
+        queryStr.append(" FROM ResourceEntity as resource WHERE resource.id=?");
+        Query query = session.createQuery(queryStr.toString());
+        @SuppressWarnings("unchecked")
+        List<ResourceEntity> idList = query.setLong(0, resource.getId()).list();
+        return new HashSet<ResourceEntity>(idList);
+    }
+
+    private HashSet<ResourceEntity> getIndirectGroups(Session session, HashSet<ResourceEntity> resources) {
+        return null;
+    }
+
+    private HashSet<ResourceEntity> getAllGroups(Session session, ResourceEntity resource) {
+        HashSet<ResourceEntity> directGroups = getDirectGroups(session, resource);
+        HashSet<ResourceEntity> result = getIndirectGroups(session, directGroups);
+        result.addAll(directGroups);
+        return result;
+    }
+
+    private HashSet<Long> getDirectGroupIds(Session session, Long resId) {
+        StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
+        queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
+        queryStr.append(" WHERE resource.id=?");
+        Query query = session.createQuery(queryStr.toString());
+        @SuppressWarnings("unchecked")
+        List<Long> idList = query.setLong(0, resId).list();
+        return new HashSet<Long>(idList);
+    }
+
+    private HashSet<Long> getIndirectGroupIds(Session session, HashSet<Long> resIds) {
+        HashSet<Long> result = new HashSet<Long>();
+        HashSet<Long> currSet = resIds;
+        while (currSet.size() > 0) {
+            StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
+            queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
+            queryStr.append(" WHERE resource.id IN (:resourceIds)");
+            Query query = session.createQuery(queryStr.toString());
+            @SuppressWarnings("unchecked")
+            List<Long> idList = query.setParameterList("resourceIds", currSet).list();
+            currSet = new HashSet<Long>(idList);
+            currSet.remove(result);
+            result.addAll(idList);
+        }
+
+        return result;
+    }
+
+    private HashSet<Long> getAllGroupIds(Session session, Long resId) {
+        HashSet<Long> directGroupIds = getDirectGroupIds(session, resId);
+        HashSet<Long> result = getIndirectGroupIds(session, directGroupIds);
+        result.addAll(directGroupIds);
+        return result;
+    }
+
+    private User userFromEntity(Session session, UserEntity usrEnt)
+        throws CharonException {
+        User result = new User();
+        result.setId(usrEnt.getId().toString());
+        result.setUserName(usrEnt.getUserName());
+
+        HashSet<Long> dGroups = getDirectGroupIds(session, usrEnt.getId());
+        HashSet<Long> iGroups = getIndirectGroupIds(session, dGroups);
+
+        ArrayList<String> tmpl1 = new ArrayList<String>(dGroups.size());
+        for (Long tmpId : dGroups) {
+            tmpl1.add(tmpId.toString());
+        }
+        result.setDirectGroups(tmpl1);
+
+        ArrayList<String> tmpl2 = new ArrayList<String>(iGroups.size());
+        for (Long tmpId : iGroups) {
+            tmpl2.add(tmpId.toString());
+        }
+        result.setIndirectGroups(tmpl2);
+        return result;
     }
 
 }
