@@ -7,6 +7,7 @@ import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
+import it.infn.security.saml.utils.charon.GroupResourceEndpoint;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +29,6 @@ import org.wso2.charon.core.exceptions.BadRequestException;
 import org.wso2.charon.core.exceptions.FormatNotSupportedException;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.protocol.SCIMResponse;
-import org.wso2.charon.core.protocol.endpoints.GroupResourceEndpoint;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.utils.jaxrs.JAXRSResponseBuilder;
 

@@ -1,8 +1,8 @@
 package it.infn.security.saml.datasource.hibernate;
 
-import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
+import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 
@@ -21,6 +21,7 @@ import org.wso2.charon.core.attributes.SimpleAttribute;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.DuplicateResourceException;
 import org.wso2.charon.core.exceptions.NotFoundException;
+import org.wso2.charon.core.objects.AbstractSCIMObject;
 import org.wso2.charon.core.objects.Group;
 import org.wso2.charon.core.objects.User;
 
@@ -44,11 +45,7 @@ public class HibernateDataSource
             UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, Long.parseLong(userId));
             if (usrEnt == null) {
                 logger.info("Entity not found " + userId);
-                /*
-                 * TODO empty list or error?
-                 */
-                // session.getTransaction().commit();
-                throw new DataSourceException("User not found");
+                return null;
             }
 
             result = userFromEntity(session, usrEnt);
@@ -115,35 +112,7 @@ public class HibernateDataSource
             eUser.setUserName(user.getUserName());
             eUser.setCommonName(user.getGivenName() + " " + user.getFamilyName());
 
-            Set<AttributeEntity> eUserAttrs = new HashSet<AttributeEntity>();
-
-            Attribute extAttribute = user.getAttribute(SPID_ATTR_NAME);
-            for (Attribute subAttr : ((MultiValuedAttribute) extAttribute).getValuesAsSubAttributes()) {
-                ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
-                SimpleAttribute keyAttr = (SimpleAttribute) cplxAttr.getSubAttribute(KEY_FIELD);
-                SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(CONTENT_FIELD);
-                SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(ATTR_DESCR_FIELD);
-
-                AttributeEntity attrEnt = new AttributeEntity();
-                AttributeEntityId attrEntId = new AttributeEntityId();
-                attrEntId.setKey(keyAttr.getStringValue());
-                attrEntId.setContent(cntAttr.getStringValue());
-                attrEnt.setAttributeId(attrEntId);
-                attrEnt.setDescription(descrAttr.getStringValue());
-
-                /*
-                 * TODO check for attribute auto-saving
-                 */
-                if (session.get(AttributeEntity.class, attrEntId) == null) {
-                    logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
-                    session.save(attrEnt);
-                }
-
-                eUserAttrs.add(attrEnt);
-
-            }
-
-            eUser.setAttributes(eUserAttrs);
+            eUser.setAttributes(getExtendedAttributes(session, user));
 
             Long genId = (Long) session.save(eUser);
             logger.info("Created user " + user.getUserName() + " with id " + genId.toString());
@@ -195,7 +164,36 @@ public class HibernateDataSource
 
     public Group createGroup(Group group)
         throws CharonException, DuplicateResourceException {
-        return null;
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            GroupEntity grpEnt = new GroupEntity();
+            grpEnt.setType(ResourceType.GROUP);
+            grpEnt.setDisplayName(group.getDisplayName());
+
+            grpEnt.setAttributes(getExtendedAttributes(session, group));
+
+            Long genId = (Long) session.save(grpEnt);
+            logger.info("Created group " + grpEnt.getDisplayName() + " with id " + genId.toString());
+
+            session.getTransaction().commit();
+
+            return group;
+
+        } catch (Throwable th) {
+
+            /*
+             * TODO check rollback
+             */
+            session.getTransaction().rollback();
+
+            logger.log(Level.SEVERE, "Query execution error", th);
+            throw new CharonException("Query execution error");
+        }
+
     }
 
     public Group updateGroup(Group oldGroup, Group group)
@@ -238,6 +236,40 @@ public class HibernateDataSource
             tmpl2.add(tmpId.toString());
         }
         result.setIndirectGroups(tmpl2);
+        return result;
+    }
+
+    private Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
+        throws CharonException, NotFoundException {
+
+        Set<AttributeEntity> result = new HashSet<AttributeEntity>();
+
+        Attribute extAttribute = resource.getAttribute(SPID_ATTR_NAME);
+        for (Attribute subAttr : ((MultiValuedAttribute) extAttribute).getValuesAsSubAttributes()) {
+            ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
+            SimpleAttribute keyAttr = (SimpleAttribute) cplxAttr.getSubAttribute(KEY_FIELD);
+            SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(CONTENT_FIELD);
+            SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(ATTR_DESCR_FIELD);
+
+            AttributeEntity attrEnt = new AttributeEntity();
+            AttributeEntityId attrEntId = new AttributeEntityId();
+            attrEntId.setKey(keyAttr.getStringValue());
+            attrEntId.setContent(cntAttr.getStringValue());
+            attrEnt.setAttributeId(attrEntId);
+            attrEnt.setDescription(descrAttr.getStringValue());
+
+            /*
+             * TODO check for attribute auto-saving
+             */
+            if (session.get(AttributeEntity.class, attrEntId) == null) {
+                logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
+                session.save(attrEnt);
+            }
+
+            result.add(attrEnt);
+
+        }
+
         return result;
     }
 
