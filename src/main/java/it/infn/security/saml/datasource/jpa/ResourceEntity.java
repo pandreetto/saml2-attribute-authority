@@ -6,7 +6,6 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -25,14 +24,13 @@ public class ResourceEntity {
     };
 
     @Id
-    @GeneratedValue
-    private Long id;
+    private String id;
 
     @Column(name = "resource_type", nullable = false)
     private ResourceType type;
 
     /*
-     * TODO check PERSIST
+     * TODO check PERSIST; verify missing index on target
      */
     @ManyToMany(cascade = { CascadeType.PERSIST })
     @JoinTable(name = "memberof", 
@@ -51,11 +49,11 @@ public class ResourceEntity {
     public ResourceEntity() {
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

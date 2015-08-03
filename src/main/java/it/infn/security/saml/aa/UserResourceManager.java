@@ -7,7 +7,6 @@ import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
-import it.infn.security.saml.utils.charon.UserResourceEndpoint;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,6 +28,7 @@ import org.wso2.charon.core.exceptions.BadRequestException;
 import org.wso2.charon.core.exceptions.FormatNotSupportedException;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.protocol.SCIMResponse;
+import org.wso2.charon.core.protocol.endpoints.UserResourceEndpoint;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.utils.jaxrs.JAXRSResponseBuilder;
 
@@ -50,9 +50,9 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            
+
             format = SCIMUtils.normalizeFormat(format);
-            
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
@@ -79,7 +79,7 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            
+
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
@@ -91,7 +91,7 @@ public class UserResourceManager {
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateUser(requester);
-            
+
             DataSource userManager = DataSourceFactory.getDataSource();
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
@@ -113,9 +113,9 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            
+
             format = SCIMUtils.normalizeFormat(format);
-            
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
@@ -143,7 +143,7 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            
+
             format = SCIMUtils.normalizeFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
@@ -155,10 +155,13 @@ public class UserResourceManager {
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
-                //scimResponse = userResourceEndpoint.listByAttribute(searchAttribute, userManager, format);
+                // scimResponse =
+                // userResourceEndpoint.listByAttribute(searchAttribute,
+                // userManager, format);
                 throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
             } else if (filter != null) {
-                //scimResponse = userResourceEndpoint.listByFilter(filter, userManager, format);
+                // scimResponse = userResourceEndpoint.listByFilter(filter,
+                // userManager, format);
                 throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
             } else if (startIndex != null && count != null) {
                 scimResponse = userResourceEndpoint.listWithPagination(Integer.valueOf(startIndex),
@@ -190,14 +193,14 @@ public class UserResourceManager {
 
         SCIMResponse scimResponse = null;
         try {
-            
+
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
                 throw new FormatNotSupportedException(error);
             }
             inputFormat = SCIMUtils.normalizeFormat(inputFormat);
             outputFormat = SCIMUtils.normalizeFormat(outputFormat);
-            
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();

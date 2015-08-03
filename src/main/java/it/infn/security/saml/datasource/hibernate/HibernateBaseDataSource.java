@@ -79,7 +79,7 @@ public abstract class HibernateBaseDataSource
 
             String qStr = "SELECT qUser.id FROM UserEntity as qUser WHERE qUser.userName = :uName";
             Query query2 = session.createQuery(qStr).setString("uName", id);
-            Long userId = (Long) query2.uniqueResult();
+            String userId = (String) query2.uniqueResult();
             if (userId == null) {
                 logger.info("Entity not found " + id);
                 /*
@@ -89,7 +89,7 @@ public abstract class HibernateBaseDataSource
                 throw new DataSourceException("User not found");
             }
 
-            HashSet<Long> allIds = getAllGroupIds(session, userId);
+            HashSet<String> allIds = getAllGroupIds(session, userId);
             allIds.add(userId);
 
             HashMap<String, Object> qArgs = new HashMap<String, Object>();
@@ -188,27 +188,27 @@ public abstract class HibernateBaseDataSource
 
     }
 
-    protected HashSet<Long> getDirectGroupIds(Session session, Long resId) {
+    protected HashSet<String> getDirectGroupIds(Session session, String resId) {
         StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
         queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
         queryStr.append(" WHERE resource.id=?");
         Query query = session.createQuery(queryStr.toString());
         @SuppressWarnings("unchecked")
-        List<Long> idList = query.setLong(0, resId).list();
-        return new HashSet<Long>(idList);
+        List<String> idList = query.setString(0, resId).list();
+        return new HashSet<String>(idList);
     }
 
-    protected HashSet<Long> getIndirectGroupIds(Session session, HashSet<Long> resIds) {
-        HashSet<Long> result = new HashSet<Long>();
-        HashSet<Long> currSet = resIds;
+    protected HashSet<String> getIndirectGroupIds(Session session, HashSet<String> resIds) {
+        HashSet<String> result = new HashSet<String>();
+        HashSet<String> currSet = resIds;
         while (currSet.size() > 0) {
             StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
             queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
             queryStr.append(" WHERE resource.id IN (:resourceIds)");
             Query query = session.createQuery(queryStr.toString());
             @SuppressWarnings("unchecked")
-            List<Long> idList = query.setParameterList("resourceIds", currSet).list();
-            currSet = new HashSet<Long>(idList);
+            List<String> idList = query.setParameterList("resourceIds", currSet).list();
+            currSet = new HashSet<String>(idList);
             currSet.remove(result);
             result.addAll(idList);
         }
@@ -216,9 +216,9 @@ public abstract class HibernateBaseDataSource
         return result;
     }
 
-    protected HashSet<Long> getAllGroupIds(Session session, Long resId) {
-        HashSet<Long> directGroupIds = getDirectGroupIds(session, resId);
-        HashSet<Long> result = getIndirectGroupIds(session, directGroupIds);
+    protected HashSet<String> getAllGroupIds(Session session, String resId) {
+        HashSet<String> directGroupIds = getDirectGroupIds(session, resId);
+        HashSet<String> result = getIndirectGroupIds(session, directGroupIds);
         result.addAll(directGroupIds);
         return result;
     }
