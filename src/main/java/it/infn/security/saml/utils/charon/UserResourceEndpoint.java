@@ -1,7 +1,9 @@
 package it.infn.security.saml.utils.charon;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +22,7 @@ import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
 import org.wso2.charon.core.schema.SCIMResourceSchemaManager;
 import org.wso2.charon.core.schema.ServerSideValidator;
+import org.wso2.charon.core.util.AttributeUtil;
 import org.wso2.charon.core.util.CopyUtil;
 
 public class UserResourceEndpoint
@@ -81,6 +84,12 @@ public class UserResourceEndpoint
      */
     private void validateCreatedSCIMObject(AbstractSCIMObject scimObject, SCIMResourceSchema resourceSchema)
         throws CharonException {
+
+        String id = UUID.randomUUID().toString();
+        scimObject.setId(id);
+        Date date = new Date();
+        scimObject.setCreatedDate(AttributeUtil.parseDateTime(AttributeUtil.formatDateTime(date)));
+        scimObject.setLastModified(AttributeUtil.parseDateTime(AttributeUtil.formatDateTime(date)));
         
         String location = "/" +  scimObject.getId();
         if (SCIMConstants.USER.equals(resourceSchema.getName())) {

@@ -3,6 +3,7 @@ package it.infn.security.saml.datasource.hibernate;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
+import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 
@@ -13,6 +14,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.wso2.charon.core.attributes.Attribute;
 import org.wso2.charon.core.attributes.ComplexAttribute;
@@ -135,7 +137,27 @@ public class HibernateDataSource
 
     public Group getGroup(String groupId)
         throws CharonException {
-        return null;
+
+        Group result = null;
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+            GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, Long.parseLong(groupId));
+            if (grpEnt == null) {
+                logger.info("Entity not found " + groupId);
+                return null;
+            }
+
+            result = groupFromEntity(session, grpEnt);
+            session.getTransaction().commit();
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+        }
+        return result;
     }
 
     public List<Group> listGroups()
@@ -178,6 +200,8 @@ public class HibernateDataSource
 
             Long genId = (Long) session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + genId.toString());
+
+            updateMembers(session, grpEnt, group.getMembers());
 
             session.getTransaction().commit();
 
@@ -239,10 +263,61 @@ public class HibernateDataSource
         return result;
     }
 
+    private Group groupFromEntity(Session session, GroupEntity grpEnt)
+        throws CharonException {
+        Group result = new Group();
+        result.setId(grpEnt.getId().toString());
+        result.setDisplayName(grpEnt.getDisplayName());
+
+        StringBuffer queryStr = new StringBuffer("SELECT resource.id, resource.type");
+        queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
+        queryStr.append(" WHERE rGroups.id=?");
+        Query query = session.createQuery(queryStr.toString());
+        @SuppressWarnings("unchecked")
+        List<Object[]> directMembers = (List<Object[]>) query.setLong(0, grpEnt.getId()).list();
+        for (Object[] tmpObj : directMembers) {
+            if (tmpObj[1].equals(ResourceEntity.ResourceType.USER)) {
+                result.setUserMember(tmpObj[0].toString());
+            } else {
+                result.setGroupMember(tmpObj[0].toString());
+            }
+        }
+
+        return result;
+    }
+
+    private void updateMembers(Session session, ResourceEntity resEnt, List<String> inList) {
+
+        if (inList == null || inList.size() == 0)
+            return;
+        List<Long> memberIds = new ArrayList<Long>(inList.size());
+        for (String tmps : inList)
+            memberIds.add(new Long(tmps));
+
+        /*
+         * TODO check for cycles in the DAC
+         */
+        StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
+        queryStr.append(" WHERE qRes.id in (:memberIds)");
+        Query query = session.createQuery(queryStr.toString());
+        @SuppressWarnings("unchecked")
+        List<ResourceEntity> mResList = query.setParameterList("memberIds", memberIds).list();
+
+        for (ResourceEntity tmpEnt : mResList) {
+            tmpEnt.getGroups().add(resEnt);
+            session.flush();
+        }
+
+    }
+
     private Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
         throws CharonException, NotFoundException {
 
         Set<AttributeEntity> result = new HashSet<AttributeEntity>();
+
+        if (!resource.isAttributeExist(SPID_ATTR_NAME)) {
+            return result;
+        }
 
         Attribute extAttribute = resource.getAttribute(SPID_ATTR_NAME);
         for (Attribute subAttr : ((MultiValuedAttribute) extAttribute).getValuesAsSubAttributes()) {
