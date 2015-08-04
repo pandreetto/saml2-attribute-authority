@@ -219,6 +219,10 @@ public class MongoDataSource
         return null;
     }
 
+    public List<User> listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count) {
+        return null;
+    }
+
     public User updateUser(User user)
         throws CharonException {
         return null;
@@ -331,6 +335,10 @@ public class MongoDataSource
     }
 
     public List<Group> listGroupsWithPagination(int startIndex, int count) {
+        return null;
+    }
+
+    public List<Group> listGroups(String filter, String sortBy, String sortOrder, int startIndex, int count) {
         return null;
     }
 

@@ -62,4 +62,41 @@ public class HibernateUtils {
 
     }
 
+    public static String convertSortedParam(String sParam, boolean isUser) {
+
+        if (sParam == null)
+            return null;
+
+        sParam = sParam.toLowerCase();
+
+        /*
+         * TODO user introspection for collecting db-fields
+         */
+        if (sParam.equals("id"))
+            return "id";
+
+        if (isUser) {
+            if (sParam.equals("username"))
+                return "userName";
+            if (sParam.equals("commonname"))
+                return "commonName";
+        } else {
+            if (sParam.equals("displayname"))
+                return "displayName";
+        }
+
+        throw new IllegalArgumentException("Wrong parameter " + sParam);
+    }
+
+    public static int checkQueryRange(int count, boolean isUser) {
+        if (isUser) {
+            /*
+             * TODO read system max user count from configuration
+             */
+            return count;
+        } else {
+            return count;
+        }
+    }
+
 }

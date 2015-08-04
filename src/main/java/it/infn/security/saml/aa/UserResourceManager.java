@@ -7,6 +7,7 @@ import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
+import it.infn.security.saml.utils.charon.UserResourceEndpoint;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +29,6 @@ import org.wso2.charon.core.exceptions.BadRequestException;
 import org.wso2.charon.core.exceptions.FormatNotSupportedException;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.protocol.SCIMResponse;
-import org.wso2.charon.core.protocol.endpoints.UserResourceEndpoint;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.utils.jaxrs.JAXRSResponseBuilder;
 
@@ -155,24 +155,12 @@ public class UserResourceManager {
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
-                // scimResponse =
-                // userResourceEndpoint.listByAttribute(searchAttribute,
-                // userManager, format);
                 throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
-            } else if (filter != null) {
-                // scimResponse = userResourceEndpoint.listByFilter(filter,
-                // userManager, format);
-                throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
-            } else if (startIndex != null && count != null) {
-                scimResponse = userResourceEndpoint.listWithPagination(Integer.valueOf(startIndex),
-                        Integer.valueOf(count), userManager, format);
-            } else if (sortBy != null) {
-                scimResponse = userResourceEndpoint.listBySort(sortBy, sortOrder, userManager, format);
-            } else if (searchAttribute == null && filter == null && startIndex == null && count == null
-                    && sortBy == null) {
-                scimResponse = userResourceEndpoint.list(userManager, format);
             } else {
-                throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
+                int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
+                int cnt = (count != null) ? Integer.parseInt(count) : -1;
+                scimResponse = userResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, userManager,
+                        format);
             }
 
         } catch (Exception ex) {

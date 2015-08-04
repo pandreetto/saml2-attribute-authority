@@ -62,7 +62,7 @@ public class HibernateDataSource
 
     public List<User> listUsers()
         throws CharonException {
-        return null;
+        return listUsers(null, null, null, -1, -1);
     }
 
     public List<User> listUsersByAttribute(Attribute attribute) {
@@ -71,15 +71,77 @@ public class HibernateDataSource
 
     public List<User> listUsersByFilter(String filter, String operation, String value)
         throws CharonException {
-        return null;
+        try {
+            return listUsers(filter + operation + value, null, null, -1, -1);
+        } catch (CharonException chEx) {
+            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
+            return null;
+        }
     }
 
     public List<User> listUsersBySort(String sortBy, String sortOrder) {
-        return null;
+        try {
+            return listUsers(null, sortBy, sortOrder, -1, -1);
+        } catch (CharonException chEx) {
+            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
+            return null;
+        }
     }
 
     public List<User> listUsersWithPagination(int startIndex, int count) {
-        return null;
+        try {
+            return listUsers(null, null, null, startIndex, count);
+        } catch (CharonException chEx) {
+            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
+            return null;
+        }
+    }
+
+    public List<User> listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count)
+        throws CharonException {
+
+        count = HibernateUtils.checkQueryRange(count, true);
+
+        ArrayList<User> result = new ArrayList<User>();
+
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+            StringBuffer queryStr = new StringBuffer("FROM UserEntity as qUser");
+            
+            if (sortBy != null) {
+                sortBy = HibernateUtils.convertSortedParam(sortBy, true);
+                queryStr.append(" ORDER BY ").append(sortBy);
+                if (sortOrder != null && sortOrder.equalsIgnoreCase("descending")) {
+                    queryStr.append(" DESC");
+                } else {
+                    queryStr.append(" ASC");
+                }
+            }
+
+            Query query = session.createQuery(queryStr.toString());
+            if (startIndex >= 0)
+                query.setFirstResult(startIndex);
+            if (count > 0)
+                query.setMaxResults(count);
+
+            @SuppressWarnings("unchecked")
+            List<UserEntity> usersFound = query.list();
+
+            for (UserEntity usrEnt : usersFound) {
+                result.add(userFromEntity(session, usrEnt));
+            }
+
+            session.getTransaction().commit();
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+        }
+
+        return result;
     }
 
     public User updateUser(User user)
@@ -165,7 +227,7 @@ public class HibernateDataSource
 
     public List<Group> listGroups()
         throws CharonException {
-        return null;
+        return listGroups(null, null, null, -1, -1);
     }
 
     public List<Group> listGroupsByAttribute(Attribute attribute)
@@ -175,15 +237,25 @@ public class HibernateDataSource
 
     public List<Group> listGroupsByFilter(String filter, String operation, String value)
         throws CharonException {
-        return null;
+        return listGroups(filter + operation + value, null, null, -1, -1);
     }
 
     public List<Group> listGroupsBySort(String sortBy, String sortOrder)
         throws CharonException {
-        return null;
+        return listGroups(null, sortBy, sortOrder, -1, -1);
     }
 
     public List<Group> listGroupsWithPagination(int startIndex, int count) {
+        try {
+            return listGroups(null, null, null, startIndex, count);
+        } catch (CharonException chEx) {
+            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
+            return null;
+        }
+    }
+
+    public List<Group> listGroups(String filter, String sortBy, String sortOrder, int startIndex, int count)
+        throws CharonException {
         return null;
     }
 
@@ -218,7 +290,7 @@ public class HibernateDataSource
         } catch (Throwable th) {
 
             logger.log(Level.SEVERE, th.getMessage(), th);
-            
+
             session.getTransaction().rollback();
 
             throw new CharonException("Query execution error");
