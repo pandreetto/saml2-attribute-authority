@@ -102,7 +102,7 @@ public class HibernateDataSource
 
         count = HibernateUtils.checkQueryRange(count, true);
 
-        ArrayList<User> result = new ArrayList<User>();
+        ArrayList<User> result = new ArrayList<User>(count);
 
         Session session = sessionFactory.getCurrentSession();
 
@@ -110,7 +110,7 @@ public class HibernateDataSource
 
             session.beginTransaction();
             StringBuffer queryStr = new StringBuffer("FROM UserEntity as qUser");
-            
+
             if (sortBy != null) {
                 sortBy = HibernateUtils.convertSortedParam(sortBy, true);
                 queryStr.append(" ORDER BY ").append(sortBy);
@@ -256,7 +256,48 @@ public class HibernateDataSource
 
     public List<Group> listGroups(String filter, String sortBy, String sortOrder, int startIndex, int count)
         throws CharonException {
-        return null;
+
+        count = HibernateUtils.checkQueryRange(count, false);
+
+        ArrayList<Group> result = new ArrayList<Group>(count);
+
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+            StringBuffer queryStr = new StringBuffer("FROM GroupEntity as qGroup");
+
+            if (sortBy != null) {
+                sortBy = HibernateUtils.convertSortedParam(sortBy, false);
+                queryStr.append(" ORDER BY ").append(sortBy);
+                if (sortOrder != null && sortOrder.equalsIgnoreCase("descending")) {
+                    queryStr.append(" DESC");
+                } else {
+                    queryStr.append(" ASC");
+                }
+            }
+
+            Query query = session.createQuery(queryStr.toString());
+            if (startIndex >= 0)
+                query.setFirstResult(startIndex);
+            if (count > 0)
+                query.setMaxResults(count);
+
+            @SuppressWarnings("unchecked")
+            List<GroupEntity> groupsFound = query.list();
+
+            for (GroupEntity grpEnt : groupsFound) {
+                result.add(groupFromEntity(session, grpEnt));
+            }
+            session.getTransaction().commit();
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+        }
+
+        return result;
     }
 
     public Group createGroup(Group group)

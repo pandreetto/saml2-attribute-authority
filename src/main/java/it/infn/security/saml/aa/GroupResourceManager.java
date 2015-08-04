@@ -150,23 +150,16 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeListGroups(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource dataSource = DataSourceFactory.getDataSource();
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
 
             if (searchAttribute != null) {
-                scimResponse = groupResourceEndpoint.listByAttribute(searchAttribute, userManager, format);
-            } else if (filter != null) {
-                scimResponse = groupResourceEndpoint.listByFilter(filter, userManager, format);
-            } else if (startIndex != null && count != null) {
-                scimResponse = groupResourceEndpoint.listWithPagination(Integer.valueOf(startIndex),
-                        Integer.valueOf(count), userManager, format);
-            } else if (sortBy != null) {
-                scimResponse = groupResourceEndpoint.listBySort(sortBy, sortOrder, userManager, format);
-            } else if (searchAttribute == null && filter == null && startIndex == null && count == null
-                    && sortBy == null) {
-                scimResponse = groupResourceEndpoint.list(userManager, format);
-            } else {
                 throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
+            } else {
+                int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
+                int cnt = (count != null) ? Integer.parseInt(count) : -1;
+                scimResponse = groupResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, dataSource,
+                        format);
             }
 
         } catch (Exception ex) {
