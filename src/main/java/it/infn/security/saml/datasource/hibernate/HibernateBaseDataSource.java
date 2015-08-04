@@ -29,17 +29,6 @@ public abstract class HibernateBaseDataSource
 
     private static final Logger logger = Logger.getLogger(HibernateBaseDataSource.class.getName());
 
-    /*
-     * Definitions for specific attribute structures
-     */
-    protected final static String SPID_ATTR_NAME = "SPIDAttributes";
-
-    protected final static String KEY_FIELD = "key";
-
-    protected final static String CONTENT_FIELD = "content";
-
-    protected final static String ATTR_DESCR_FIELD = "description";
-
     protected static SessionFactory sessionFactory;
 
     public HibernateBaseDataSource() {
@@ -64,13 +53,6 @@ public abstract class HibernateBaseDataSource
     public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs)
         throws DataSourceException {
 
-        ArrayList<Attribute> result = new ArrayList<Attribute>();
-
-        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
-        AttributeBuilder attributeBuilder = (AttributeBuilder) builderFactory
-                .getBuilder(Attribute.DEFAULT_ELEMENT_NAME);
-        XSStringBuilder attributeValueBuilder = (XSStringBuilder) builderFactory.getBuilder(XSString.TYPE_NAME);
-
         Session session = sessionFactory.getCurrentSession();
 
         try {
@@ -92,95 +74,22 @@ public abstract class HibernateBaseDataSource
             HashSet<String> allIds = getAllGroupIds(session, userId);
             allIds.add(userId);
 
-            HashMap<String, Object> qArgs = new HashMap<String, Object>();
-            StringBuffer queryStr = new StringBuffer("SELECT qAttributes");
-            queryStr.append(" FROM ResourceEntity as qRes INNER JOIN qRes.attributes as qAttributes");
-
-            queryStr.append(" WHERE qRes.id IN (:resourceIds)");
-            qArgs.put("resourceIds", allIds);
-
-            if (requiredAttrs != null && requiredAttrs.size() > 0) {
-                queryStr.append(" AND (");
-                int keyNum = 0;
-                for (Attribute reqAttr : requiredAttrs) {
-                    String tmpName = reqAttr.getName();
-                    List<XMLObject> tmpValues = reqAttr.getAttributeValues();
-
-                    if (keyNum > 0) {
-                        queryStr.append(" OR");
-                    }
-                    String keyTag = "key_" + keyNum;
-                    keyNum++;
-
-                    if (tmpValues != null && tmpValues.size() > 0) {
-                        int cntNum = 0;
-                        for (XMLObject xObj : tmpValues) {
-
-                            if (cntNum > 0) {
-                                queryStr.append(" OR");
-                            }
-                            String refValue = xObj.getDOM().getTextContent().trim();
-
-                            queryStr.append(" (qAttributes.attributeId.key = :").append(keyTag);
-                            qArgs.put(keyTag, tmpName);
-
-                            String cntTag = "cnt_" + keyNum + "_" + cntNum;
-                            queryStr.append(" AND qAttributes.attributeId.content = :");
-                            queryStr.append(cntTag).append(")");
-                            qArgs.put(cntTag, refValue);
-                            cntNum++;
-                        }
-                    } else {
-                        queryStr.append(" qAttributes.attributeId.key = :").append(keyTag);
-                        qArgs.put(keyTag, tmpName);
-                    }
-                }
-
-                queryStr.append(")");
-            }
-
-            Query query = session.createQuery(queryStr.toString());
-            query.setProperties(qArgs);
-
-            @SuppressWarnings("unchecked")
-            List<AttributeEntity> filteredAttrs = query.list();
-
-            HashMap<String, Attribute> resultTable = new HashMap<String, Attribute>();
-            for (AttributeEntity attrEnt : filteredAttrs) {
-
-                String attrKey = attrEnt.getAttributeId().getKey();
-                Attribute attribute = null;
-                if (resultTable.containsKey(attrKey)) {
-                    attribute = resultTable.get(attrKey);
-                } else {
-                    attribute = attributeBuilder.buildObject();
-                    attribute.setName(attrKey);
-                    attribute.setNameFormat(Attribute.BASIC);
-                    resultTable.put(attrKey, attribute);
-                }
-
-                XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
-                        XSString.TYPE_NAME);
-                attributeValue.setValue(attrEnt.getAttributeId().getContent());
-                attribute.getAttributeValues().add(attributeValue);
-
-            }
-
-            for (Attribute tmpAttr : resultTable.values()) {
-                result.add(tmpAttr);
-            }
+            List<Attribute> result = buildAttributeList(session, allIds, requiredAttrs);
 
             session.getTransaction().commit();
 
-        } catch (Throwable th) {
+            return result;
 
-            session.getTransaction().rollback();
+        } catch (Throwable th) {
 
             logger.log(Level.SEVERE, th.getMessage(), th);
 
+            session.getTransaction().rollback();
+
+            throw new DataSourceException(th.getMessage());
+
         }
 
-        return result;
     }
 
     public void close()
@@ -220,6 +129,107 @@ public abstract class HibernateBaseDataSource
         HashSet<String> directGroupIds = getDirectGroupIds(session, resId);
         HashSet<String> result = getIndirectGroupIds(session, directGroupIds);
         result.addAll(directGroupIds);
+        return result;
+    }
+
+    /*
+     * TODO move the section below into subclass
+     */
+    protected final static String SPID_ATTR_NAME = "SPIDAttributes";
+
+    protected final static String KEY_FIELD = "key";
+
+    protected final static String CONTENT_FIELD = "content";
+
+    protected final static String ATTR_DESCR_FIELD = "description";
+
+    protected List<Attribute> buildAttributeList(Session session, HashSet<String> allIds, List<Attribute> reqAttrs) {
+
+        ArrayList<Attribute> result = new ArrayList<Attribute>();
+
+        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+        AttributeBuilder attributeBuilder = (AttributeBuilder) builderFactory
+                .getBuilder(Attribute.DEFAULT_ELEMENT_NAME);
+        XSStringBuilder attributeValueBuilder = (XSStringBuilder) builderFactory.getBuilder(XSString.TYPE_NAME);
+
+        HashMap<String, Object> qArgs = new HashMap<String, Object>();
+        StringBuffer queryStr = new StringBuffer("SELECT qAttributes");
+        queryStr.append(" FROM ResourceEntity as qRes INNER JOIN qRes.attributes as qAttributes");
+
+        queryStr.append(" WHERE qRes.id IN (:resourceIds)");
+        qArgs.put("resourceIds", allIds);
+
+        if (reqAttrs != null && reqAttrs.size() > 0) {
+            queryStr.append(" AND (");
+            int keyNum = 0;
+            for (Attribute reqAttr : reqAttrs) {
+                String tmpName = reqAttr.getName();
+                List<XMLObject> tmpValues = reqAttr.getAttributeValues();
+
+                if (keyNum > 0) {
+                    queryStr.append(" OR");
+                }
+                String keyTag = "key_" + keyNum;
+                keyNum++;
+
+                if (tmpValues != null && tmpValues.size() > 0) {
+                    int cntNum = 0;
+                    for (XMLObject xObj : tmpValues) {
+
+                        if (cntNum > 0) {
+                            queryStr.append(" OR");
+                        }
+                        String refValue = xObj.getDOM().getTextContent().trim();
+
+                        queryStr.append(" (qAttributes.attributeId.key = :").append(keyTag);
+                        qArgs.put(keyTag, tmpName);
+
+                        String cntTag = "cnt_" + keyNum + "_" + cntNum;
+                        queryStr.append(" AND qAttributes.attributeId.content = :");
+                        queryStr.append(cntTag).append(")");
+                        qArgs.put(cntTag, refValue);
+                        cntNum++;
+                    }
+                } else {
+                    queryStr.append(" qAttributes.attributeId.key = :").append(keyTag);
+                    qArgs.put(keyTag, tmpName);
+                }
+            }
+
+            queryStr.append(")");
+        }
+
+        Query query = session.createQuery(queryStr.toString());
+        query.setProperties(qArgs);
+
+        @SuppressWarnings("unchecked")
+        List<AttributeEntity> filteredAttrs = query.list();
+
+        HashMap<String, Attribute> resultTable = new HashMap<String, Attribute>();
+        for (AttributeEntity attrEnt : filteredAttrs) {
+
+            String attrKey = attrEnt.getAttributeId().getKey();
+            Attribute attribute = null;
+            if (resultTable.containsKey(attrKey)) {
+                attribute = resultTable.get(attrKey);
+            } else {
+                attribute = attributeBuilder.buildObject();
+                attribute.setName(attrKey);
+                attribute.setNameFormat(Attribute.BASIC);
+                resultTable.put(attrKey, attribute);
+            }
+
+            XSString attributeValue = attributeValueBuilder.buildObject(AttributeValue.DEFAULT_ELEMENT_NAME,
+                    XSString.TYPE_NAME);
+            attributeValue.setValue(attrEnt.getAttributeId().getContent());
+            attribute.getAttributeValues().add(attributeValue);
+
+        }
+
+        for (Attribute tmpAttr : resultTable.values()) {
+            result.add(tmpAttr);
+        }
+
         return result;
     }
 

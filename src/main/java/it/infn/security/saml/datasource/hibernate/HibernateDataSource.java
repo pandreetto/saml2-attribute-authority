@@ -305,7 +305,10 @@ public class HibernateDataSource
 
     }
 
-    private Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
+    /*
+     * TODO move the section below into subclass
+     */
+    protected Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
         throws CharonException, NotFoundException {
 
         Set<AttributeEntity> result = new HashSet<AttributeEntity>();
