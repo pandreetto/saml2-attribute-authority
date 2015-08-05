@@ -88,14 +88,18 @@ public class HibernateUtils {
         throw new IllegalArgumentException("Wrong parameter " + sParam);
     }
 
+    /*
+     * TODO read system max user and group count from configuration
+     */
+    private static int MAXUSERPERPAGE = 100;
+
+    private static int MAXGROUPPERPAGE = 100;
+
     public static int checkQueryRange(int count, boolean isUser) {
         if (isUser) {
-            /*
-             * TODO read system max user count from configuration
-             */
-            return count;
+            return (count > MAXUSERPERPAGE || count <= 0) ? MAXUSERPERPAGE : count;
         } else {
-            return count;
+            return (count > MAXGROUPPERPAGE || count <= 0) ? MAXGROUPPERPAGE : count;
         }
     }
 

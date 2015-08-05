@@ -20,6 +20,7 @@ import org.wso2.charon.core.attributes.Attribute;
 import org.wso2.charon.core.attributes.ComplexAttribute;
 import org.wso2.charon.core.attributes.MultiValuedAttribute;
 import org.wso2.charon.core.attributes.SimpleAttribute;
+import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.DuplicateResourceException;
 import org.wso2.charon.core.exceptions.NotFoundException;
@@ -156,6 +157,30 @@ public class HibernateDataSource
     public void deleteUser(String userId)
         throws NotFoundException, CharonException {
 
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, userId);
+            if (usrEnt == null) {
+                logger.info("Entity not found " + userId);
+                throw new NotFoundException();
+            }
+
+            session.delete(usrEnt);
+
+            session.getTransaction().commit();
+
+        } catch (AbstractCharonException chEx) {
+            session.getTransaction().rollback();
+            throw chEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new CharonException(th.getMessage(), th);
+        }
     }
 
     public User createUser(User user)
@@ -356,7 +381,41 @@ public class HibernateDataSource
 
     public void deleteGroup(String groupId)
         throws NotFoundException, CharonException {
+        Session session = sessionFactory.getCurrentSession();
 
+        try {
+
+            session.beginTransaction();
+            GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, groupId);
+            if (grpEnt == null) {
+                logger.info("Entity not found " + groupId);
+                throw new NotFoundException();
+            }
+
+            /*
+             * TODO lots fo queries, missing index on source
+             */
+            StringBuffer queryStr = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
+            queryStr.append(" INNER JOIN qRes.groups as rGroup WHERE rGroup.id=?");
+            Query query = session.createQuery(queryStr.toString()).setString(0, grpEnt.getId());
+            @SuppressWarnings("unchecked")
+            List<ResourceEntity> members = query.list();
+
+            for (ResourceEntity resEnt : members) {
+                resEnt.getGroups().remove(grpEnt);
+            }
+
+            session.delete(grpEnt);
+            session.getTransaction().commit();
+
+        } catch (AbstractCharonException chEx) {
+            session.getTransaction().rollback();
+            throw chEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new CharonException(th.getMessage(), th);
+        }
     }
 
     private User userFromEntity(Session session, UserEntity usrEnt)
