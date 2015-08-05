@@ -1,5 +1,6 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
@@ -347,7 +348,7 @@ public class HibernateDataSource
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
 
-            updateMembers(session, grpEnt, group.getMembers());
+            addMembers(session, grpEnt, group.getMembers());
 
             session.getTransaction().commit();
 
@@ -359,7 +360,7 @@ public class HibernateDataSource
 
             session.getTransaction().rollback();
 
-            throw new CharonException("Query execution error");
+            throw new CharonException(th.getMessage());
         }
 
     }
@@ -419,7 +420,7 @@ public class HibernateDataSource
     }
 
     private User userFromEntity(Session session, UserEntity usrEnt)
-        throws CharonException {
+        throws CharonException, DataSourceException {
         User result = new User();
         result.setId(usrEnt.getId());
         result.setUserName(usrEnt.getUserName());
@@ -456,11 +457,8 @@ public class HibernateDataSource
         return result;
     }
 
-    private void updateMembers(Session session, ResourceEntity resEnt, List<String> memberIds) {
+    private void addMembers(Session session, GroupEntity grpEnt, List<String> memberIds) {
 
-        /*
-         * TODO check for cycles in the DAC
-         */
         StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
         queryStr.append(" WHERE qRes.id in (:memberIds)");
         Query query = session.createQuery(queryStr.toString());
@@ -471,8 +469,45 @@ public class HibernateDataSource
          * TODO improve query
          */
         for (ResourceEntity tmpEnt : mResList) {
-            tmpEnt.getGroups().add(resEnt);
+            tmpEnt.getGroups().add(grpEnt);
             session.flush();
+        }
+
+    }
+
+    private void checkForCycle(Session session, String grpId)
+        throws DataSourceException {
+
+        HashSet<String> accSet = new HashSet<String>();
+        accSet.add(grpId);
+        HashSet<String> currSet = accSet;
+
+        while (currSet.size() > 0) {
+            StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
+            queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
+            queryStr.append(" WHERE resource.id IN (:resourceIds)");
+            Query query = session.createQuery(queryStr.toString());
+            @SuppressWarnings("unchecked")
+            List<String> idList = query.setParameterList("resourceIds", currSet).list();
+            currSet = new HashSet<String>(idList);
+            if (currSet.contains(grpId)) {
+                throw new DataSourceException("Detected cycle in the groups graph");
+            }
+            currSet.remove(accSet);
+            accSet.addAll(idList);
+        }
+    }
+
+    private void removeMembers(Session session, GroupEntity grpEnt, List<String> memberIds) {
+
+        StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
+        queryStr.append(" WHERE qRes.id in (:memberIds)");
+        Query query = session.createQuery(queryStr.toString());
+        @SuppressWarnings("unchecked")
+        List<ResourceEntity> members = query.setParameterList("memberIds", memberIds).list();
+
+        for (ResourceEntity resEnt : members) {
+            resEnt.getGroups().remove(grpEnt);
         }
 
     }
