@@ -1,5 +1,7 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import java.util.UUID;
+
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
@@ -101,6 +103,10 @@ public class HibernateUtils {
         } else {
             return (count > MAXGROUPPERPAGE || count <= 0) ? MAXGROUPPERPAGE : count;
         }
+    }
+    
+    public static String generateNewVersion(String currVer) {
+        return UUID.randomUUID().toString();
     }
 
 }

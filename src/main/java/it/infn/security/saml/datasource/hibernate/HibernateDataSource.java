@@ -110,6 +110,10 @@ public class HibernateDataSource
 
         try {
 
+            /*
+             * TODO missing query for totalResults in pagination
+             */
+
             session.beginTransaction();
             StringBuffer queryStr = new StringBuffer("FROM UserEntity as qUser");
 
@@ -205,6 +209,9 @@ public class HibernateDataSource
              */
             eUser.setId(user.getId());
             eUser.setType(ResourceType.USER);
+            eUser.setCreateDate(user.getCreatedDate());
+            eUser.setModifyDate(user.getLastModified());
+            eUser.setVersion(HibernateUtils.generateNewVersion(null));
             eUser.setUserName(user.getUserName());
             eUser.setCommonName(user.getGivenName() + " " + user.getFamilyName());
 
@@ -291,6 +298,10 @@ public class HibernateDataSource
 
         try {
 
+            /*
+             * TODO missing query for totalResults in pagination
+             */
+
             session.beginTransaction();
             StringBuffer queryStr = new StringBuffer("FROM GroupEntity as qGroup");
 
@@ -341,6 +352,9 @@ public class HibernateDataSource
              */
             grpEnt.setId(group.getId());
             grpEnt.setType(ResourceType.GROUP);
+            grpEnt.setCreateDate(group.getCreatedDate());
+            grpEnt.setModifyDate(group.getLastModified());
+            grpEnt.setVersion(HibernateUtils.generateNewVersion(null));
             grpEnt.setDisplayName(group.getDisplayName());
 
             grpEnt.setAttributes(getExtendedAttributes(session, group));
@@ -424,6 +438,9 @@ public class HibernateDataSource
         User result = new User();
         result.setId(usrEnt.getId());
         result.setUserName(usrEnt.getUserName());
+        result.setCreatedDate(usrEnt.getCreateDate());
+        result.setLastModified(usrEnt.getModifyDate());
+        result.setVersion(usrEnt.getVersion());
 
         HashSet<String> dGroups = getDirectGroupIds(session, usrEnt.getId());
         HashSet<String> iGroups = getIndirectGroupIds(session, dGroups);
@@ -439,6 +456,9 @@ public class HibernateDataSource
         Group result = new Group();
         result.setId(grpEnt.getId());
         result.setDisplayName(grpEnt.getDisplayName());
+        result.setCreatedDate(grpEnt.getCreateDate());
+        result.setLastModified(grpEnt.getModifyDate());
+        result.setVersion(grpEnt.getVersion());
 
         StringBuffer queryStr = new StringBuffer("SELECT resource.id, resource.type");
         queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");

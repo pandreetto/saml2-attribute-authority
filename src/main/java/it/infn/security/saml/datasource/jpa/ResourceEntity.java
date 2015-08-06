@@ -1,5 +1,6 @@
 package it.infn.security.saml.datasource.jpa;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,6 +27,15 @@ public class ResourceEntity {
     @Id
     private String id;
 
+    @Column(name = "creation_date", nullable = false)
+    private Date createDate;
+
+    @Column(name = "last_update", nullable = false)
+    private Date modifyDate;
+
+    @Column(name = "version", nullable = false)
+    private String version;
+
     @Column(name = "resource_type", nullable = false)
     private ResourceType type;
 
@@ -33,17 +43,18 @@ public class ResourceEntity {
      * TODO check PERSIST; verify missing index on target
      */
     @ManyToMany(cascade = { CascadeType.PERSIST })
-    @JoinTable(name = "memberof", 
-        joinColumns = { @JoinColumn(name = "source", referencedColumnName = "id") }, 
-        inverseJoinColumns = { @JoinColumn(name = "target", referencedColumnName = "id") })
+    @JoinTable(
+            name = "memberof",
+            joinColumns = { @JoinColumn(name = "source", referencedColumnName = "id") },
+            inverseJoinColumns = { @JoinColumn(name = "target", referencedColumnName = "id") })
     private Set<ResourceEntity> groups = new HashSet<ResourceEntity>();
 
     @ManyToMany(cascade = { CascadeType.PERSIST })
-    @JoinTable(name = "bind_attribute",
-        joinColumns = { @JoinColumn(name = "resource_id", referencedColumnName = "id") },
-        inverseJoinColumns = { 
-            @JoinColumn(referencedColumnName = "attr_key"), 
-            @JoinColumn(referencedColumnName = "attr_content") })
+    @JoinTable(
+            name = "bind_attribute",
+            joinColumns = { @JoinColumn(name = "resource_id", referencedColumnName = "id") },
+            inverseJoinColumns = { @JoinColumn(referencedColumnName = "attr_key"),
+                    @JoinColumn(referencedColumnName = "attr_content") })
     private Set<AttributeEntity> attributes = new HashSet<AttributeEntity>();
 
     public ResourceEntity() {
@@ -55,6 +66,30 @@ public class ResourceEntity {
 
     public String getId() {
         return id;
+    }
+
+    public void setCreateDate(Date date) {
+        createDate = date;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public void setModifyDate(Date date) {
+        modifyDate = date;
+    }
+
+    public Date getModifyDate() {
+        return modifyDate;
+    }
+
+    public void setVersion(String ver) {
+        version = ver;
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     public void setType(ResourceType type) {
