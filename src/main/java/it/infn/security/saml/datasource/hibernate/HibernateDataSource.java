@@ -1,19 +1,24 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
+import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.security.auth.Subject;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -32,9 +37,22 @@ import org.wso2.charon.core.objects.User;
 public class HibernateDataSource
     extends HibernateBaseDataSource {
 
+    private Subject tenant;
+
     private static final Logger logger = Logger.getLogger(HibernateDataSource.class.getName());
 
     public HibernateDataSource() {
+        tenant = null;
+    }
+
+    public DataSource getProxyDataSource(Subject tenant)
+        throws DataSourceException {
+        if (this.tenant != null)
+            throw new DataSourceException("Cannot create proxy from data source");
+
+        HibernateDataSource result = (HibernateDataSource) new HibernateDataSource();
+        result.tenant = tenant;
+        return result;
     }
 
     public User getUser(String userId)
@@ -215,6 +233,22 @@ public class HibernateDataSource
             eUser.setUserName(user.getUserName());
             eUser.setCommonName(user.getGivenName() + " " + user.getFamilyName());
 
+            String extId = user.getExternalId();
+            if (extId != null && extId.length() > 0) {
+                if (tenant == null) {
+                    throw new DataSourceException("Datasource is not a proxy");
+                }
+
+                for (Principal tmpp : tenant.getPrincipals()) {
+                    ExternalIdEntity tmpEnt = new ExternalIdEntity();
+                    tmpEnt.setTenant(tmpp.getName());
+                    tmpEnt.setExtId(extId);
+                    Long extMapId = (Long) session.save(tmpEnt);
+                    logger.info("Stored external id " + extId + ": " + extMapId.toString());
+                    eUser.getExternalIds().add(tmpEnt);
+                }
+            }
+
             eUser.setAttributes(getExtendedAttributes(session, user));
 
             session.save(eUser);
@@ -229,7 +263,7 @@ public class HibernateDataSource
 
             session.getTransaction().rollback();
 
-            throw new CharonException("Query execution error");
+            throw new CharonException(th.getMessage());
         }
     }
 
@@ -433,6 +467,41 @@ public class HibernateDataSource
         }
     }
 
+    private String getExternalId(Session session, ResourceEntity resEnt)
+        throws CharonException {
+
+        if (tenant == null)
+            return null;
+
+        Set<Principal> principalSet = tenant.getPrincipals(Principal.class);
+
+        if (principalSet.size() > 0) {
+            List<String> tenantNames = new ArrayList<String>(principalSet.size());
+            for (Principal tmpp : principalSet) {
+                tenantNames.add(tmpp.getName());
+            }
+
+            StringBuffer queryStr = new StringBuffer("SELECT qExtId FROM ResourceEntity as qRes");
+            queryStr.append(" INNER JOIN qRes.externalIds as qExtId");
+            queryStr.append(" WHERE qRes.id=:resourceid AND qExtId.tenant in (:tenantlist)");
+
+            Query query = session.createQuery(queryStr.toString());
+            query.setString("resourceid", resEnt.getId());
+            query.setParameterList("tenantlist", tenantNames);
+
+            @SuppressWarnings("unchecked")
+            List<ExternalIdEntity> extIdList = query.list();
+
+            if (extIdList.size() > 0) {
+                return extIdList.get(0).getExtId();
+            }
+
+        }
+
+        return null;
+
+    }
+
     private User userFromEntity(Session session, UserEntity usrEnt)
         throws CharonException, DataSourceException {
         User result = new User();
@@ -447,6 +516,10 @@ public class HibernateDataSource
 
         result.setDirectGroups(new ArrayList<String>(dGroups));
         result.setIndirectGroups(new ArrayList<String>(iGroups));
+
+        String externalId = getExternalId(session, usrEnt);
+        if (externalId != null)
+            result.setExternalId(externalId);
 
         return result;
     }
@@ -473,6 +546,10 @@ public class HibernateDataSource
                 result.setGroupMember(tmpObj[0].toString());
             }
         }
+
+        String externalId = getExternalId(session, grpEnt);
+        if (externalId != null)
+            result.setExternalId(externalId);
 
         return result;
     }

@@ -7,6 +7,7 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.cxf.message.Message;
@@ -39,9 +40,11 @@ public class TLSIdentityManager
             throw new IdentityManagerException("User not authenticated");
         }
 
-        logger.info("User authenticated" + certificateChain[0].getSubjectX500Principal().getName());
+        X500Principal authUser = certificateChain[0].getSubjectX500Principal();
+        logger.info("User authenticated" + authUser.getName());
 
         Subject result = new Subject();
+        result.getPrincipals().add(authUser);
         result.getPublicCredentials().add(certificateChain);
         return result;
     }

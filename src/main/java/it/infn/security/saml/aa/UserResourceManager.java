@@ -58,7 +58,7 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeShowUser(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.get(id, format, userManager);
@@ -92,7 +92,7 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateUser(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
@@ -121,7 +121,7 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeDeleteUser(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.delete(id, userManager, format);
 
@@ -151,7 +151,7 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeListUsers(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
@@ -194,7 +194,7 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeModifyUser(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
             scimResponse = userResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat,
                     userManager);

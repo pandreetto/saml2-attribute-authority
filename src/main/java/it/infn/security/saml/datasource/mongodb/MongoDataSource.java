@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.security.auth.Subject;
+
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -79,7 +81,10 @@ public class MongoDataSource
 
     private String dbName;
 
+    private Subject tenant;
+
     public MongoDataSource() {
+        tenant = null;
     }
 
     public void init()
@@ -94,6 +99,18 @@ public class MongoDataSource
 
         mongoClient = new MongoClient();
 
+    }
+
+    public DataSource getProxyDataSource(Subject tenant)
+        throws DataSourceException {
+        if (this.tenant != null)
+            throw new DataSourceException("Cannot create proxy from data source");
+
+        MongoDataSource result = new MongoDataSource();
+        result.dbName = this.dbName;
+        result.mongoClient = this.mongoClient;
+        result.tenant = tenant;
+        return result;
     }
 
     public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs)

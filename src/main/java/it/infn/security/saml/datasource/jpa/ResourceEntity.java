@@ -13,6 +13,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 @Entity
@@ -56,6 +57,16 @@ public class ResourceEntity {
             inverseJoinColumns = { @JoinColumn(referencedColumnName = "attr_key"),
                     @JoinColumn(referencedColumnName = "attr_content") })
     private Set<AttributeEntity> attributes = new HashSet<AttributeEntity>();
+
+    /*
+     * TODO try to use just a joinColumns insteadof joinTable
+     */
+    @OneToMany
+    @JoinTable(
+            name = "bind_ext_id",
+            joinColumns = { @JoinColumn(name = "resource_id", referencedColumnName = "id") },
+            inverseJoinColumns = { @JoinColumn(name = "ext_id", referencedColumnName = "id") })
+    private Set<ExternalIdEntity> externalIds = new HashSet<ExternalIdEntity>();
 
     public ResourceEntity() {
     }
@@ -114,6 +125,14 @@ public class ResourceEntity {
 
     public Set<AttributeEntity> getAttributes() {
         return attributes;
+    }
+
+    public void setExternalIds(Set<ExternalIdEntity> eIds) {
+        externalIds = eIds;
+    }
+
+    public Set<ExternalIdEntity> getExternalIds() {
+        return externalIds;
     }
 
     public boolean equals(Object other) {

@@ -2,6 +2,8 @@ package it.infn.security.saml.datasource;
 
 import java.util.List;
 
+import javax.security.auth.Subject;
+
 import org.opensaml.saml2.core.Attribute;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.extensions.UserManager;
@@ -24,6 +26,9 @@ public interface DataSource
         throws CharonException;
 
     public void close()
+        throws DataSourceException;
+
+    public DataSource getProxyDataSource(Subject tenant)
         throws DataSourceException;
 
 }

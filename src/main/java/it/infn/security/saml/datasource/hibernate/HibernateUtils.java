@@ -6,6 +6,7 @@ import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
+import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.UserEntity;
@@ -56,6 +57,7 @@ public class HibernateUtils {
                 hiberCfg.addAnnotatedClass(AttributeEntity.class);
                 hiberCfg.addAnnotatedClass(UserEntity.class);
                 hiberCfg.addAnnotatedClass(GroupEntity.class);
+                hiberCfg.addAnnotatedClass(ExternalIdEntity.class);
             }
 
         }
