@@ -7,6 +7,7 @@ import it.infn.security.saml.datasource.jpa.AttributeEntityId;
 import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity;
+import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceStatus;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 
@@ -227,11 +228,13 @@ public class HibernateDataSource
              */
             eUser.setId(user.getId());
             eUser.setType(ResourceType.USER);
+            eUser.setStatus(ResourceStatus.ACTIVE);
             eUser.setCreateDate(user.getCreatedDate());
             eUser.setModifyDate(user.getLastModified());
             eUser.setVersion(HibernateUtils.generateNewVersion(null));
             eUser.setUserName(user.getUserName());
-            eUser.setCommonName(user.getGivenName() + " " + user.getFamilyName());
+
+            HibernateUtils.copyAttributesInEntity(user, eUser);
 
             String extId = user.getExternalId();
             if (extId != null && extId.length() > 0) {
@@ -243,8 +246,6 @@ public class HibernateDataSource
                     ExternalIdEntity tmpEnt = new ExternalIdEntity();
                     tmpEnt.setTenant(tmpp.getName());
                     tmpEnt.setExtId(extId);
-                    Long extMapId = (Long) session.save(tmpEnt);
-                    logger.info("Stored external id " + extId + ": " + extMapId.toString());
                     eUser.getExternalIds().add(tmpEnt);
                 }
             }
@@ -386,12 +387,27 @@ public class HibernateDataSource
              */
             grpEnt.setId(group.getId());
             grpEnt.setType(ResourceType.GROUP);
+            grpEnt.setStatus(ResourceStatus.ACTIVE);
             grpEnt.setCreateDate(group.getCreatedDate());
             grpEnt.setModifyDate(group.getLastModified());
             grpEnt.setVersion(HibernateUtils.generateNewVersion(null));
             grpEnt.setDisplayName(group.getDisplayName());
 
             grpEnt.setAttributes(getExtendedAttributes(session, group));
+
+            String extId = group.getExternalId();
+            if (extId != null && extId.length() > 0) {
+                if (tenant == null) {
+                    throw new DataSourceException("Datasource is not a proxy");
+                }
+
+                for (Principal tmpp : tenant.getPrincipals()) {
+                    ExternalIdEntity tmpEnt = new ExternalIdEntity();
+                    tmpEnt.setTenant(tmpp.getName());
+                    tmpEnt.setExtId(extId);
+                    grpEnt.getExternalIds().add(tmpEnt);
+                }
+            }
 
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
@@ -442,7 +458,7 @@ public class HibernateDataSource
             }
 
             /*
-             * TODO lots fo queries, missing index on source
+             * TODO lots of queries, missing index on source
              */
             StringBuffer queryStr = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
             queryStr.append(" INNER JOIN qRes.groups as rGroup WHERE rGroup.id=?");
@@ -520,6 +536,8 @@ public class HibernateDataSource
         String externalId = getExternalId(session, usrEnt);
         if (externalId != null)
             result.setExternalId(externalId);
+
+        HibernateUtils.copyAttributesInUser(usrEnt, result);
 
         return result;
     }

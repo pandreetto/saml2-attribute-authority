@@ -25,6 +25,10 @@ public class ResourceEntity {
         USER, GROUP
     };
 
+    public enum ResourceStatus {
+        ACTIVE, SUSPENDED, REGISTERED
+    };
+
     @Id
     private String id;
 
@@ -40,8 +44,11 @@ public class ResourceEntity {
     @Column(name = "resource_type", nullable = false)
     private ResourceType type;
 
+    @Column(name = "resource_status", nullable = false)
+    private ResourceStatus status;
+
     /*
-     * TODO check PERSIST; verify missing index on target
+     * TODO verify missing index on target
      */
     @ManyToMany(cascade = { CascadeType.PERSIST })
     @JoinTable(
@@ -58,10 +65,7 @@ public class ResourceEntity {
                     @JoinColumn(referencedColumnName = "attr_content") })
     private Set<AttributeEntity> attributes = new HashSet<AttributeEntity>();
 
-    /*
-     * TODO try to use just a joinColumns insteadof joinTable
-     */
-    @OneToMany
+    @OneToMany(cascade = { CascadeType.ALL })
     @JoinTable(
             name = "bind_ext_id",
             joinColumns = { @JoinColumn(name = "resource_id", referencedColumnName = "id") },
@@ -109,6 +113,14 @@ public class ResourceEntity {
 
     public ResourceType getType() {
         return type;
+    }
+
+    public void setStatus(ResourceStatus st) {
+        status = st;
+    }
+
+    public ResourceStatus getStatus() {
+        return status;
     }
 
     public void setGroups(Set<ResourceEntity> groups) {

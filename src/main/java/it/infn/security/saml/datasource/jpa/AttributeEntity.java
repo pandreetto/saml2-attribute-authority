@@ -21,7 +21,7 @@ public class AttributeEntity
             @AttributeOverride(name = "content", column = @Column(name = "attr_content")) })
     AttributeEntityId attributeId;
 
-    @Column(name = "attr_descrition", nullable = false)
+    @Column(name = "attr_description", nullable = false)
     private String description;
 
     public AttributeEntity() {
