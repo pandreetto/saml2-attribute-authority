@@ -66,11 +66,11 @@ public class AttributeAuthorityServiceImpl
 
     public Response attributeQuery(AttributeQuery query) {
 
-        try {
+        Response response = this.newResponse(query.getID());
+        Issuer responseIssuer = this.newIssuer();
+        response.setIssuer(responseIssuer);
 
-            Response response = this.newResponse(query.getID());
-            Issuer responseIssuer = this.newIssuer();
-            response.setIssuer(responseIssuer);
+        try {
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -102,23 +102,21 @@ public class AttributeAuthorityServiceImpl
             Status status = this.newStatus();
             response.setStatus(status);
 
-            return response;
+        } catch (CodedException cEx) {
+            
+            Status status = this.newStatus(cEx);
+            response.setStatus(status);
 
         } catch (Throwable th) {
 
             logger.log(Level.SEVERE, th.getMessage(), th);
 
-            Response response = this.newResponse(query.getID());
-
-            Issuer responseIssuer = this.newIssuer();
-            response.setIssuer(responseIssuer);
-
             Status status = this.newStatus(th);
             response.setStatus(status);
 
-            return response;
-
         }
+
+        return response;
 
     }
 
@@ -180,7 +178,7 @@ public class AttributeAuthorityServiceImpl
                 .getBuilder(StatusCode.DEFAULT_ELEMENT_NAME);
         StatusCode statusCode = statusCodeBuilder.buildObject();
 
-        if (th.getClass() == CodedException.class) {
+        if (th instanceof CodedException) {
             CodedException handlerEx = (CodedException) th;
             statusCode.setValue(handlerEx.getStatusCode());
 

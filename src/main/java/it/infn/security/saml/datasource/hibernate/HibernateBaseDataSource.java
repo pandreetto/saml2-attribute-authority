@@ -13,6 +13,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.StatusCode;
 
 public abstract class HibernateBaseDataSource
     implements DataSource {
@@ -53,12 +54,8 @@ public abstract class HibernateBaseDataSource
             Query query2 = session.createQuery(qStr).setString("uName", id);
             String userId = (String) query2.uniqueResult();
             if (userId == null) {
-                logger.info("Entity not found " + id);
-                /*
-                 * TODO empty list or error?
-                 */
-                // session.getTransaction().commit();
-                throw new DataSourceException("User not found");
+                throw new DataSourceException("User not found", StatusCode.RESPONDER_URI,
+                        StatusCode.UNKNOWN_PRINCIPAL_URI);
             }
 
             ResourceGraph rGraph = new ResourceGraph(session);
@@ -71,12 +68,16 @@ public abstract class HibernateBaseDataSource
 
             return result;
 
+        } catch (DataSourceException dsEx) {
+
+            logger.log(Level.SEVERE, dsEx.getMessage());
+            session.getTransaction().rollback();
+            throw dsEx;
+
         } catch (Throwable th) {
 
             logger.log(Level.SEVERE, th.getMessage(), th);
-
             session.getTransaction().rollback();
-
             throw new DataSourceException(th.getMessage());
 
         }
