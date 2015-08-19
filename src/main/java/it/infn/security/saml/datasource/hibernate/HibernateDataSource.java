@@ -68,10 +68,9 @@ public class HibernateDataSource
             UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, userId);
             if (usrEnt == null) {
                 logger.info("Entity not found " + userId);
-                return null;
+            } else {
+                result = userFromEntity(session, usrEnt);
             }
-
-            result = userFromEntity(session, usrEnt);
             session.getTransaction().commit();
 
         } catch (Throwable th) {
@@ -280,10 +279,9 @@ public class HibernateDataSource
             GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, groupId);
             if (grpEnt == null) {
                 logger.info("Entity not found " + groupId);
-                return null;
+            } else {
+                result = groupFromEntity(session, grpEnt);
             }
-
-            result = groupFromEntity(session, grpEnt);
             session.getTransaction().commit();
 
         } catch (Throwable th) {
@@ -412,7 +410,8 @@ public class HibernateDataSource
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
 
-            addMembers(session, grpEnt, group.getMembers());
+            ResourceGraph rGraph = new ResourceGraph(session);
+            rGraph.addMembers(grpEnt, group.getMembers());
 
             session.getTransaction().commit();
 
@@ -457,18 +456,8 @@ public class HibernateDataSource
                 throw new NotFoundException();
             }
 
-            /*
-             * TODO lots of queries, missing index on source
-             */
-            StringBuffer queryStr = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
-            queryStr.append(" INNER JOIN qRes.groups as rGroup WHERE rGroup.id=?");
-            Query query = session.createQuery(queryStr.toString()).setString(0, grpEnt.getId());
-            @SuppressWarnings("unchecked")
-            List<ResourceEntity> members = query.list();
-
-            for (ResourceEntity resEnt : members) {
-                resEnt.getGroups().remove(grpEnt);
-            }
+            ResourceGraph rGraph = new ResourceGraph(session);
+            rGraph.removeGroupsForEntity(grpEnt);
 
             session.delete(grpEnt);
             session.getTransaction().commit();
@@ -527,8 +516,9 @@ public class HibernateDataSource
         result.setLastModified(usrEnt.getModifyDate());
         result.setVersion(usrEnt.getVersion());
 
-        HashSet<String> dGroups = getDirectGroupIds(session, usrEnt.getId());
-        HashSet<String> iGroups = getIndirectGroupIds(session, dGroups);
+        ResourceGraph graph = new ResourceGraph(session);
+        HashSet<String> dGroups = graph.getDirectGroupIds(usrEnt.getId());
+        HashSet<String> iGroups = graph.getIndirectGroupIds(dGroups);
 
         result.setDirectGroups(new ArrayList<String>(dGroups));
         result.setIndirectGroups(new ArrayList<String>(iGroups));
@@ -551,17 +541,12 @@ public class HibernateDataSource
         result.setLastModified(grpEnt.getModifyDate());
         result.setVersion(grpEnt.getVersion());
 
-        StringBuffer queryStr = new StringBuffer("SELECT resource.id, resource.type");
-        queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
-        queryStr.append(" WHERE rGroups.id=?");
-        Query query = session.createQuery(queryStr.toString());
-        @SuppressWarnings("unchecked")
-        List<Object[]> directMembers = (List<Object[]>) query.setString(0, grpEnt.getId()).list();
-        for (Object[] tmpObj : directMembers) {
-            if (tmpObj[1].equals(ResourceEntity.ResourceType.USER)) {
-                result.setUserMember(tmpObj[0].toString());
+        ResourceGraph rGraph = new ResourceGraph(session);
+        for (ResourceGraph.MemberItem item : rGraph.getMembersForGroup(grpEnt)) {
+            if (item.isaUser()) {
+                result.setUserMember(item.getId());
             } else {
-                result.setGroupMember(tmpObj[0].toString());
+                result.setGroupMember(item.getId());
             }
         }
 
@@ -570,61 +555,6 @@ public class HibernateDataSource
             result.setExternalId(externalId);
 
         return result;
-    }
-
-    private void addMembers(Session session, GroupEntity grpEnt, List<String> memberIds) {
-
-        StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
-        queryStr.append(" WHERE qRes.id in (:memberIds)");
-        Query query = session.createQuery(queryStr.toString());
-        @SuppressWarnings("unchecked")
-        List<ResourceEntity> mResList = query.setParameterList("memberIds", memberIds).list();
-
-        /*
-         * TODO improve query
-         */
-        for (ResourceEntity tmpEnt : mResList) {
-            tmpEnt.getGroups().add(grpEnt);
-            session.flush();
-        }
-
-    }
-
-    private void checkForCycle(Session session, String grpId)
-        throws DataSourceException {
-
-        HashSet<String> accSet = new HashSet<String>();
-        accSet.add(grpId);
-        HashSet<String> currSet = accSet;
-
-        while (currSet.size() > 0) {
-            StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
-            queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
-            queryStr.append(" WHERE resource.id IN (:resourceIds)");
-            Query query = session.createQuery(queryStr.toString());
-            @SuppressWarnings("unchecked")
-            List<String> idList = query.setParameterList("resourceIds", currSet).list();
-            currSet = new HashSet<String>(idList);
-            if (currSet.contains(grpId)) {
-                throw new DataSourceException("Detected cycle in the groups graph");
-            }
-            currSet.remove(accSet);
-            accSet.addAll(idList);
-        }
-    }
-
-    private void removeMembers(Session session, GroupEntity grpEnt, List<String> memberIds) {
-
-        StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
-        queryStr.append(" WHERE qRes.id in (:memberIds)");
-        Query query = session.createQuery(queryStr.toString());
-        @SuppressWarnings("unchecked")
-        List<ResourceEntity> members = query.setParameterList("memberIds", memberIds).list();
-
-        for (ResourceEntity resEnt : members) {
-            resEnt.getGroups().remove(grpEnt);
-        }
-
     }
 
     /*

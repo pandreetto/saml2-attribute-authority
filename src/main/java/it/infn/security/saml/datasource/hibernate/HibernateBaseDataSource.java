@@ -71,7 +71,8 @@ public abstract class HibernateBaseDataSource
                 throw new DataSourceException("User not found");
             }
 
-            HashSet<String> allIds = getAllGroupIds(session, userId);
+            ResourceGraph rGraph = new ResourceGraph(session);
+            HashSet<String> allIds = rGraph.getAllGroupIds(userId);
             allIds.add(userId);
 
             List<Attribute> result = buildAttributeList(session, allIds, requiredAttrs);
@@ -95,41 +96,6 @@ public abstract class HibernateBaseDataSource
     public void close()
         throws DataSourceException {
 
-    }
-
-    protected HashSet<String> getDirectGroupIds(Session session, String resId) {
-        StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
-        queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
-        queryStr.append(" WHERE resource.id=?");
-        Query query = session.createQuery(queryStr.toString());
-        @SuppressWarnings("unchecked")
-        List<String> idList = query.setString(0, resId).list();
-        return new HashSet<String>(idList);
-    }
-
-    protected HashSet<String> getIndirectGroupIds(Session session, HashSet<String> resIds) {
-        HashSet<String> result = new HashSet<String>();
-        HashSet<String> currSet = resIds;
-        while (currSet.size() > 0) {
-            StringBuffer queryStr = new StringBuffer("SELECT rGroups.id");
-            queryStr.append(" FROM ResourceEntity as resource INNER JOIN resource.groups as rGroups");
-            queryStr.append(" WHERE resource.id IN (:resourceIds)");
-            Query query = session.createQuery(queryStr.toString());
-            @SuppressWarnings("unchecked")
-            List<String> idList = query.setParameterList("resourceIds", currSet).list();
-            currSet = new HashSet<String>(idList);
-            currSet.remove(result);
-            result.addAll(idList);
-        }
-
-        return result;
-    }
-
-    protected HashSet<String> getAllGroupIds(Session session, String resId) {
-        HashSet<String> directGroupIds = getDirectGroupIds(session, resId);
-        HashSet<String> result = getIndirectGroupIds(session, directGroupIds);
-        result.addAll(directGroupIds);
-        return result;
     }
 
     /*
