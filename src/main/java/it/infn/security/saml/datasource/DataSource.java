@@ -31,4 +31,6 @@ public interface DataSource
     public DataSource getProxyDataSource(Subject tenant)
         throws DataSourceException;
 
+    public Subject getTenant();
+
 }

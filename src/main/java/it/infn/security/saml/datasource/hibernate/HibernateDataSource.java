@@ -1,9 +1,7 @@
 package it.infn.security.saml.datasource.hibernate;
 
-import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
-import it.infn.security.saml.datasource.jpa.AttributeEntityId;
 import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity;
@@ -19,14 +17,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.security.auth.Subject;
-
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.wso2.charon.core.attributes.Attribute;
-import org.wso2.charon.core.attributes.ComplexAttribute;
-import org.wso2.charon.core.attributes.MultiValuedAttribute;
-import org.wso2.charon.core.attributes.SimpleAttribute;
 import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.DuplicateResourceException;
@@ -35,25 +28,12 @@ import org.wso2.charon.core.objects.AbstractSCIMObject;
 import org.wso2.charon.core.objects.Group;
 import org.wso2.charon.core.objects.User;
 
-public class HibernateDataSource
+public abstract class HibernateDataSource
     extends HibernateBaseDataSource {
-
-    private Subject tenant;
 
     private static final Logger logger = Logger.getLogger(HibernateDataSource.class.getName());
 
     public HibernateDataSource() {
-        tenant = null;
-    }
-
-    public DataSource getProxyDataSource(Subject tenant)
-        throws DataSourceException {
-        if (this.tenant != null)
-            throw new DataSourceException("Cannot create proxy from data source");
-
-        HibernateDataSource result = (HibernateDataSource) new HibernateDataSource();
-        result.tenant = tenant;
-        return result;
     }
 
     public User getUser(String userId)
@@ -237,11 +217,11 @@ public class HibernateDataSource
 
             String extId = user.getExternalId();
             if (extId != null && extId.length() > 0) {
-                if (tenant == null) {
+                if (this.getTenant() == null) {
                     throw new DataSourceException("Datasource is not a proxy");
                 }
 
-                for (Principal tmpp : tenant.getPrincipals()) {
+                for (Principal tmpp : this.getTenant().getPrincipals()) {
                     ExternalIdEntity tmpEnt = new ExternalIdEntity();
                     tmpEnt.setTenant(tmpp.getName());
                     tmpEnt.setExtId(extId);
@@ -395,11 +375,11 @@ public class HibernateDataSource
 
             String extId = group.getExternalId();
             if (extId != null && extId.length() > 0) {
-                if (tenant == null) {
+                if (this.getTenant() == null) {
                     throw new DataSourceException("Datasource is not a proxy");
                 }
 
-                for (Principal tmpp : tenant.getPrincipals()) {
+                for (Principal tmpp : this.getTenant().getPrincipals()) {
                     ExternalIdEntity tmpEnt = new ExternalIdEntity();
                     tmpEnt.setTenant(tmpp.getName());
                     tmpEnt.setExtId(extId);
@@ -475,10 +455,10 @@ public class HibernateDataSource
     private String getExternalId(Session session, ResourceEntity resEnt)
         throws CharonException {
 
-        if (tenant == null)
+        if (this.getTenant() == null)
             return null;
 
-        Set<Principal> principalSet = tenant.getPrincipals(Principal.class);
+        Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
 
         if (principalSet.size() > 0) {
             List<String> tenantNames = new ArrayList<String>(principalSet.size());
@@ -557,45 +537,7 @@ public class HibernateDataSource
         return result;
     }
 
-    /*
-     * TODO move the section below into subclass
-     */
-    protected Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
-        throws CharonException, NotFoundException {
-
-        Set<AttributeEntity> result = new HashSet<AttributeEntity>();
-
-        if (!resource.isAttributeExist(SPID_ATTR_NAME)) {
-            return result;
-        }
-
-        Attribute extAttribute = resource.getAttribute(SPID_ATTR_NAME);
-        for (Attribute subAttr : ((MultiValuedAttribute) extAttribute).getValuesAsSubAttributes()) {
-            ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
-            SimpleAttribute keyAttr = (SimpleAttribute) cplxAttr.getSubAttribute(KEY_FIELD);
-            SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(CONTENT_FIELD);
-            SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(ATTR_DESCR_FIELD);
-
-            AttributeEntity attrEnt = new AttributeEntity();
-            AttributeEntityId attrEntId = new AttributeEntityId();
-            attrEntId.setKey(keyAttr.getStringValue());
-            attrEntId.setContent(cntAttr.getStringValue());
-            attrEnt.setAttributeId(attrEntId);
-            attrEnt.setDescription(descrAttr.getStringValue());
-
-            /*
-             * TODO check for attribute auto-saving
-             */
-            if (session.get(AttributeEntity.class, attrEntId) == null) {
-                logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
-                session.save(attrEnt);
-            }
-
-            result.add(attrEnt);
-
-        }
-
-        return result;
-    }
+    protected abstract Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
+        throws CharonException, NotFoundException;
 
 }
