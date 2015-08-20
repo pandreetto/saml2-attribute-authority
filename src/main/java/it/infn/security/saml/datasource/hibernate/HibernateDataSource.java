@@ -3,7 +3,6 @@ package it.infn.security.saml.datasource.hibernate;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.datasource.UserSearchResult;
-import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity;
@@ -157,7 +156,44 @@ public abstract class HibernateDataSource
 
     public User updateUser(User user)
         throws CharonException {
-        return null;
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            UserEntity eUser = (UserEntity) session.get(UserEntity.class, user.getId());
+            eUser.setModifyDate(user.getLastModified());
+            eUser.setVersion(HibernateUtils.generateNewVersion(eUser.getVersion()));
+            eUser.setUserName(user.getUserName());
+
+            /*
+             * TODO passwd attribute must be kept
+             */
+            eUser.getUserAttributes().clear();
+            eUser.getUserAddresses().clear();
+            session.flush();
+            HibernateUtils.copyAttributesInEntity(user, eUser);
+
+            fillinExternalIds(eUser, user.getExternalId());
+
+            cleanUserExtAttributes(session, eUser);
+            fillinUserExtAttributes(session, user, eUser);
+
+            session.save(eUser);
+            logger.info("Updated user " + user.getUserName() + " with id " + user.getId());
+
+            session.getTransaction().commit();
+
+            return user;
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+
+            session.getTransaction().rollback();
+
+            throw new CharonException(th.getMessage());
+        }
     }
 
     public User updateUser(List<Attribute> updatedAttributes) {
@@ -222,21 +258,9 @@ public abstract class HibernateDataSource
 
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            String extId = user.getExternalId();
-            if (extId != null && extId.length() > 0) {
-                if (this.getTenant() == null) {
-                    throw new DataSourceException("Datasource is not a proxy");
-                }
+            fillinExternalIds(eUser, user.getExternalId());
 
-                for (Principal tmpp : this.getTenant().getPrincipals()) {
-                    ExternalIdEntity tmpEnt = new ExternalIdEntity();
-                    tmpEnt.setTenant(tmpp.getName());
-                    tmpEnt.setExtId(extId);
-                    eUser.getExternalIds().add(tmpEnt);
-                }
-            }
-
-            eUser.setAttributes(getExtendedAttributes(session, user));
+            fillinUserExtAttributes(session, user, eUser);
 
             session.save(eUser);
             logger.info("Created user " + user.getUserName() + " with id " + user.getId());
@@ -383,21 +407,9 @@ public abstract class HibernateDataSource
             grpEnt.setVersion(HibernateUtils.generateNewVersion(null));
             grpEnt.setDisplayName(group.getDisplayName());
 
-            grpEnt.setAttributes(getExtendedAttributes(session, group));
+            fillinGroupExtAttributes(session, group, grpEnt);
 
-            String extId = group.getExternalId();
-            if (extId != null && extId.length() > 0) {
-                if (this.getTenant() == null) {
-                    throw new DataSourceException("Datasource is not a proxy");
-                }
-
-                for (Principal tmpp : this.getTenant().getPrincipals()) {
-                    ExternalIdEntity tmpEnt = new ExternalIdEntity();
-                    tmpEnt.setTenant(tmpp.getName());
-                    tmpEnt.setExtId(extId);
-                    grpEnt.getExternalIds().add(tmpEnt);
-                }
-            }
+            fillinExternalIds(grpEnt, group.getExternalId());
 
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
@@ -499,6 +511,24 @@ public abstract class HibernateDataSource
 
     }
 
+    private void fillinExternalIds(ResourceEntity resEntity, String extId)
+        throws DataSourceException {
+
+        if (extId != null && extId.length() > 0) {
+            if (this.getTenant() == null) {
+                throw new DataSourceException("Datasource is not a proxy");
+            }
+
+            for (Principal tmpp : this.getTenant().getPrincipals()) {
+                ExternalIdEntity tmpEnt = new ExternalIdEntity();
+                tmpEnt.setTenant(tmpp.getName());
+                tmpEnt.setExtId(extId);
+                resEntity.getExternalIds().add(tmpEnt);
+            }
+        }
+
+    }
+
     private User userFromEntity(Session session, UserEntity usrEnt)
         throws CharonException, DataSourceException {
         User result = new User();
@@ -549,7 +579,16 @@ public abstract class HibernateDataSource
         return result;
     }
 
-    protected abstract Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
+    protected abstract void fillinUserExtAttributes(Session session, AbstractSCIMObject resource, UserEntity uEnt)
+        throws CharonException, NotFoundException;
+
+    protected abstract void fillinGroupExtAttributes(Session session, AbstractSCIMObject resource, GroupEntity gEnt)
+        throws CharonException, NotFoundException;
+
+    protected abstract void cleanUserExtAttributes(Session session, UserEntity uEnt)
+        throws CharonException, NotFoundException;
+
+    protected abstract void cleanGroupExtAttributes(Session session, GroupEntity gEnt)
         throws CharonException, NotFoundException;
 
 }

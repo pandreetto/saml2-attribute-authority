@@ -31,6 +31,8 @@ import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.hibernate.HibernateDataSource;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
+import it.infn.security.saml.datasource.jpa.GroupEntity;
+import it.infn.security.saml.datasource.jpa.UserEntity;
 
 public class SPIDDataSource
     extends HibernateDataSource {
@@ -193,6 +195,32 @@ public class SPIDDataSource
         }
 
         return result;
+    }
+
+    protected void fillinUserExtAttributes(Session session, AbstractSCIMObject resource, UserEntity uEnt)
+        throws CharonException, NotFoundException {
+        uEnt.setAttributes(getExtendedAttributes(session, resource));
+    }
+
+    protected void fillinGroupExtAttributes(Session session, AbstractSCIMObject resource, GroupEntity gEnt)
+        throws CharonException, NotFoundException {
+        gEnt.setAttributes(getExtendedAttributes(session, resource));
+    }
+
+    protected void cleanUserExtAttributes(Session session, UserEntity uEnt)
+        throws CharonException, NotFoundException {
+
+        uEnt.getAttributes().clear();
+        session.flush();
+
+    }
+
+    protected void cleanGroupExtAttributes(Session session, GroupEntity gEnt)
+        throws CharonException, NotFoundException {
+
+        gEnt.getAttributes().clear();
+        session.flush();
+
     }
 
 }
