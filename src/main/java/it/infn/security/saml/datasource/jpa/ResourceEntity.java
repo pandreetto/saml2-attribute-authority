@@ -65,11 +65,7 @@ public class ResourceEntity {
                     @JoinColumn(referencedColumnName = "attr_content") })
     private Set<AttributeEntity> attributes = new HashSet<AttributeEntity>();
 
-    @OneToMany(cascade = { CascadeType.ALL })
-    @JoinTable(
-            name = "bind_ext_id",
-            joinColumns = { @JoinColumn(name = "resource_id", referencedColumnName = "id") },
-            inverseJoinColumns = { @JoinColumn(name = "ext_id", referencedColumnName = "id") })
+    @OneToMany(cascade = { CascadeType.ALL }, mappedBy = "owner")
     private Set<ExternalIdEntity> externalIds = new HashSet<ExternalIdEntity>();
 
     public ResourceEntity() {

@@ -4,6 +4,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -13,6 +15,10 @@ public class ExternalIdEntity {
     @Id
     @GeneratedValue
     private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id", nullable = false)
+    private ResourceEntity owner;
 
     @Column(nullable = false)
     private String tenant;
@@ -26,6 +32,14 @@ public class ExternalIdEntity {
 
     public Long getId() {
         return id;
+    }
+
+    public void setOwner(ResourceEntity res) {
+        owner = res;
+    }
+
+    public ResourceEntity getOwner() {
+        return owner;
     }
 
     public void setTenant(String tenant) {

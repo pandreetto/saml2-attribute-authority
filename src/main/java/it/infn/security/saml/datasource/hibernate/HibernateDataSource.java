@@ -175,7 +175,7 @@ public abstract class HibernateDataSource
             session.flush();
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            fillinExternalIds(eUser, user.getExternalId());
+            fillinExternalIds(session, eUser, user.getExternalId());
 
             cleanUserExtAttributes(session, eUser);
             fillinUserExtAttributes(session, user, eUser);
@@ -258,7 +258,7 @@ public abstract class HibernateDataSource
 
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            fillinExternalIds(eUser, user.getExternalId());
+            fillinExternalIds(session, eUser, user.getExternalId());
 
             fillinUserExtAttributes(session, user, eUser);
 
@@ -409,7 +409,7 @@ public abstract class HibernateDataSource
 
             fillinGroupExtAttributes(session, group, grpEnt);
 
-            fillinExternalIds(grpEnt, group.getExternalId());
+            fillinExternalIds(session, grpEnt, group.getExternalId());
 
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
@@ -511,20 +511,38 @@ public abstract class HibernateDataSource
 
     }
 
-    private void fillinExternalIds(ResourceEntity resEntity, String extId)
+    private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId)
         throws DataSourceException {
 
-        if (extId != null && extId.length() > 0) {
-            if (this.getTenant() == null) {
-                throw new DataSourceException("Datasource is not a proxy");
-            }
+        if (extId == null || extId.length() == 0) {
+            return;
+        }
 
-            for (Principal tmpp : this.getTenant().getPrincipals()) {
-                ExternalIdEntity tmpEnt = new ExternalIdEntity();
-                tmpEnt.setTenant(tmpp.getName());
-                tmpEnt.setExtId(extId);
-                resEntity.getExternalIds().add(tmpEnt);
-            }
+        if (this.getTenant() == null) {
+            throw new DataSourceException("Datasource is not a proxy");
+        }
+
+        Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
+        List<String> tenantNames = new ArrayList<String>(principalSet.size());
+        for (Principal tmpp : principalSet) {
+            tenantNames.add(tmpp.getName());
+        }
+
+        StringBuffer queryStr = new StringBuffer("DELETE FROM ExternalIdEntity as extId");
+        queryStr.append(" WHERE extId.owner.id=:resourceid");
+        queryStr.append(" AND extId.tenant in (:tenantlist)");
+        Query query = session.createQuery(queryStr.toString());
+        query.setString("resourceid", resEntity.getId());
+        query.setParameterList("tenantlist", tenantNames);
+        int deletedItems = query.executeUpdate();
+        logger.info("Removed " + deletedItems + " external id for " + resEntity.getId());
+
+        for (String pName : tenantNames) {
+            ExternalIdEntity tmpEnt = new ExternalIdEntity();
+            tmpEnt.setTenant(pName);
+            tmpEnt.setExtId(extId);
+            tmpEnt.setOwner(resEntity);
+            resEntity.getExternalIds().add(tmpEnt);
         }
 
     }
