@@ -1,9 +1,9 @@
 package it.infn.security.saml.utils.charon;
 
 import it.infn.security.saml.datasource.DataSource;
+import it.infn.security.saml.datasource.GroupSearchResult;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,7 +84,8 @@ public class GroupResourceEndpoint
 
             encoder = getEncoder(SCIMConstants.identifyFormat(format));
 
-            List<Group> returnedGroups = dataSource.listGroups(filterString, sortBy, sortOrder, startIndex, count);
+            GroupSearchResult returnedGroups = dataSource
+                    .listGroups(filterString, sortBy, sortOrder, startIndex, count);
             if (returnedGroups == null || returnedGroups.isEmpty()) {
                 String error = "Groups not found in the user store for the filter: " + filterString;
                 throw new ResourceNotFoundException(error);
@@ -102,11 +103,11 @@ public class GroupResourceEndpoint
         }
     }
 
-    private ListedResource createListedResource(List<Group> groups)
+    private ListedResource createListedResource(GroupSearchResult searchResult)
         throws CharonException, NotFoundException {
         ListedResource listedResource = new ListedResource();
-        listedResource.setTotalResults(groups.size());
-        for (Group group : groups) {
+        listedResource.setTotalResults(searchResult.getTotalResults());
+        for (Group group : searchResult.getGroupList()) {
             if (group != null) {
                 Map<String, Attribute> attributesOfGroupResource = group.getAttributeList();
                 listedResource.setResources(attributesOfGroupResource);

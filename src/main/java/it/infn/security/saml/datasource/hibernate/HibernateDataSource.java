@@ -1,6 +1,8 @@
 package it.infn.security.saml.datasource.hibernate;
 
 import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
@@ -12,6 +14,7 @@ import it.infn.security.saml.datasource.jpa.UserEntity;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -62,7 +65,7 @@ public abstract class HibernateDataSource
 
     public List<User> listUsers()
         throws CharonException {
-        return listUsers(null, null, null, -1, -1);
+        return listUsers(null, null, null, -1, -1).getUserList();
     }
 
     public List<User> listUsersByAttribute(Attribute attribute) {
@@ -72,7 +75,7 @@ public abstract class HibernateDataSource
     public List<User> listUsersByFilter(String filter, String operation, String value)
         throws CharonException {
         try {
-            return listUsers(filter + operation + value, null, null, -1, -1);
+            return listUsers(filter + operation + value, null, null, -1, -1).getUserList();
         } catch (CharonException chEx) {
             logger.log(Level.SEVERE, chEx.getMessage(), chEx);
             return null;
@@ -81,7 +84,7 @@ public abstract class HibernateDataSource
 
     public List<User> listUsersBySort(String sortBy, String sortOrder) {
         try {
-            return listUsers(null, sortBy, sortOrder, -1, -1);
+            return listUsers(null, sortBy, sortOrder, -1, -1).getUserList();
         } catch (CharonException chEx) {
             logger.log(Level.SEVERE, chEx.getMessage(), chEx);
             return null;
@@ -90,29 +93,26 @@ public abstract class HibernateDataSource
 
     public List<User> listUsersWithPagination(int startIndex, int count) {
         try {
-            return listUsers(null, null, null, startIndex, count);
+            return listUsers(null, null, null, startIndex, count).getUserList();
         } catch (CharonException chEx) {
             logger.log(Level.SEVERE, chEx.getMessage(), chEx);
             return null;
         }
     }
 
-    public List<User> listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count)
+    public UserSearchResult listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count)
         throws CharonException {
 
         count = HibernateUtils.checkQueryRange(count, true);
 
-        ArrayList<User> result = new ArrayList<User>(count);
+        UserSearchResult result = new UserSearchResult(count);
 
         Session session = sessionFactory.getCurrentSession();
 
         try {
 
-            /*
-             * TODO missing query for totalResults in pagination
-             */
-
             session.beginTransaction();
+
             StringBuffer queryStr = new StringBuffer("FROM UserEntity as qUser");
 
             if (sortBy != null) {
@@ -136,6 +136,13 @@ public abstract class HibernateDataSource
 
             for (UserEntity usrEnt : usersFound) {
                 result.add(userFromEntity(session, usrEnt));
+            }
+
+            Query query2 = session.createQuery("SELECT COUNT(*) FROM UserEntity as qUser");
+            @SuppressWarnings("unchecked")
+            Iterator<Long> totalUser = query2.list().iterator();
+            if (totalUser.hasNext()) {
+                result.setTotalResults(totalUser.next().intValue());
             }
 
             session.getTransaction().commit();
@@ -273,7 +280,7 @@ public abstract class HibernateDataSource
 
     public List<Group> listGroups()
         throws CharonException {
-        return listGroups(null, null, null, -1, -1);
+        return listGroups(null, null, null, -1, -1).getGroupList();
     }
 
     public List<Group> listGroupsByAttribute(Attribute attribute)
@@ -283,39 +290,36 @@ public abstract class HibernateDataSource
 
     public List<Group> listGroupsByFilter(String filter, String operation, String value)
         throws CharonException {
-        return listGroups(filter + operation + value, null, null, -1, -1);
+        return listGroups(filter + operation + value, null, null, -1, -1).getGroupList();
     }
 
     public List<Group> listGroupsBySort(String sortBy, String sortOrder)
         throws CharonException {
-        return listGroups(null, sortBy, sortOrder, -1, -1);
+        return listGroups(null, sortBy, sortOrder, -1, -1).getGroupList();
     }
 
     public List<Group> listGroupsWithPagination(int startIndex, int count) {
         try {
-            return listGroups(null, null, null, startIndex, count);
+            return listGroups(null, null, null, startIndex, count).getGroupList();
         } catch (CharonException chEx) {
             logger.log(Level.SEVERE, chEx.getMessage(), chEx);
             return null;
         }
     }
 
-    public List<Group> listGroups(String filter, String sortBy, String sortOrder, int startIndex, int count)
+    public GroupSearchResult listGroups(String filter, String sortBy, String sortOrder, int startIndex, int count)
         throws CharonException {
 
         count = HibernateUtils.checkQueryRange(count, false);
 
-        ArrayList<Group> result = new ArrayList<Group>(count);
+        GroupSearchResult result = new GroupSearchResult(count);
 
         Session session = sessionFactory.getCurrentSession();
 
         try {
 
-            /*
-             * TODO missing query for totalResults in pagination
-             */
-
             session.beginTransaction();
+
             StringBuffer queryStr = new StringBuffer("FROM GroupEntity as qGroup");
 
             if (sortBy != null) {
@@ -340,6 +344,14 @@ public abstract class HibernateDataSource
             for (GroupEntity grpEnt : groupsFound) {
                 result.add(groupFromEntity(session, grpEnt));
             }
+
+            Query query2 = session.createQuery("SELECT COUNT(*) FROM GroupEntity as qGroup");
+            @SuppressWarnings("unchecked")
+            Iterator<Long> totalGroup = query2.list().iterator();
+            if (totalGroup.hasNext()) {
+                result.setTotalResults(totalGroup.next().intValue());
+            }
+
             session.getTransaction().commit();
 
         } catch (Throwable th) {
