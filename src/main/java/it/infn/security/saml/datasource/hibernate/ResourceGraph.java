@@ -80,17 +80,15 @@ public class ResourceGraph {
             List<String> idList = query.setParameterList("resourceIds", currSet).list();
             currSet = new HashSet<String>(idList);
             if (currSet.contains(grpId)) {
-                throw new DataSourceException("Detected cycle in the groups graph");
+                throw new DataSourceException("Detected cycle in the resource graph");
             }
             currSet.remove(accSet);
             accSet.addAll(idList);
         }
     }
 
-    public void removeGroupsForEntity(GroupEntity grpEnt) {
-        /*
-         * TODO lots of queries, missing index on source
-         */
+    public void removeMembersFromGroup(GroupEntity grpEnt) {
+
         StringBuffer queryStr = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
         queryStr.append(" INNER JOIN qRes.groups as rGroup WHERE rGroup.id=?");
 
@@ -104,40 +102,56 @@ public class ResourceGraph {
 
     }
 
-    public void removeMembers(GroupEntity grpEnt, List<String> memberIds) {
+    public void addMembersToGroup(GroupEntity grpEnt, List<String> memberIds) {
 
         StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
-        queryStr.append(" WHERE qRes.id in (:memberIds)");
+        queryStr.append(" WHERE qRes.id in (:memberids)");
 
         Query query = session.createQuery(queryStr.toString());
         @SuppressWarnings("unchecked")
-        List<ResourceEntity> members = query.setParameterList("memberIds", memberIds).list();
+        List<ResourceEntity> mResList = query.setParameterList("memberids", memberIds).list();
 
-        for (ResourceEntity resEnt : members) {
-            resEnt.getGroups().remove(grpEnt);
-            logger.fine("Removed member " + grpEnt.getId() + " from " + resEnt.getId());
-        }
-
-    }
-
-    public void addMembers(GroupEntity grpEnt, List<String> memberIds) {
-
-        StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
-        queryStr.append(" WHERE qRes.id in (:memberIds)");
-
-        Query query = session.createQuery(queryStr.toString());
-        @SuppressWarnings("unchecked")
-        List<ResourceEntity> mResList = query.setParameterList("memberIds", memberIds).list();
-
-        /*
-         * TODO improve query
-         */
         for (ResourceEntity tmpEnt : mResList) {
             tmpEnt.getGroups().add(grpEnt);
             logger.fine("Inserted member " + grpEnt.getId() + " into " + tmpEnt.getId());
             session.flush();
         }
 
+    }
+
+    public void updateMembersForGroup(GroupEntity grpEnt, List<String> memberIds) {
+
+        StringBuffer queryStr = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
+        queryStr.append(" INNER JOIN qRes.groups as rGroup WHERE rGroup.id=:groupid");
+        queryStr.append(" AND qRes.id not in (:memberids)");
+
+        Query query = session.createQuery(queryStr.toString());
+        query.setString("groupid", grpEnt.getId());
+        query.setParameterList("memberids", memberIds);
+        @SuppressWarnings("unchecked")
+        List<ResourceEntity> oldMembers = query.list();
+
+        for (ResourceEntity resEnt : oldMembers) {
+            resEnt.getGroups().remove(grpEnt);
+            logger.info("Removed member " + grpEnt.getId() + " from " + resEnt.getId());
+        }
+
+        StringBuffer query2Str = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
+        query2Str.append(" INNER JOIN qRes.groups as rGroup");
+        query2Str.append(" WHERE qRes.id in (:memberids)");
+        query2Str.append(" AND rGroup.id != :groupid");
+
+        Query query2 = session.createQuery(query2Str.toString());
+        query2.setString("groupid", grpEnt.getId());
+        query2.setParameterList("memberids", memberIds);
+        @SuppressWarnings("unchecked")
+        List<ResourceEntity> newMembers = query2.list();
+
+        for (ResourceEntity tmpEnt : newMembers) {
+            tmpEnt.getGroups().add(grpEnt);
+            logger.info("Inserted member " + grpEnt.getId() + " into " + tmpEnt.getId());
+            session.flush();
+        }
     }
 
     public List<MemberItem> getMembersForGroup(GroupEntity grpEnt) {

@@ -411,7 +411,7 @@ public abstract class HibernateDataSource
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
 
             ResourceGraph rGraph = new ResourceGraph(session);
-            rGraph.addMembers(grpEnt, group.getMembers());
+            rGraph.addMembersToGroup(grpEnt, group.getMembers());
 
             session.getTransaction().commit();
 
@@ -430,7 +430,42 @@ public abstract class HibernateDataSource
 
     public Group updateGroup(Group oldGroup, Group group)
         throws CharonException {
-        return null;
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            GroupEntity eGroup = (GroupEntity) session.get(GroupEntity.class, group.getId());
+            eGroup.setModifyDate(group.getLastModified());
+            eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
+            eGroup.setDisplayName(group.getDisplayName());
+
+            cleanExternalIds(session, eGroup);
+            fillinExternalIds(session, eGroup, group.getExternalId());
+
+            cleanGroupExtAttributes(session, eGroup);
+            fillinGroupExtAttributes(session, group, eGroup);
+
+            ResourceGraph rGraph = new ResourceGraph(session);
+            rGraph.updateMembersForGroup(eGroup, group.getMembers());
+            rGraph.checkForCycle(eGroup.getId());
+
+            session.save(eGroup);
+            logger.info("Updated user " + group.getDisplayName() + " with id " + group.getId());
+
+            session.getTransaction().commit();
+
+            return group;
+
+        } catch (Throwable th) {
+
+            logger.log(Level.SEVERE, th.getMessage(), th);
+
+            session.getTransaction().rollback();
+
+            throw new CharonException(th.getMessage());
+        }
     }
 
     public Group patchGroup(Group oldGroup, Group group)
@@ -457,7 +492,7 @@ public abstract class HibernateDataSource
             }
 
             ResourceGraph rGraph = new ResourceGraph(session);
-            rGraph.removeGroupsForEntity(grpEnt);
+            rGraph.removeMembersFromGroup(grpEnt);
 
             session.delete(grpEnt);
             session.getTransaction().commit();

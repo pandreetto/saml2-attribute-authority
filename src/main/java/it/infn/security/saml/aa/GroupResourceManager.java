@@ -58,7 +58,7 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeShowGroup(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.get(id, format, userManager);
 
@@ -91,7 +91,7 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateGroup(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
@@ -120,7 +120,7 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeDeleteGroup(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.delete(id, userManager, format);
 
@@ -150,7 +150,7 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeListGroups(requester);
 
-            DataSource dataSource = DataSourceFactory.getDataSource();
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
 
             if (searchAttribute != null) {
@@ -193,7 +193,7 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeModifyGroup(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource();
+            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
             scimResponse = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat,
                     userManager);
