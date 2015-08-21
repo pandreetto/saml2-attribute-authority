@@ -7,8 +7,6 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -20,18 +18,10 @@ public class UserEntity
     @Column(nullable = false)
     private String userName;
 
-    @OneToMany(cascade = { CascadeType.ALL })
-    @JoinTable(
-            name = "bind_user_attrs",
-            joinColumns = { @JoinColumn(name = "user_id", referencedColumnName = "id") },
-            inverseJoinColumns = { @JoinColumn(name = "attr_id", referencedColumnName = "id") })
+    @OneToMany(cascade = { CascadeType.ALL }, mappedBy = "user")
     private Set<UserAttributeEntity> userAttributes = new HashSet<UserAttributeEntity>();
 
-    @OneToMany(cascade = { CascadeType.ALL })
-    @JoinTable(
-            name = "bind_user_addrs",
-            joinColumns = { @JoinColumn(name = "user_id", referencedColumnName = "id") },
-            inverseJoinColumns = { @JoinColumn(name = "addr_id", referencedColumnName = "id") })
+    @OneToMany(cascade = { CascadeType.ALL }, mappedBy = "user")
     private Set<UserAddressEntity> userAddresses = new HashSet<UserAddressEntity>();
 
     public UserEntity() {

@@ -4,6 +4,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -13,6 +15,10 @@ public class UserAttributeEntity {
     @Id
     @GeneratedValue
     private Long id;
+    
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
 
     @Column(name = "attr_name", nullable = false)
     private String key;
@@ -24,7 +30,8 @@ public class UserAttributeEntity {
         
     }
     
-    public UserAttributeEntity(String k, String v) {
+    public UserAttributeEntity(UserEntity usr, String k, String v) {
+        user = usr;
         key = k;
         value = v;
     }
@@ -35,6 +42,14 @@ public class UserAttributeEntity {
 
     public Long getId() {
         return id;
+    }
+    
+    public void setUser(UserEntity usr) {
+        user = usr;
+    }
+    
+    public UserEntity getUser() {
+        return user;
     }
 
     public void setKey(String k) {

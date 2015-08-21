@@ -167,14 +167,10 @@ public abstract class HibernateDataSource
             eUser.setVersion(HibernateUtils.generateNewVersion(eUser.getVersion()));
             eUser.setUserName(user.getUserName());
 
-            /*
-             * TODO passwd attribute must be kept
-             */
-            eUser.getUserAttributes().clear();
-            eUser.getUserAddresses().clear();
-            session.flush();
+            cleanSCIMAttributes(session, eUser);
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
+            cleanExternalIds(session, eUser);
             fillinExternalIds(session, eUser, user.getExternalId());
 
             cleanUserExtAttributes(session, eUser);
@@ -476,6 +472,27 @@ public abstract class HibernateDataSource
         }
     }
 
+    private void cleanSCIMAttributes(Session session, UserEntity eUser) {
+
+        /*
+         * TODO passwd attribute must be kept
+         */
+        StringBuffer queryStr = new StringBuffer("DELETE FROM UserAttributeEntity as usrAttr");
+        queryStr.append(" WHERE usrAttr.user.id=:userid");
+        Query query = session.createQuery(queryStr.toString());
+        query.setString("userid", eUser.getId());
+        int deletedItems = query.executeUpdate();
+        logger.fine("Removed " + deletedItems + " user attributes for " + eUser.getId());
+
+        StringBuffer query2Str = new StringBuffer("DELETE FROM UserAddressEntity as usrAddr");
+        query2Str.append(" WHERE usrAddr.user.id=:userid");
+        Query query2 = session.createQuery(query2Str.toString());
+        query2.setString("userid", eUser.getId());
+        deletedItems = query2.executeUpdate();
+        logger.fine("Removed " + deletedItems + " user addresses for " + eUser.getId());
+
+    }
+
     private String getExternalId(Session session, ResourceEntity resEnt)
         throws CharonException {
 
@@ -511,12 +528,8 @@ public abstract class HibernateDataSource
 
     }
 
-    private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId)
+    private void cleanExternalIds(Session session, ResourceEntity resEntity)
         throws DataSourceException {
-
-        if (extId == null || extId.length() == 0) {
-            return;
-        }
 
         if (this.getTenant() == null) {
             throw new DataSourceException("Datasource is not a proxy");
@@ -535,11 +548,25 @@ public abstract class HibernateDataSource
         query.setString("resourceid", resEntity.getId());
         query.setParameterList("tenantlist", tenantNames);
         int deletedItems = query.executeUpdate();
-        logger.info("Removed " + deletedItems + " external id for " + resEntity.getId());
+        logger.fine("Removed " + deletedItems + " external id for " + resEntity.getId());
 
-        for (String pName : tenantNames) {
+    }
+
+    private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId)
+        throws DataSourceException {
+
+        if (extId == null || extId.length() == 0) {
+            return;
+        }
+
+        if (this.getTenant() == null) {
+            throw new DataSourceException("Datasource is not a proxy");
+        }
+
+        Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
+        for (Principal tmpp : principalSet) {
             ExternalIdEntity tmpEnt = new ExternalIdEntity();
-            tmpEnt.setTenant(pName);
+            tmpEnt.setTenant(tmpp.getName());
             tmpEnt.setExtId(extId);
             tmpEnt.setOwner(resEntity);
             resEntity.getExternalIds().add(tmpEnt);

@@ -123,18 +123,20 @@ public class HibernateUtils {
 
         if (user.getGivenName() != null) {
             eUser.getUserAttributes().add(
-                    new UserAttributeEntity(SCIMConstants.UserSchemaConstants.GIVEN_NAME, user.getGivenName()));
+                    new UserAttributeEntity(eUser, SCIMConstants.UserSchemaConstants.GIVEN_NAME, user.getGivenName()));
         }
 
         if (user.getFamilyName() != null) {
-            eUser.getUserAttributes().add(
-                    new UserAttributeEntity(SCIMConstants.UserSchemaConstants.FAMILY_NAME, user.getFamilyName()));
+            eUser.getUserAttributes()
+                    .add(new UserAttributeEntity(eUser, SCIMConstants.UserSchemaConstants.FAMILY_NAME, user
+                            .getFamilyName()));
         }
 
         String[] emails = user.getEmails();
         if (emails != null && emails.length > 0) {
             for (String email : emails) {
-                eUser.getUserAttributes().add(new UserAttributeEntity(SCIMConstants.UserSchemaConstants.EMAIL, email));
+                eUser.getUserAttributes().add(
+                        new UserAttributeEntity(eUser, SCIMConstants.UserSchemaConstants.EMAIL, email));
             }
         }
 
