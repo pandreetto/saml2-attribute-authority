@@ -567,33 +567,51 @@ public abstract class HibernateDataSource
     private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId, boolean update)
         throws DataSourceException {
 
-        if (extId == null || extId.length() == 0) {
-            return;
-        }
-
         if (this.getTenant() == null) {
             throw new DataSourceException("Datasource is not a proxy");
         }
 
         Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
-        for (Principal tmpp : principalSet) {
-            ExternalIdEntity tmpEnt = null;
+
+        if (extId == null || extId.length() == 0) {
+
             if (update) {
-                tmpEnt = resEntity.getExternalIds().get(tmpp.getName());
-            } else {
-                tmpEnt = new ExternalIdEntity();
-                tmpEnt.setTenant(tmpp.getName());
-                tmpEnt.setOwner(resEntity);
+                List<String> tenantNames = new ArrayList<String>(principalSet.size());
+                for (Principal tmpp : principalSet) {
+                    tenantNames.add(tmpp.getName());
+                }
+
+                StringBuffer queryStr = new StringBuffer("DELETE FROM ExternalIdEntity as extId");
+                queryStr.append(" WHERE extId.owner.id=:resourceid");
+                queryStr.append(" AND extId.tenant in (:tenantlist)");
+                Query query = session.createQuery(queryStr.toString());
+                query.setString("resourceid", resEntity.getId());
+                query.setParameterList("tenantlist", tenantNames);
+                int deletedItems = query.executeUpdate();
+                logger.fine("Removed " + deletedItems + " external id for " + resEntity.getId());
+
             }
 
-            if (tmpEnt == null) {
-                throw new DataSourceException("Cannot retrieve external id");
-            }
+        } else {
 
-            tmpEnt.setExtId(extId);
-            resEntity.getExternalIds().put(tmpp.getName(), tmpEnt);
+            for (Principal tmpp : principalSet) {
+                ExternalIdEntity tmpEnt = null;
+                if (update) {
+                    tmpEnt = resEntity.getExternalIds().get(tmpp.getName());
+                } else {
+                    tmpEnt = new ExternalIdEntity();
+                    tmpEnt.setTenant(tmpp.getName());
+                    tmpEnt.setOwner(resEntity);
+                }
+
+                if (tmpEnt == null) {
+                    throw new DataSourceException("Cannot retrieve external id");
+                }
+
+                tmpEnt.setExtId(extId);
+                resEntity.getExternalIds().put(tmpp.getName(), tmpEnt);
+            }
         }
-
     }
 
     private User userFromEntity(Session session, UserEntity usrEnt)
