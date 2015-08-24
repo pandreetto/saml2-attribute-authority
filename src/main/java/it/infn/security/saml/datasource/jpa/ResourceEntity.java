@@ -1,7 +1,9 @@
 package it.infn.security.saml.datasource.jpa;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -13,6 +15,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.MapKey;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -66,7 +69,8 @@ public class ResourceEntity {
     private Set<AttributeEntity> attributes = new HashSet<AttributeEntity>();
 
     @OneToMany(cascade = { CascadeType.ALL }, mappedBy = "owner")
-    private Set<ExternalIdEntity> externalIds = new HashSet<ExternalIdEntity>();
+    @MapKey(name = "tenant")
+    private Map<String, ExternalIdEntity> externalIds = new HashMap<String, ExternalIdEntity>();
 
     public ResourceEntity() {
     }
@@ -135,11 +139,11 @@ public class ResourceEntity {
         return attributes;
     }
 
-    public void setExternalIds(Set<ExternalIdEntity> eIds) {
+    public void setExternalIds(Map<String, ExternalIdEntity> eIds) {
         externalIds = eIds;
     }
 
-    public Set<ExternalIdEntity> getExternalIds() {
+    public Map<String, ExternalIdEntity> getExternalIds() {
         return externalIds;
     }
 

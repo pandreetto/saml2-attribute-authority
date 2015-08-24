@@ -156,6 +156,7 @@ public abstract class HibernateDataSource
 
     public User updateUser(User user)
         throws CharonException {
+
         Session session = sessionFactory.getCurrentSession();
 
         try {
@@ -170,8 +171,7 @@ public abstract class HibernateDataSource
             cleanSCIMAttributes(session, eUser);
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            cleanExternalIds(session, eUser);
-            fillinExternalIds(session, eUser, user.getExternalId());
+            fillinExternalIds(session, eUser, user.getExternalId(), true);
 
             cleanUserExtAttributes(session, eUser);
             fillinUserExtAttributes(session, user, eUser);
@@ -254,7 +254,7 @@ public abstract class HibernateDataSource
 
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            fillinExternalIds(session, eUser, user.getExternalId());
+            fillinExternalIds(session, eUser, user.getExternalId(), false);
 
             fillinUserExtAttributes(session, user, eUser);
 
@@ -405,7 +405,7 @@ public abstract class HibernateDataSource
 
             fillinGroupExtAttributes(session, group, grpEnt);
 
-            fillinExternalIds(session, grpEnt, group.getExternalId());
+            fillinExternalIds(session, grpEnt, group.getExternalId(), false);
 
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
@@ -441,14 +441,15 @@ public abstract class HibernateDataSource
             eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
             eGroup.setDisplayName(group.getDisplayName());
 
-            cleanExternalIds(session, eGroup);
-            fillinExternalIds(session, eGroup, group.getExternalId());
+            fillinExternalIds(session, eGroup, group.getExternalId(), true);
 
             cleanGroupExtAttributes(session, eGroup);
             fillinGroupExtAttributes(session, group, eGroup);
 
             ResourceGraph rGraph = new ResourceGraph(session);
-            rGraph.updateMembersForGroup(eGroup, group.getMembers());
+            // rGraph.updateMembersForGroup(eGroup, group.getMembers());
+            rGraph.removeMembersFromGroup(eGroup);
+            rGraph.addMembersToGroup(eGroup, group.getMembers());
             rGraph.checkForCycle(eGroup.getId());
 
             session.save(eGroup);
@@ -563,31 +564,7 @@ public abstract class HibernateDataSource
 
     }
 
-    private void cleanExternalIds(Session session, ResourceEntity resEntity)
-        throws DataSourceException {
-
-        if (this.getTenant() == null) {
-            throw new DataSourceException("Datasource is not a proxy");
-        }
-
-        Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
-        List<String> tenantNames = new ArrayList<String>(principalSet.size());
-        for (Principal tmpp : principalSet) {
-            tenantNames.add(tmpp.getName());
-        }
-
-        StringBuffer queryStr = new StringBuffer("DELETE FROM ExternalIdEntity as extId");
-        queryStr.append(" WHERE extId.owner.id=:resourceid");
-        queryStr.append(" AND extId.tenant in (:tenantlist)");
-        Query query = session.createQuery(queryStr.toString());
-        query.setString("resourceid", resEntity.getId());
-        query.setParameterList("tenantlist", tenantNames);
-        int deletedItems = query.executeUpdate();
-        logger.fine("Removed " + deletedItems + " external id for " + resEntity.getId());
-
-    }
-
-    private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId)
+    private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId, boolean update)
         throws DataSourceException {
 
         if (extId == null || extId.length() == 0) {
@@ -600,11 +577,21 @@ public abstract class HibernateDataSource
 
         Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
         for (Principal tmpp : principalSet) {
-            ExternalIdEntity tmpEnt = new ExternalIdEntity();
-            tmpEnt.setTenant(tmpp.getName());
+            ExternalIdEntity tmpEnt = null;
+            if (update) {
+                tmpEnt = resEntity.getExternalIds().get(tmpp.getName());
+            } else {
+                tmpEnt = new ExternalIdEntity();
+                tmpEnt.setTenant(tmpp.getName());
+                tmpEnt.setOwner(resEntity);
+            }
+
+            if (tmpEnt == null) {
+                throw new DataSourceException("Cannot retrieve external id");
+            }
+
             tmpEnt.setExtId(extId);
-            tmpEnt.setOwner(resEntity);
-            resEntity.getExternalIds().add(tmpEnt);
+            resEntity.getExternalIds().put(tmpp.getName(), tmpEnt);
         }
 
     }
