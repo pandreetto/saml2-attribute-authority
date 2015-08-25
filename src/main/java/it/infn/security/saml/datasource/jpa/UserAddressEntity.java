@@ -34,6 +34,9 @@ public class UserAddressEntity {
 
     @Column(name = "country")
     private String country;
+    
+    @Column(name = "addr_type", nullable = true)
+    private String type;
 
     public void setId(Long id) {
         this.id = id;
@@ -91,4 +94,11 @@ public class UserAddressEntity {
         return country;
     }
 
+    public void setType(String t) {
+        type = t;
+    }
+    
+    public String getType() {
+        return type;
+    }
 }

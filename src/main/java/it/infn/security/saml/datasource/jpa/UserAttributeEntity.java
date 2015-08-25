@@ -15,7 +15,7 @@ public class UserAttributeEntity {
     @Id
     @GeneratedValue
     private Long id;
-    
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
@@ -26,14 +26,11 @@ public class UserAttributeEntity {
     @Column(name = "attr_value", nullable = false)
     private String value;
     
+    @Column(name = "attr_type", nullable = true)
+    private String type;
+
     public UserAttributeEntity() {
-        
-    }
-    
-    public UserAttributeEntity(UserEntity usr, String k, String v) {
-        user = usr;
-        key = k;
-        value = v;
+
     }
 
     public void setId(Long id) {
@@ -43,11 +40,11 @@ public class UserAttributeEntity {
     public Long getId() {
         return id;
     }
-    
+
     public void setUser(UserEntity usr) {
         user = usr;
     }
-    
+
     public UserEntity getUser() {
         return user;
     }
@@ -66,5 +63,13 @@ public class UserAttributeEntity {
 
     public String getValue() {
         return value;
+    }
+    
+    public void setType(String t) {
+        type = t;
+    }
+    
+    public String getType() {
+        return type;
     }
 }
