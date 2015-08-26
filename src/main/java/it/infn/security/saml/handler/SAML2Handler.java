@@ -1,6 +1,7 @@
 package it.infn.security.saml.handler;
 
 import java.util.List;
+import java.util.ServiceLoader;
 
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
@@ -15,5 +16,9 @@ public interface SAML2Handler {
 
     public void fillInResponse(Response response, List<Attribute> attributes, AttributeQuery query)
         throws SAML2HandlerException;
+
+    public int getLoadPriority();
+
+    public static ServiceLoader<SAML2Handler> handlerLoader = ServiceLoader.load(SAML2Handler.class);
 
 }

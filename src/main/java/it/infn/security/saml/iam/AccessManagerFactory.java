@@ -1,12 +1,11 @@
 package it.infn.security.saml.iam;
 
-import it.infn.security.saml.iam.impl.XACMLAccessManager;
-
 public class AccessManagerFactory {
 
     private static AccessManager manager = null;
 
-    public static AccessManager getManager() {
+    public static AccessManager getManager()
+        throws AccessManagerException {
 
         if (manager == null) {
 
@@ -14,7 +13,19 @@ public class AccessManagerFactory {
 
                 if (manager == null) {
 
-                    manager = new XACMLAccessManager();
+                    int maxPriority = -1;
+                    for (AccessManager tmpMan : AccessManager.accessManagerLoader) {
+                        if (tmpMan.getLoadPriority() > maxPriority) {
+                            maxPriority = tmpMan.getLoadPriority();
+                            manager = tmpMan;
+                        }
+                    }
+
+                    if (manager == null) {
+                        throw new AccessManagerException("Cannot find access manager");
+                    }
+                    
+                    manager.init();
 
                 }
             }

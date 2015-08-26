@@ -30,6 +30,10 @@ public class OCPSAML2Handler
 
     }
 
+    public int getLoadPriority() {
+        return 0;
+    }
+
     public void checkRequest(AttributeQuery query)
         throws SAML2HandlerException {
 

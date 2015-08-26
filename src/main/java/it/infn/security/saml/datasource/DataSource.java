@@ -1,6 +1,7 @@
 package it.infn.security.saml.datasource;
 
 import java.util.List;
+import java.util.ServiceLoader;
 
 import javax.security.auth.Subject;
 
@@ -30,5 +31,9 @@ public interface DataSource
         throws DataSourceException;
 
     public Subject getTenant();
+    
+    public int getLoadPriority();
+    
+    public static ServiceLoader<DataSource> dataSourceLoader = ServiceLoader.load(DataSource.class);
 
 }

@@ -3,22 +3,11 @@ package it.infn.security.saml.configuration;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 public interface AuthorityConfiguration {
 
     public void init(Map<String, String> parameters)
-        throws ConfigurationException;
-
-    public String getIdentityManagerClass()
-        throws ConfigurationException;
-
-    public String getAccessManagerClass()
-        throws ConfigurationException;
-
-    public String getDataSourceClass()
-        throws ConfigurationException;
-
-    public String getSAMLsHandlerClass()
         throws ConfigurationException;
 
     public String getAuthorityID()
@@ -41,5 +30,10 @@ public interface AuthorityConfiguration {
 
     public void close()
         throws ConfigurationException;
+
+    public int getLoadPriority();
+
+    public static ServiceLoader<AuthorityConfiguration> configurationLoader = ServiceLoader
+            .load(AuthorityConfiguration.class);
 
 }

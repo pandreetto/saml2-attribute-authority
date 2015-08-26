@@ -4,14 +4,26 @@ public class AuthorityConfigurationFactory {
 
     private static AuthorityConfiguration configuration = null;
 
-    public static AuthorityConfiguration getConfiguration() {
+    public static AuthorityConfiguration getConfiguration()
+        throws ConfigurationException {
 
         if (configuration == null) {
 
             synchronized (AuthorityConfigurationFactory.class) {
 
                 if (configuration == null) {
-                    configuration = new it.infn.security.saml.configuration.impl.PropertyFileConfiguration();
+
+                    int maxPriority = -1;
+                    for (AuthorityConfiguration tmpconf : AuthorityConfiguration.configurationLoader) {
+                        if (tmpconf.getLoadPriority() > maxPriority) {
+                            maxPriority = tmpconf.getLoadPriority();
+                            configuration = tmpconf;
+                        }
+                    }
+
+                    if (configuration == null) {
+                        throw new ConfigurationException("Cannot find configuration handler");
+                    }
                 }
 
             }

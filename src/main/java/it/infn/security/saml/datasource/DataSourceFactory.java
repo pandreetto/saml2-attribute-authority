@@ -1,8 +1,5 @@
 package it.infn.security.saml.datasource;
 
-import it.infn.security.saml.configuration.AuthorityConfiguration;
-import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
-
 public class DataSourceFactory {
 
     private static DataSource dataSource = null;
@@ -17,13 +14,21 @@ public class DataSourceFactory {
                 if (dataSource == null) {
 
                     try {
-                        AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
 
-                        Class<?> cls = Class.forName(config.getDataSourceClass());
-                        dataSource = (DataSource) cls.newInstance();
+                        int maxPriority = -1;
+                        for (DataSource tmpds : DataSource.dataSourceLoader) {
+                            if (tmpds.getLoadPriority() > maxPriority) {
+                                maxPriority = tmpds.getLoadPriority();
+                                dataSource = tmpds;
+                            }
+                        }
 
                     } catch (Exception ex) {
                         throw new DataSourceException("Cannot load data source", ex);
+                    }
+
+                    if (dataSource == null) {
+                        throw new DataSourceException("Cannot find data source");
                     }
 
                     dataSource.init();

@@ -1,8 +1,5 @@
 package it.infn.security.saml.iam;
 
-import it.infn.security.saml.configuration.AuthorityConfiguration;
-import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
-
 public class IdentityManagerFactory {
 
     private static IdentityManager manager = null;
@@ -16,12 +13,16 @@ public class IdentityManagerFactory {
 
                 if (manager == null) {
 
-                    try {
-                        AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
-                        Class<?> cls = Class.forName(config.getIdentityManagerClass());
-                        manager = (IdentityManager) cls.newInstance();
-                    } catch (Throwable th) {
-                        throw new IdentityManagerException("Cannot load identity manager", th);
+                    int maxPriority = -1;
+                    for (IdentityManager tmpMan : IdentityManager.identManagerLoader) {
+                        if (tmpMan.getLoadPriority() > maxPriority) {
+                            maxPriority = tmpMan.getLoadPriority();
+                            manager = tmpMan;
+                        }
+                    }
+
+                    if (manager == null) {
+                        throw new IdentityManagerException("Cannot find identity manager");
                     }
 
                     manager.init();

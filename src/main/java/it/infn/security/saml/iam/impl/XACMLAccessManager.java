@@ -16,6 +16,10 @@ public class XACMLAccessManager
 
     private static final Logger logger = Logger.getLogger(XACMLAccessManager.class.getName());
 
+    public int getLoadPriority() {
+        return 0;
+    }
+
     public void init()
         throws AccessManagerException {
 

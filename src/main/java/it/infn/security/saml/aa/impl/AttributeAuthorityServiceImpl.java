@@ -67,10 +67,11 @@ public class AttributeAuthorityServiceImpl
     public Response attributeQuery(AttributeQuery query) {
 
         Response response = this.newResponse(query.getID());
-        Issuer responseIssuer = this.newIssuer();
-        response.setIssuer(responseIssuer);
 
         try {
+
+            Issuer responseIssuer = this.newIssuer();
+            response.setIssuer(responseIssuer);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -103,7 +104,7 @@ public class AttributeAuthorityServiceImpl
             response.setStatus(status);
 
         } catch (CodedException cEx) {
-            
+
             Status status = this.newStatus(cEx);
             response.setStatus(status);
 
@@ -132,7 +133,8 @@ public class AttributeAuthorityServiceImpl
         return response;
     }
 
-    private Issuer newIssuer() {
+    private Issuer newIssuer()
+        throws ConfigurationException {
 
         AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
@@ -239,8 +241,7 @@ public class AttributeAuthorityServiceImpl
         Signature signature = query.getSignature();
         if (signature == null) {
             /*
-             * if signature is mandatory the check must be specified in
-             * SAML2Handler
+             * if signature is mandatory the check must be specified in SAML2Handler
              */
             return;
         }
@@ -255,8 +256,8 @@ public class AttributeAuthorityServiceImpl
         }
         if (subjectCertificate == null) {
             /*
-             * TODO get the certificate from <KeyInfo/> even if is not mandatory
-             * for SAML XMLSig profile certificate requires validation
+             * TODO get the certificate from <KeyInfo/> even if is not mandatory for SAML XMLSig profile certificate
+             * requires validation
              */
             throw new SecurityException("Cannot retrieve peer certificate");
         }

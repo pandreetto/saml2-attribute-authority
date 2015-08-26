@@ -22,6 +22,10 @@ public class TLSIdentityManager
 
     }
 
+    public int getLoadPriority() {
+        return 0;
+    }
+
     public void init()
         throws IdentityManagerException {
 

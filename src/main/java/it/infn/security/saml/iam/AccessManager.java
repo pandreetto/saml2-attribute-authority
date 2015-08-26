@@ -1,5 +1,7 @@
 package it.infn.security.saml.iam;
 
+import java.util.ServiceLoader;
+
 import javax.security.auth.Subject;
 
 import org.opensaml.saml2.core.AttributeQuery;
@@ -44,5 +46,9 @@ public interface AccessManager {
 
     public void close()
         throws AccessManagerException;
+
+    public int getLoadPriority();
+
+    public static ServiceLoader<AccessManager> accessManagerLoader = ServiceLoader.load(AccessManager.class);
 
 }

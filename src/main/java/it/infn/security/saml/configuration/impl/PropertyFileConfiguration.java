@@ -27,14 +27,6 @@ public class PropertyFileConfiguration
 
     private static final String AUTHORITY_ID_FORMAT = "authority_id_format";
 
-    private static final String DATASOURCE_CLASS = "datasource_class";
-
-    private static final String SAMLHANDLER_CLASS = "samlhandler_class";
-
-    private static final String IDENTITY_MAN_CLASS = "identity_manager_class";
-
-    private static final String ACCESS_MAN_CLASS = "access_manager_class";
-
     private static final String CERT_FILENAME = "service_certificate";
 
     private static final String KEY_FILENAME = "service_key";
@@ -102,37 +94,6 @@ public class PropertyFileConfiguration
         }
     }
 
-    public String getIdentityManagerClass()
-        throws ConfigurationException {
-        return properties.getProperty(IDENTITY_MAN_CLASS, "it.infn.security.saml.iam.impl.TLSIdentityManager");
-    }
-
-    public String getAccessManagerClass()
-        throws ConfigurationException {
-        /*
-         * TODO missing standard implementation
-         */
-        return properties.getProperty(ACCESS_MAN_CLASS, "");
-    }
-
-    public String getDataSourceClass()
-        throws ConfigurationException {
-        String result = properties.getProperty(DATASOURCE_CLASS);
-        if (result == null) {
-            throw new ConfigurationException("Missing " + DATASOURCE_CLASS);
-        }
-        return result;
-    }
-
-    public String getSAMLsHandlerClass()
-        throws ConfigurationException {
-        String result = properties.getProperty(SAMLHANDLER_CLASS);
-        if (result == null) {
-            throw new ConfigurationException("Missing " + SAMLHANDLER_CLASS);
-        }
-        return result;
-    }
-
     public String getAuthorityID()
         throws ConfigurationException {
         String result = properties.getProperty(AUTHORITY_ID);
@@ -180,6 +141,10 @@ public class PropertyFileConfiguration
     public void close()
         throws ConfigurationException {
 
+    }
+
+    public int getLoadPriority() {
+        return 0;
     }
 
 }

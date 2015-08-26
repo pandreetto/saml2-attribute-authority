@@ -1,7 +1,5 @@
 package it.infn.security.saml.handler;
 
-import it.infn.security.saml.configuration.AuthorityConfiguration;
-import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 
 public class SAML2HandlerFactory {
 
@@ -18,13 +16,20 @@ public class SAML2HandlerFactory {
 
                     try {
 
-                        AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
-
-                        Class<?> cls = Class.forName(config.getSAMLsHandlerClass());
-                        handler = (SAML2Handler) cls.newInstance();
+                        int maxPriority = -1;
+                        for (SAML2Handler tmphdlr : SAML2Handler.handlerLoader) {
+                            if (tmphdlr.getLoadPriority() > maxPriority) {
+                                maxPriority = tmphdlr.getLoadPriority();
+                                handler = tmphdlr;
+                            }
+                        }
 
                     } catch (Exception ex) {
                         throw new SAML2HandlerException("Cannot load saml handler", ex);
+                    }
+
+                    if (handler == null) {
+                        throw new SAML2HandlerException("Cannot find saml handler");
                     }
 
                 }

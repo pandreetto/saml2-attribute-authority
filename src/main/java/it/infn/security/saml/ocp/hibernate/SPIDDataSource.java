@@ -53,6 +53,10 @@ public class SPIDDataSource
         super();
     }
 
+    public int getLoadPriority() {
+        return 0;
+    }
+
     public DataSource getProxyDataSource(Subject tenant)
         throws DataSourceException {
         if (this.tenant != null)
