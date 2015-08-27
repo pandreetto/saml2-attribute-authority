@@ -31,8 +31,6 @@ public class PropertyFileConfiguration
 
     private static final String KEY_FILENAME = "service_key";
 
-    private static final String EX_SCHEMA_PATH = "extension_schema_path";
-
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
 
     private static final String DEF_CONFFILE = "/etc/saml2-attribute-authority/configuration.xml";
@@ -131,11 +129,6 @@ public class PropertyFileConfiguration
             throw new ConfigurationException("Missing " + KEY_FILENAME);
         }
         return serviceKey;
-    }
-
-    public String getExtensionSchemaPath()
-        throws ConfigurationException {
-        return properties.getProperty(EX_SCHEMA_PATH, "/etc/saml2-attribute-authority/schema.json");
     }
 
     public void close()

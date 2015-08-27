@@ -25,9 +25,6 @@ public interface AuthorityConfiguration {
     public PrivateKey getServicePrivateKey()
         throws ConfigurationException;
 
-    public String getExtensionSchemaPath()
-        throws ConfigurationException;
-
     public void close()
         throws ConfigurationException;
 

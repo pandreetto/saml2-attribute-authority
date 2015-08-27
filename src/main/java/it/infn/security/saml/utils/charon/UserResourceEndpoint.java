@@ -2,6 +2,8 @@ package it.infn.security.saml.utils.charon;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.UserSearchResult;
+import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +26,6 @@ import org.wso2.charon.core.protocol.SCIMResponse;
 import org.wso2.charon.core.protocol.endpoints.AbstractResourceEndpoint;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
-import org.wso2.charon.core.schema.SCIMResourceSchemaManager;
 import org.wso2.charon.core.schema.ServerSideValidator;
 import org.wso2.charon.core.util.CopyUtil;
 
@@ -45,13 +46,17 @@ public class UserResourceEndpoint
                 throw new ResourceNotFoundException("User not found in the user store.");
             }
 
-            SCIMResourceSchema schema = SCIMResourceSchemaManager.getInstance().getUserResourceSchema();
+            SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
             ServerSideValidator.validateRetrievedSCIMObject(user, schema);
             String encodedUser = encoder.encodeSCIMObject(user);
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, format);
             return new SCIMResponse(ResponseCodeConstants.CODE_OK, encodedUser, httpHeaders);
 
+        } catch (SchemaManagerException schEx) {
+            logger.log(Level.FINE, schEx.getMessage());
+            CharonException wrapper = new CharonException("Schema unsupported");
+            return AbstractResourceEndpoint.encodeSCIMException(encoder, wrapper);
         } catch (AbstractCharonException ex) {
             if (ex instanceof CharonException && ex.getCode() == -1) {
                 ex.setCode(ResponseCodeConstants.CODE_INTERNAL_SERVER_ERROR);
@@ -123,7 +128,7 @@ public class UserResourceEndpoint
             encoder = getEncoder(SCIMConstants.identifyFormat(outputFormat));
             Decoder decoder = getDecoder(SCIMConstants.identifyFormat(inputFormat));
 
-            SCIMResourceSchema schema = SCIMResourceSchemaManager.getInstance().getUserResourceSchema();
+            SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
 
             User user = (User) decoder.decodeResource(scimObjectString, schema, new User());
 
@@ -147,6 +152,10 @@ public class UserResourceEndpoint
 
             return new SCIMResponse(ResponseCodeConstants.CODE_CREATED, encodedUser, httpHeaders);
 
+        } catch (SchemaManagerException schEx) {
+            logger.log(Level.FINE, schEx.getMessage());
+            CharonException wrapper = new CharonException("Schema unsupported");
+            return AbstractResourceEndpoint.encodeSCIMException(encoder, wrapper);
         } catch (AbstractCharonException ex) {
             if (ex instanceof CharonException && ex.getCode() == -1) {
                 ex.setCode(ResponseCodeConstants.CODE_INTERNAL_SERVER_ERROR);
@@ -194,7 +203,7 @@ public class UserResourceEndpoint
             encoder = getEncoder(SCIMConstants.identifyFormat(outputFormat));
             decoder = getDecoder(SCIMConstants.identifyFormat(inputFormat));
 
-            SCIMResourceSchema schema = SCIMResourceSchemaManager.getInstance().getUserResourceSchema();
+            SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
 
             User user = (User) decoder.decodeResource(scimObjectString, schema, new User());
             User updatedUser = null;
@@ -228,6 +237,10 @@ public class UserResourceEndpoint
 
             return new SCIMResponse(ResponseCodeConstants.CODE_OK, encodedUser, httpHeaders);
 
+        } catch (SchemaManagerException schEx) {
+            logger.log(Level.FINE, schEx.getMessage());
+            CharonException wrapper = new CharonException("Schema unsupported");
+            return AbstractResourceEndpoint.encodeSCIMException(encoder, wrapper);
         } catch (AbstractCharonException ex) {
             if (ex instanceof CharonException && ex.getCode() == -1) {
                 ex.setCode(ResponseCodeConstants.CODE_INTERNAL_SERVER_ERROR);

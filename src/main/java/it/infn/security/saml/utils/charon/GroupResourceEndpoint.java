@@ -2,6 +2,8 @@ package it.infn.security.saml.utils.charon;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +27,6 @@ import org.wso2.charon.core.protocol.SCIMResponse;
 import org.wso2.charon.core.protocol.endpoints.AbstractResourceEndpoint;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
-import org.wso2.charon.core.schema.SCIMSchemaDefinitions;
 import org.wso2.charon.core.schema.ServerSideValidator;
 
 public class GroupResourceEndpoint
@@ -46,12 +47,19 @@ public class GroupResourceEndpoint
                 String message = "Group not found in the user store.";
                 throw new ResourceNotFoundException(message);
             }
-            ServerSideValidator.validateRetrievedSCIMObject(group, SCIMSchemaDefinitions.SCIM_GROUP_SCHEMA);
+
+            SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
+            ServerSideValidator.validateRetrievedSCIMObject(group, groupSchema);
+
             String encodedGroup = encoder.encodeSCIMObject(group);
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, format);
             return new SCIMResponse(ResponseCodeConstants.CODE_OK, encodedGroup, httpHeaders);
 
+        } catch (SchemaManagerException schEx) {
+            logger.log(Level.FINE, schEx.getMessage());
+            CharonException wrapper = new CharonException("Schema unsupported");
+            return AbstractResourceEndpoint.encodeSCIMException(encoder, wrapper);
         } catch (AbstractCharonException ex) {
             if (ex instanceof CharonException && ex.getCode() == -1) {
                 ex.setCode(ResponseCodeConstants.CODE_INTERNAL_SERVER_ERROR);
@@ -71,7 +79,7 @@ public class GroupResourceEndpoint
             encoder = getEncoder(SCIMConstants.identifyFormat(outputFormat));
             decoder = getDecoder(SCIMConstants.identifyFormat(inputFormat));
 
-            SCIMResourceSchema groupSchema = SCIMGroupSchemaManager.getSchema();
+            SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
 
             Group group = (Group) decoder.decodeResource(scimObjectString, groupSchema, new Group());
 
@@ -94,6 +102,10 @@ public class GroupResourceEndpoint
 
             return new SCIMResponse(ResponseCodeConstants.CODE_CREATED, encodedGroup, httpHeaders);
 
+        } catch (SchemaManagerException schEx) {
+            logger.log(Level.FINE, schEx.getMessage());
+            CharonException wrapper = new CharonException("Schema unsupported");
+            return AbstractResourceEndpoint.encodeSCIMException(encoder, wrapper);
         } catch (AbstractCharonException ex) {
             if (ex instanceof CharonException && ex.getCode() == -1) {
                 ex.setCode(ResponseCodeConstants.CODE_INTERNAL_SERVER_ERROR);
@@ -189,14 +201,15 @@ public class GroupResourceEndpoint
             encoder = getEncoder(SCIMConstants.identifyFormat(outputFormat));
             decoder = getDecoder(SCIMConstants.identifyFormat(inputFormat));
 
-            Group group = (Group) decoder.decodeResource(scimObjectString, SCIMSchemaDefinitions.SCIM_GROUP_SCHEMA,
-                    new Group());
+            SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
+
+            Group group = (Group) decoder.decodeResource(scimObjectString, groupSchema, new Group());
             Group updatedGroup = null;
             if (userManager != null) {
                 Group oldGroup = userManager.getGroup(existingId);
                 if (oldGroup != null) {
                     Group validatedGroup = (Group) ServerSideValidator.validateUpdatedSCIMObject(oldGroup, group,
-                            SCIMSchemaDefinitions.SCIM_GROUP_SCHEMA);
+                            groupSchema);
                     updatedGroup = userManager.updateGroup(oldGroup, validatedGroup);
                 } else {
                     String message = "No group exists with the given id: " + existingId;
@@ -224,6 +237,10 @@ public class GroupResourceEndpoint
 
             return new SCIMResponse(ResponseCodeConstants.CODE_OK, encodedGroup, httpHeaders);
 
+        } catch (SchemaManagerException schEx) {
+            logger.log(Level.FINE, schEx.getMessage());
+            CharonException wrapper = new CharonException("Schema unsupported");
+            return AbstractResourceEndpoint.encodeSCIMException(encoder, wrapper);
         } catch (AbstractCharonException ex) {
             if (ex instanceof CharonException && ex.getCode() == -1) {
                 ex.setCode(ResponseCodeConstants.CODE_INTERNAL_SERVER_ERROR);
