@@ -19,6 +19,27 @@ public interface AuthorityConfiguration {
     public String getDataSourceParam(String name)
         throws ConfigurationException;
 
+    public String getDataSourceParam(String name, String defValue)
+            throws ConfigurationException;
+
+    public int getDataSourceParamAsInt(String name)
+        throws ConfigurationException;
+
+    public int getDataSourceParamAsInt(String name, int defValue)
+        throws ConfigurationException;
+
+    public String getAccessManagerParam(String name)
+            throws ConfigurationException;
+
+    public String getAccessManagerParam(String name, String defValue)
+            throws ConfigurationException;
+
+    public int getAccessManagerParamAsInt(String name)
+            throws ConfigurationException;
+
+    public int getAccessManagerParamAsInt(String name, int defValue)
+            throws ConfigurationException;
+
     public X509Certificate getServiceCertificate()
         throws ConfigurationException;
 

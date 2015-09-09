@@ -23,13 +23,13 @@ public class PropertyFileConfiguration
 
     private static final Logger logger = Logger.getLogger(PropertyFileConfiguration.class.getName());
 
-    private static final String AUTHORITY_ID = "authority_id";
+    private static final String AUTHORITY_ID = "authority.id";
 
-    private static final String AUTHORITY_ID_FORMAT = "authority_id_format";
+    private static final String AUTHORITY_ID_FORMAT = "authority.id.format";
 
-    private static final String CERT_FILENAME = "service_certificate";
+    private static final String CERT_FILENAME = "service.certificate";
 
-    private static final String KEY_FILENAME = "service_key";
+    private static final String KEY_FILENAME = "service.key";
 
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
 
@@ -113,6 +113,69 @@ public class PropertyFileConfiguration
             throw new ConfigurationException("Missing " + name);
         }
         return result;
+    }
+
+    public String getDataSourceParam(String name, String defValue) {
+        String result = properties.getProperty(name);
+        if (result == null) {
+            return defValue;
+        }
+        return result;
+    }
+
+    public int getDataSourceParamAsInt(String name)
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(getDataSourceParam(name));
+        } catch (NumberFormatException nEx) {
+            throw new ConfigurationException("Attribute " + name + " is not an integer");
+        }
+    }
+
+    public int getDataSourceParamAsInt(String name, int defValue)
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(getDataSourceParam(name));
+        } catch (Exception ex) {
+            logger.warning("Missing or wrong attribute " + name + "; used default value");
+            return defValue;
+        }
+    }
+
+    public String getAccessManagerParam(String name)
+        throws ConfigurationException {
+        String result = properties.getProperty(name);
+        if (result == null) {
+            throw new ConfigurationException("Missing " + name);
+        }
+        return result;
+    }
+
+    public String getAccessManagerParam(String name, String defValue) {
+        String result = properties.getProperty(name);
+        if (result == null) {
+            return defValue;
+        }
+        return result;
+    }
+
+    public int getAccessManagerParamAsInt(String name)
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(getAccessManagerParam(name));
+        } catch (NumberFormatException nEx) {
+            throw new ConfigurationException("Attribute " + name + " is not an integer");
+        }
+    }
+
+    public int getAccessManagerParamAsInt(String name, int defValue)
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(getAccessManagerParam(name));
+        } catch (Exception ex) {
+            logger.warning("Missing or wrong attribute " + name + "; used default value");
+            return defValue;
+        }
     }
 
     public X509Certificate getServiceCertificate()
