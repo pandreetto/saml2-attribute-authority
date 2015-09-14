@@ -5,6 +5,9 @@ import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
+
 public interface AuthorityConfiguration {
 
     public void init(Map<String, String> parameters)
@@ -20,7 +23,7 @@ public interface AuthorityConfiguration {
         throws ConfigurationException;
 
     public String getDataSourceParam(String name, String defValue)
-            throws ConfigurationException;
+        throws ConfigurationException;
 
     public int getDataSourceParamAsInt(String name)
         throws ConfigurationException;
@@ -29,16 +32,22 @@ public interface AuthorityConfiguration {
         throws ConfigurationException;
 
     public String getAccessManagerParam(String name)
-            throws ConfigurationException;
+        throws ConfigurationException;
 
     public String getAccessManagerParam(String name, String defValue)
-            throws ConfigurationException;
+        throws ConfigurationException;
 
     public int getAccessManagerParamAsInt(String name)
-            throws ConfigurationException;
+        throws ConfigurationException;
 
     public int getAccessManagerParamAsInt(String name, int defValue)
-            throws ConfigurationException;
+        throws ConfigurationException;
+
+    public X509KeyManager getKeyManager()
+        throws ConfigurationException;
+
+    public X509TrustManager getTrustManager()
+        throws ConfigurationException;
 
     public X509Certificate getServiceCertificate()
         throws ConfigurationException;
