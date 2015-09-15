@@ -110,6 +110,8 @@ public class XACMLAccessManager
 
             soapClient = buildSOAPClient(keyManager, trustManager, conTimeout, maxRequests, buffSize);
 
+            messageIssuerId = authConf.getAuthorityID();
+
         } catch (Throwable th) {
             logger.log(Level.SEVERE, th.getMessage(), th);
             throw new AccessManagerException(th.getMessage());
@@ -313,7 +315,14 @@ public class XACMLAccessManager
 
     private void fillinConstraints(AccessConstraints constraints, ObligationsType obligations) {
 
-        for (ObligationType oblType : obligations.getObligations()) {
+        if (obligations == null)
+            return;
+
+        List<ObligationType> allOblig = obligations.getObligations();
+        if (allOblig == null)
+            return;
+
+        for (ObligationType oblType : allOblig) {
 
             if (XACMLAAProfile.ATTR_FILTER_OBLI_URI.equals(oblType.getObligationId())) {
                 for (AttributeAssignmentType aaType : oblType.getAttributeAssignments()) {
@@ -343,7 +352,7 @@ public class XACMLAccessManager
 
         ResourceType resource = xBuilder.buildResource(null);
         resource.getAttributes().add(
-                xBuilder.buildAttribute(XACMLAAProfile.USER_RESOURCE_ID_URI, XACMLAAProfile.XSD_STRING, null, resId));
+                xBuilder.buildAttribute(XACMLAAProfile.RESOURCE_ID_URI, XACMLAAProfile.XSD_STRING, null, resId));
         xacmlRequest.getResources().add(resource);
 
         String subjName = null;
@@ -354,8 +363,9 @@ public class XACMLAccessManager
 
         if (subjName != null) {
             SubjectType subjType = xBuilder.buildSubject(null);
-            subjType.getAttributes().add(
-                    xBuilder.buildAttribute(XACMLAAProfile.SUBJECT_ID_URI, XACMLAAProfile.XSD_STRING, null, subjName));
+            subjType.getAttributes()
+                    .add(xBuilder.buildAttribute(XACMLAAProfile.SUBJECT_ID_URI, XACMLAAProfile.XSD_X500NAME, null,
+                            subjName));
             xacmlRequest.getSubjects().add(subjType);
         }
         return xacmlRequest;

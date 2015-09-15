@@ -5,6 +5,8 @@ public class XACMLAAProfile {
     public static final String ACTION_ID_URI = "urn:oasis:names:tc:xacml:1.0:action:action-id";
 
     public static final String SUBJECT_ID_URI = "urn:oasis:names:tc:xacml:1.0:subject:subject-id";
+    
+    public static final String RESOURCE_ID_URI = "urn:oasis:names:tc:xacml:1.0:resource:resource-id";
 
     public static final String XACML_SAML_PROFILE_URI = "urn:mace:switch.ch:doc:xacml-saml:profile:200711:SOAP";
 
@@ -13,6 +15,8 @@ public class XACMLAAProfile {
      */
 
     public static final String XSD_STRING = "http://www.w3.org/2001/XMLSchema#string";
+    
+    public static final String XSD_X500NAME = "urn:oasis:names:tc:xacml:1.0:data-type:x500Name";
 
     /*
      * Actions
@@ -27,12 +31,6 @@ public class XACMLAAProfile {
     public static final String PROFILE_ID_URI = "http://infn.it/xacml/aa/profile-id";
 
     public static final String PROFILE_ID_VALUE = "http://infn.it/xacml/aa/1.0";
-
-    /*
-     * Resources
-     */
-
-    public static final String USER_RESOURCE_ID_URI = "http://infn.it/xacml/aa/resource/user-id";
 
     /*
      * Obligations
