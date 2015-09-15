@@ -13,7 +13,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.opensaml.saml2.core.Attribute;
-import org.opensaml.saml2.core.StatusCode;
 
 public abstract class HibernateBaseDataSource
     implements DataSource {
@@ -41,9 +40,8 @@ public abstract class HibernateBaseDataSource
 
     }
 
-    public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs)
+    public String samlId2UserId(String samlId)
         throws DataSourceException {
-
         Session session = sessionFactory.getCurrentSession();
 
         try {
@@ -51,12 +49,29 @@ public abstract class HibernateBaseDataSource
             session.beginTransaction();
 
             String qStr = "SELECT qUser.id FROM UserEntity as qUser WHERE qUser.userName = :uName";
-            Query query2 = session.createQuery(qStr).setString("uName", id);
-            String userId = (String) query2.uniqueResult();
-            if (userId == null) {
-                throw new DataSourceException("User not found", StatusCode.RESPONDER_URI,
-                        StatusCode.UNKNOWN_PRINCIPAL_URI);
-            }
+            Query query = session.createQuery(qStr).setString("uName", samlId);
+            String result = (String) query.uniqueResult();
+            
+            session.getTransaction().commit();
+            return result;
+
+        } catch (Throwable th) {
+
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new DataSourceException(th.getMessage());
+
+        }
+    }
+
+    public List<Attribute> findAttributes(String userId, List<Attribute> requiredAttrs)
+        throws DataSourceException {
+
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
 
             ResourceGraph rGraph = new ResourceGraph(session);
             HashSet<String> allIds = rGraph.getAllGroupIds(userId);
@@ -67,12 +82,6 @@ public abstract class HibernateBaseDataSource
             session.getTransaction().commit();
 
             return result;
-
-        } catch (DataSourceException dsEx) {
-
-            logger.log(Level.SEVERE, dsEx.getMessage());
-            session.getTransaction().rollback();
-            throw dsEx;
 
         } catch (Throwable th) {
 

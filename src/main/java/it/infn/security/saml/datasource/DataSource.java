@@ -14,8 +14,11 @@ public interface DataSource
 
     public void init()
         throws DataSourceException;
+    
+    public String samlId2UserId(String samlId)
+            throws DataSourceException;
 
-    public List<Attribute> findAttributes(String id, List<Attribute> requiredAttrs)
+    public List<Attribute> findAttributes(String userId, List<Attribute> requiredAttrs)
         throws DataSourceException;
 
     public UserSearchResult listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count)

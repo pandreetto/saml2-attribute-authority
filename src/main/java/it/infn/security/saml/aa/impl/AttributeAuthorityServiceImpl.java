@@ -6,6 +6,7 @@ import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
+import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.handler.SAML2Handler;
 import it.infn.security.saml.handler.SAML2HandlerFactory;
@@ -90,16 +91,18 @@ public class AttributeAuthorityServiceImpl
 
             verifySignature(query, requester);
 
-            /*
-             * TODO The saml uid is different from scim uid!!
-             */
-            String sbjID = handler.getSubjectID(query);
+            String samlId = handler.getSubjectID(query);
+            String userId = dataSource.samlId2UserId(samlId);
+            if (userId == null) {
+                throw new DataSourceException("User not found", StatusCode.RESPONDER_URI,
+                        StatusCode.UNKNOWN_PRINCIPAL_URI);
+            }
 
-            AttributeQueryParameters params = new AttributeQueryParameters(sbjID);
+            AttributeQueryParameters params = new AttributeQueryParameters(userId);
             AccessConstraints constraints = accessManager.authorizeAttributeQuery(requester, params);
 
             List<Attribute> queryAttrs = constraints.filterAttributes(query.getAttributes());
-            List<Attribute> userAttrs = dataSource.findAttributes(sbjID, queryAttrs);
+            List<Attribute> userAttrs = dataSource.findAttributes(userId, queryAttrs);
 
             handler.fillInResponse(response, userAttrs, query);
 
