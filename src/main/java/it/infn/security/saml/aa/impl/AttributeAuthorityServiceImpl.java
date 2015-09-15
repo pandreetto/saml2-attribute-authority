@@ -12,6 +12,7 @@ import it.infn.security.saml.handler.SAML2HandlerFactory;
 import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
+import it.infn.security.saml.iam.AttributeQueryParameters;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 
@@ -89,9 +90,13 @@ public class AttributeAuthorityServiceImpl
 
             verifySignature(query, requester);
 
-            AccessConstraints constraints = accessManager.authorizeAttributeQuery(requester, query);
-
+            /*
+             * TODO The saml uid is different from scim uid!!
+             */
             String sbjID = handler.getSubjectID(query);
+
+            AttributeQueryParameters params = new AttributeQueryParameters(sbjID);
+            AccessConstraints constraints = accessManager.authorizeAttributeQuery(requester, params);
 
             List<Attribute> queryAttrs = constraints.filterAttributes(query.getAttributes());
             List<Attribute> userAttrs = dataSource.findAttributes(sbjID, queryAttrs);

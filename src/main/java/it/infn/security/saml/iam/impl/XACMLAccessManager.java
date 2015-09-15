@@ -2,11 +2,10 @@ package it.infn.security.saml.iam.impl;
 
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
-import it.infn.security.saml.handler.SAML2Handler;
-import it.infn.security.saml.handler.SAML2HandlerFactory;
 import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerException;
+import it.infn.security.saml.iam.AttributeQueryParameters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +20,6 @@ import javax.security.auth.x500.X500Principal;
 
 import org.joda.time.DateTime;
 import org.opensaml.saml2.core.Assertion;
-import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Statement;
@@ -80,8 +78,6 @@ public class XACMLAccessManager
 
     private String messageIssuerId;
 
-    private boolean disabled = false;
-
     public int getLoadPriority() {
         return 0;
     }
@@ -123,23 +119,18 @@ public class XACMLAccessManager
 
     }
 
-    public AccessConstraints authorizeAttributeQuery(Subject requester, AttributeQuery query)
+    public AccessConstraints authorizeAttributeQuery(Subject requester, AttributeQueryParameters queryParams)
         throws AccessManagerException {
 
         AccessConstraints result = new AccessConstraints();
-        if (disabled) {
-            return result;
-        }
 
         try {
 
             /*
              * TODO The saml uid is different from scim uid!!
              */
-            SAML2Handler handler = SAML2HandlerFactory.getHandler();
-            String resId = handler.getSubjectID(query);
-
-            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.QUERY_ATTR_ACTION_URI, resId);
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.QUERY_ATTR_ACTION_URI,
+                    queryParams.getId());
             ObligationsType obsType = processRequest(xacmlRequest);
             fillinConstraints(result, obsType);
             return result;
