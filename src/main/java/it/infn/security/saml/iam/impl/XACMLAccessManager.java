@@ -1,9 +1,14 @@
 package it.infn.security.saml.iam.impl;
 
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
+import it.infn.security.saml.handler.SAML2Handler;
+import it.infn.security.saml.handler.SAML2HandlerFactory;
 import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -12,10 +17,9 @@ import java.util.logging.Logger;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
-import org.opensaml.common.SAMLObjectBuilder;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Issuer;
@@ -29,57 +33,82 @@ import org.opensaml.ws.soap.client.http.HttpSOAPClient;
 import org.opensaml.ws.soap.client.http.HttpSOAPRequestParameters;
 import org.opensaml.ws.soap.client.http.TLSProtocolSocketFactory;
 import org.opensaml.ws.soap.common.SOAPException;
-import org.opensaml.ws.soap.common.SOAPObjectBuilder;
 import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
+import org.opensaml.xacml.ctx.ActionType;
+import org.opensaml.xacml.ctx.EnvironmentType;
 import org.opensaml.xacml.ctx.RequestType;
+import org.opensaml.xacml.ctx.ResourceType;
 import org.opensaml.xacml.ctx.ResponseType;
 import org.opensaml.xacml.ctx.ResultType;
+import org.opensaml.xacml.ctx.SubjectType;
+import org.opensaml.xacml.policy.AttributeAssignmentType;
+import org.opensaml.xacml.policy.ObligationType;
 import org.opensaml.xacml.policy.ObligationsType;
 import org.opensaml.xacml.profile.saml.XACMLAuthzDecisionQueryType;
 import org.opensaml.xacml.profile.saml.XACMLAuthzDecisionStatementType;
-import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.parse.BasicParserPool;
 import org.opensaml.xml.security.SecurityException;
 
+/*
+ * TODO missing cache
+ */
 public class XACMLAccessManager
     implements AccessManager {
 
     private static final Logger logger = Logger.getLogger(XACMLAccessManager.class.getName());
 
-    public static final String XACML_SAML_PROFILE_URI = "urn:mace:switch.ch:doc:xacml-saml:profile:200711:SOAP";
+    public static final String CONN_TIMEOUT = "pdp.connection.timeout";
 
-    private SAMLObjectBuilder<XACMLAuthzDecisionQueryType> authzDecisionQueryBuilder;
+    public static final int DEF_CONN_TIMEOUT = 5000;
 
-    private SOAPObjectBuilder<Body> bodyBuilder;
+    public static final String MAX_CONN = "pdp.max.connection";
 
-    private SOAPObjectBuilder<Envelope> envelopeBuilder;
+    public static final int DEF_MAX_CONN = 50;
 
-    private SAMLObjectBuilder<Issuer> issuerBuilder;
+    public static final String BUFFER_SIZE = "pdp.buffer.size";
+
+    public static final int DEF_BUFFER_SIZE = 4096;
+
+    public static final String PDP_LIST = "pdp.list";
+
+    private XACMLBuilderWrapper xBuilder;
 
     private SOAPClient soapClient;
 
-    private String[] pdpEndpoints;
+    private List<String> pdpEndpoints;
 
     private String messageIssuerId;
+
+    private boolean disabled = false;
 
     public int getLoadPriority() {
         return 0;
     }
 
-    @SuppressWarnings("unchecked")
     public void init()
         throws AccessManagerException {
 
         try {
 
-            XMLObjectBuilderFactory objFactory = Configuration.getBuilderFactory();
+            xBuilder = XACMLBuilderWrapper.getInstance();
 
-            Object tmpo = objFactory.getBuilder(XACMLAuthzDecisionQueryType.TYPE_NAME_XACML20);
-            authzDecisionQueryBuilder = (SAMLObjectBuilder<XACMLAuthzDecisionQueryType>) tmpo;
-            bodyBuilder = (SOAPObjectBuilder<Body>) objFactory.getBuilder(Body.TYPE_NAME);
-            envelopeBuilder = (SOAPObjectBuilder<Envelope>) objFactory.getBuilder(Envelope.TYPE_NAME);
-            issuerBuilder = (SAMLObjectBuilder<Issuer>) objFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
+            AuthorityConfiguration authConf = AuthorityConfigurationFactory.getConfiguration();
+            X509KeyManager keyManager = authConf.getKeyManager();
+            X509TrustManager trustManager = authConf.getTrustManager();
+            int conTimeout = authConf.getAccessManagerParamAsInt(CONN_TIMEOUT, DEF_CONN_TIMEOUT);
+            int maxRequests = authConf.getAccessManagerParamAsInt(MAX_CONN, DEF_MAX_CONN);
+            int buffSize = authConf.getAccessManagerParamAsInt(BUFFER_SIZE, DEF_BUFFER_SIZE);
+
+            pdpEndpoints = new ArrayList<String>();
+            for (String tmps : authConf.getAccessManagerParam(PDP_LIST, "").split(" ")) {
+                tmps = tmps.trim();
+                if (tmps.length() > 0) {
+                    pdpEndpoints.add(tmps);
+                }
+            }
+
+            soapClient = buildSOAPClient(keyManager, trustManager, conTimeout, maxRequests, buffSize);
 
         } catch (Throwable th) {
             logger.log(Level.SEVERE, th.getMessage(), th);
@@ -92,9 +121,33 @@ public class XACMLAccessManager
 
     }
 
-    public AccessConstraints authorizeAttributeQuery(Subject subject, AttributeQuery query)
+    public AccessConstraints authorizeAttributeQuery(Subject requester, AttributeQuery query)
         throws AccessManagerException {
-        return new AccessConstraints();
+
+        AccessConstraints result = new AccessConstraints();
+        if (disabled) {
+            return result;
+        }
+
+        try {
+
+            /*
+             * TODO The saml uid is different from scim uid!!
+             */
+            SAML2Handler handler = SAML2HandlerFactory.getHandler();
+            String resId = handler.getSubjectID(query);
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.QUERY_ATTR_ACTION_URI, resId);
+            ObligationsType obsType = processRequest(xacmlRequest);
+            fillinConstraints(result, obsType);
+            return result;
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
     }
 
     public AccessConstraints authorizeCreateUser(Subject requester)
@@ -150,6 +203,9 @@ public class XACMLAccessManager
     private SOAPClient buildSOAPClient(X509KeyManager keyManager, X509TrustManager trustManager, int conTimeout,
             int maxRequests, int buffSize) {
 
+        /*
+         * see org.glite.authz.pep.server.config.PEPDaemonIniConfigurationParser#processPDPConfiguration
+         */
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
         httpClientBuilder.setContentCharSet("UTF-8");
         httpClientBuilder.setConnectionTimeout(conTimeout);
@@ -175,18 +231,15 @@ public class XACMLAccessManager
         String samlRequestID = "_" + UUID.randomUUID().toString();
 
         SOAPMessageContext msgContext = new BasicSOAPMessageContext();
-        msgContext.setCommunicationProfileId(XACML_SAML_PROFILE_URI);
+        msgContext.setCommunicationProfileId(XACMLAAProfile.XACML_SAML_PROFILE_URI);
         msgContext.setOutboundMessageIssuer(messageIssuerId);
         msgContext.setSOAPRequestParameters(new HttpSOAPRequestParameters(
                 "http://www.oasis-open.org/committees/security"));
 
-        XACMLAuthzDecisionQueryType samlRequest = authzDecisionQueryBuilder
-                .buildObject(XACMLAuthzDecisionQueryType.DEFAULT_ELEMENT_NAME_XACML20,
-                        XACMLAuthzDecisionQueryType.TYPE_NAME_XACML20);
+        XACMLAuthzDecisionQueryType samlRequest = xBuilder.buildDecisionQuery();
         samlRequest.setRequest(xacmlRequest);
 
-        Issuer issuer = issuerBuilder.buildObject();
-        issuer.setFormat(Issuer.ENTITY);
+        Issuer issuer = xBuilder.buildIssuer(Issuer.ENTITY);
         issuer.setValue(messageIssuerId);
         samlRequest.setIssuer(issuer);
 
@@ -196,14 +249,17 @@ public class XACMLAccessManager
         samlRequest.setInputContextOnly(false);
         samlRequest.setReturnContext(true);
 
-        Body body = bodyBuilder.buildObject();
+        Body body = xBuilder.buildBody();
         body.getUnknownXMLObjects().add(samlRequest);
 
-        Envelope envelope = envelopeBuilder.buildObject();
+        Envelope envelope = xBuilder.buildEnvelope();
         envelope.setBody(body);
 
         msgContext.setOutboundMessage(envelope);
 
+        /*
+         * TODO implements round robin
+         */
         for (String pdpEp : pdpEndpoints) {
 
             soapClient.send(pdpEp, msgContext);
@@ -253,6 +309,56 @@ public class XACMLAccessManager
 
         throw new AccessManagerException("Authorization failed: no response from PDPs");
 
+    }
+
+    private void fillinConstraints(AccessConstraints constraints, ObligationsType obligations) {
+
+        for (ObligationType oblType : obligations.getObligations()) {
+
+            if (XACMLAAProfile.ATTR_FILTER_OBLI_URI.equals(oblType.getObligationId())) {
+                for (AttributeAssignmentType aaType : oblType.getAttributeAssignments()) {
+                    if (XACMLAAProfile.ATTR_FILTER_ID_URI.equals(aaType.getAttributeId())) {
+                        constraints.addAttribute(aaType.getValue());
+                    }
+                }
+            }
+
+        }
+
+    }
+
+    private RequestType buildRequest(Subject subject, String actionUri, String resId) {
+        RequestType xacmlRequest = xBuilder.buildRequest();
+
+        ActionType action = xBuilder.buildAction();
+        action.getAttributes().add(
+                xBuilder.buildAttribute(XACMLAAProfile.ACTION_ID_URI, XACMLAAProfile.XSD_STRING, null, actionUri));
+        xacmlRequest.setAction(action);
+
+        EnvironmentType environ = xBuilder.buildEnviron();
+        environ.getAttributes().add(
+                xBuilder.buildAttribute(XACMLAAProfile.PROFILE_ID_URI, XACMLAAProfile.XSD_STRING, null,
+                        XACMLAAProfile.PROFILE_ID_VALUE));
+        xacmlRequest.setEnvironment(environ);
+
+        ResourceType resource = xBuilder.buildResource(null);
+        resource.getAttributes().add(
+                xBuilder.buildAttribute(XACMLAAProfile.USER_RESOURCE_ID_URI, XACMLAAProfile.XSD_STRING, null, resId));
+        xacmlRequest.getResources().add(resource);
+
+        String subjName = null;
+        for (X500Principal authUser : subject.getPrincipals(X500Principal.class)) {
+            subjName = authUser.getName();
+            break;
+        }
+
+        if (subjName != null) {
+            SubjectType subjType = xBuilder.buildSubject(null);
+            subjType.getAttributes().add(
+                    xBuilder.buildAttribute(XACMLAAProfile.SUBJECT_ID_URI, XACMLAAProfile.XSD_STRING, null, subjName));
+            xacmlRequest.getSubjects().add(subjType);
+        }
+        return xacmlRequest;
     }
 
 }
