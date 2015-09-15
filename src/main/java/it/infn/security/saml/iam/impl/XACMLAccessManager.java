@@ -126,9 +126,6 @@ public class XACMLAccessManager
 
         try {
 
-            /*
-             * TODO The saml uid is different from scim uid!!
-             */
             RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.QUERY_ATTR_ACTION_URI,
                     queryParams.getId());
             ObligationsType obsType = processRequest(xacmlRequest);
@@ -145,51 +142,183 @@ public class XACMLAccessManager
 
     public AccessConstraints authorizeCreateUser(Subject requester)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.CREATE_USER_ACTION_URI, messageIssuerId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeModifyUser(Subject requester, String userId)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.MODIFY_USER_ACTION_URI, userId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
+
     }
 
     public AccessConstraints authorizeDeleteUser(Subject requester, String userId)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.DELETE_USER_ACTION_URI, userId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
+
     }
 
     public AccessConstraints authorizeShowUser(Subject requester, String userId)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.SHOW_USER_ACTION_URI, userId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeListUsers(Subject requester)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.LIST_USERS_ACTION_URI, messageIssuerId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeCreateGroup(Subject requester)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.CREATE_GROUP_ACTION_URI, messageIssuerId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeModifyGroup(Subject requester, String groupId)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.MODIFY_GROUP_ACTION_URI, groupId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeDeleteGroup(Subject requester, String groupId)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.DELETE_GROUP_ACTION_URI, groupId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeShowGroup(Subject requester, String groupId)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.SHOW_GROUP_ACTION_URI, groupId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
     public AccessConstraints authorizeListGroups(Subject requester)
         throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.LIST_GROUPS_ACTION_URI, messageIssuerId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
         return new AccessConstraints();
     }
 
