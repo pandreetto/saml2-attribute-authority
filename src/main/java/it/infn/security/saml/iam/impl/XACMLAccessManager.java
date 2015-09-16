@@ -155,7 +155,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeModifyUser(Subject requester, String userId)
@@ -173,7 +173,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
 
     }
 
@@ -192,7 +192,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
 
     }
 
@@ -211,7 +211,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeListUsers(Subject requester)
@@ -229,7 +229,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeCreateGroup(Subject requester)
@@ -247,7 +247,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeModifyGroup(Subject requester, String groupId)
@@ -265,7 +265,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeDeleteGroup(Subject requester, String groupId)
@@ -283,7 +283,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeShowGroup(Subject requester, String groupId)
@@ -301,7 +301,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     public AccessConstraints authorizeListGroups(Subject requester)
@@ -319,7 +319,7 @@ public class XACMLAccessManager
             throw new AccessManagerException(th.getMessage(), th);
         }
 
-        return new AccessConstraints();
+        return null;
     }
 
     private SOAPClient buildSOAPClient(X509KeyManager keyManager, X509TrustManager trustManager, int conTimeout,
