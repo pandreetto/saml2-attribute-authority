@@ -3,13 +3,10 @@ package it.infn.security.saml.configuration.impl;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.ConfigurationException;
 
-import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Properties;
@@ -24,7 +21,6 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.opensaml.saml2.core.Issuer;
-import org.opensaml.xml.security.SecurityHelper;
 
 public class PropertyFileConfiguration
     implements AuthorityConfiguration {
@@ -41,15 +37,13 @@ public class PropertyFileConfiguration
 
     private static final String KEYMAN_PWD = "key.manager.password";
 
+    private static final String KEYMAN_ALIAS = "key.manager.alias";
+
     private static final String TRUSTMAN_FILENAME = "trust.manager.file";
 
     private static final String TRUSTMAN_TYPE = "trust.manager.type";
 
     private static final String TRUSTMAN_PWD = "trust.manager.password";
-
-    private static final String CERT_FILENAME = "service.certificate";
-
-    private static final String KEY_FILENAME = "service.key";
 
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
 
@@ -106,7 +100,7 @@ public class PropertyFileConfiguration
                     break;
                 }
             }
-            
+
         } catch (Throwable th) {
             logger.log(Level.SEVERE, th.getMessage(), th);
         } finally {
@@ -151,36 +145,17 @@ public class PropertyFileConfiguration
             }
         }
 
-        /*
-         * TODO extract cert and key from keymanager
-         */
-        String certFile = properties.getProperty(CERT_FILENAME);
-        String pkFile = properties.getProperty(KEY_FILENAME);
+        String keyAlias = properties.getProperty(KEYMAN_ALIAS);
 
-        if (certFile != null && pkFile != null) {
-            BufferedInputStream bis = null;
-            try {
+        serviceKey = keyManager.getPrivateKey(keyAlias);
+        if (serviceKey == null)
+            throw new ConfigurationException("Cannot extract private key from key manager");
 
-                bis = new BufferedInputStream(new FileInputStream(certFile));
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                if (bis.available() > 0) {
-                    serviceCert = (X509Certificate) cf.generateCertificate(bis);
-                }
+        X509Certificate[] certChain = keyManager.getCertificateChain(keyAlias);
+        if (certChain == null)
+            throw new ConfigurationException("Cannot extract certificates from key manager");
+        serviceCert = certChain[0];
 
-                serviceKey = SecurityHelper.decodePrivateKey(new File(pkFile), (char[]) null);
-
-            } catch (Throwable th) {
-
-                logger.log(Level.SEVERE, th.getMessage(), th);
-
-            } finally {
-                try {
-                    bis.close();
-                } catch (Throwable th) {
-
-                }
-            }
-        }
     }
 
     public String getAuthorityID()
@@ -285,19 +260,11 @@ public class PropertyFileConfiguration
         return trustManager;
     }
 
-    public X509Certificate getServiceCertificate()
-        throws ConfigurationException {
-        if (serviceCert == null) {
-            throw new ConfigurationException("Missing " + CERT_FILENAME);
-        }
+    public X509Certificate getServiceCertificate() {
         return serviceCert;
     }
 
-    public PrivateKey getServicePrivateKey()
-        throws ConfigurationException {
-        if (serviceKey == null) {
-            throw new ConfigurationException("Missing " + KEY_FILENAME);
-        }
+    public PrivateKey getServicePrivateKey() {
         return serviceKey;
     }
 
