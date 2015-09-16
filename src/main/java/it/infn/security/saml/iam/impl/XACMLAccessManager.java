@@ -7,7 +7,6 @@ import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerException;
 import it.infn.security.saml.iam.AttributeQueryParameters;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -70,11 +69,15 @@ public class XACMLAccessManager
 
     public static final String PDP_LIST = "pdp.list";
 
+    public static final String RESTORE_TIME = "pdp.restore.time";
+
+    public static final int DEF_RESTORE_TIME = 3600000;
+
     private XACMLBuilderWrapper xBuilder;
 
     private SOAPClient soapClient;
 
-    private List<String> pdpEndpoints;
+    private RoundRobinPDPSelector pdpList;
 
     private String messageIssuerId;
 
@@ -96,13 +99,9 @@ public class XACMLAccessManager
             int maxRequests = authConf.getAccessManagerParamAsInt(MAX_CONN, DEF_MAX_CONN);
             int buffSize = authConf.getAccessManagerParamAsInt(BUFFER_SIZE, DEF_BUFFER_SIZE);
 
-            pdpEndpoints = new ArrayList<String>();
-            for (String tmps : authConf.getAccessManagerParam(PDP_LIST, "").split(" ")) {
-                tmps = tmps.trim();
-                if (tmps.length() > 0) {
-                    pdpEndpoints.add(tmps);
-                }
-            }
+            String pdpListStr = authConf.getAccessManagerParam(PDP_LIST, "");
+            long restoreTime = authConf.getAccessManagerParamAsInt(RESTORE_TIME, DEF_RESTORE_TIME);
+            pdpList = new RoundRobinPDPSelector(pdpListStr, restoreTime);
 
             soapClient = buildSOAPClient(keyManager, trustManager, conTimeout, maxRequests, buffSize);
 
@@ -348,7 +347,7 @@ public class XACMLAccessManager
     }
 
     private ObligationsType processRequest(RequestType xacmlRequest)
-        throws SOAPException, SecurityException, AccessManagerException {
+        throws AccessManagerException {
 
         String samlRequestID = "_" + UUID.randomUUID().toString();
 
@@ -379,22 +378,32 @@ public class XACMLAccessManager
 
         msgContext.setOutboundMessage(envelope);
 
-        /*
-         * TODO implements round robin
-         */
-        for (String pdpEp : pdpEndpoints) {
+        for (String pdpEp = pdpList.getEndpoint(); pdpEp != null; pdpEp = pdpList.getEndpoint()) {
 
-            soapClient.send(pdpEp, msgContext);
+            try {
+                logger.info("Contacting PDP " + pdpEp);
+                soapClient.send(pdpEp, msgContext);
+            } catch (SOAPException soapEx) {
+                logger.fine("Cannot contact PDP " + pdpEp);
+                pdpList.markDown(pdpEp);
+                continue;
+            } catch (SecurityException secEx) {
+                logger.log(Level.FINE, "Security Exception from PDP " + pdpEp, secEx);
+                pdpList.markDown(pdpEp);
+                continue;
+            }
 
             Envelope soapResponse = (Envelope) msgContext.getInboundMessage();
             Response samlResponse = (Response) soapResponse.getBody().getOrderedChildren().get(0);
 
             if (samlResponse.getAssertions() == null || samlResponse.getAssertions().isEmpty()) {
                 logger.warning("Response from PDP " + pdpEp + " does not contain any assertion");
+                pdpList.markDown(pdpEp);
                 continue;
             }
             if (samlResponse.getAssertions().size() > 1) {
                 logger.warning("Response from PDP " + pdpEp + " contains more than 1 assertion");
+                pdpList.markDown(pdpEp);
                 continue;
             }
 
@@ -404,10 +413,12 @@ public class XACMLAccessManager
                     .getStatements(XACMLAuthzDecisionStatementType.TYPE_NAME_XACML20);
             if (authzStatements == null || authzStatements.isEmpty()) {
                 logger.warning("Response from PDP " + pdpEp + " does not contain any authorization statement");
+                pdpList.markDown(pdpEp);
                 continue;
             }
             if (authzStatements.size() > 1) {
                 logger.warning("Response from PDP " + pdpEp + " contains more than 1 authorization statement");
+                pdpList.markDown(pdpEp);
                 continue;
             }
 
