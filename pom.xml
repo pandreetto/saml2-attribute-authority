@@ -49,27 +49,27 @@
     <dependency>
 	  <groupId>org.apache.cxf</groupId>
 	  <artifactId>cxf-rt-frontend-jaxws</artifactId>
-	  <version>3.0.4</version>
+	  <version>3.1.2</version>
     </dependency>
     <dependency>
           <groupId>org.apache.cxf</groupId>
           <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-          <version>3.0.4</version>
+          <version>3.1.2</version>
     </dependency>
     <dependency>
 	  <groupId>org.apache.cxf</groupId>
 	  <artifactId>cxf-rt-transports-http</artifactId>
-	  <version>3.0.4</version>
+	  <version>3.1.2</version>
     </dependency>
     <dependency>
 	  <groupId>org.apache.cxf</groupId>
 	  <artifactId>cxf-rt-databinding-aegis</artifactId>
-	  <version>3.0.4</version>
+	  <version>3.1.2</version>
     </dependency> 
     <dependency>
           <groupId>org.apache.cxf</groupId>
           <artifactId>cxf-rt-rs-service-description</artifactId>
-          <version>3.0.4</version>
+          <version>3.1.2</version>
     </dependency>
     <dependency>
 	  <groupId>org.springframework</groupId>
@@ -132,6 +132,11 @@
       <groupId>org.wso2.charon</groupId>
       <artifactId>org.wso2.charon.utils</artifactId>
       <version>2.0.0-wso2v3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.parboiled</groupId>
+      <artifactId>parboiled-java</artifactId>
+      <version>1.1.7</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
