@@ -52,7 +52,7 @@ public class XACMLAAProfile {
 
     public static final String SHOW_ATTR_ACTION_URI = "http://infn.it/xacml/aa/show-attribute";
 
-    public static final String LIST_ATTR_ACTION_URI = "http://infn.it/xacml/aa/list-attribute";
+    public static final String LIST_ATTRS_ACTION_URI = "http://infn.it/xacml/aa/list-attributes";
 
     /*
      * Environment
