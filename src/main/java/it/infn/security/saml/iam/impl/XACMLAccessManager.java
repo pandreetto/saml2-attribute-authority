@@ -321,6 +321,96 @@ public class XACMLAccessManager
         return null;
     }
 
+    public AccessConstraints authorizeCreateAttribute(Subject requester)
+        throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.CREATE_ATTR_ACTION_URI, messageIssuerId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
+        return null;
+    }
+
+    public AccessConstraints authorizeModifyAttribute(Subject requester, String attrId)
+        throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.MODIFY_ATTR_ACTION_URI, attrId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
+        return null;
+    }
+
+    public AccessConstraints authorizeDeleteAttribute(Subject requester, String attrId)
+        throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.DELETE_ATTR_ACTION_URI, attrId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
+        return null;
+    }
+
+    public AccessConstraints authorizeShowAttribute(Subject requester, String attrId)
+        throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.SHOW_ATTR_ACTION_URI, attrId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
+        return null;
+    }
+
+    public AccessConstraints authorizeListAttributes(Subject requester)
+        throws AccessManagerException {
+
+        try {
+
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.LIST_ATTR_ACTION_URI, messageIssuerId);
+            processRequest(xacmlRequest);
+
+        } catch (AccessManagerException amEx) {
+            throw amEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new AccessManagerException(th.getMessage(), th);
+        }
+
+        return null;
+    }
+
     private SOAPClient buildSOAPClient(X509KeyManager keyManager, X509TrustManager trustManager, int conTimeout,
             int maxRequests, int buffSize) {
 

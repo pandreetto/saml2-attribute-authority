@@ -42,6 +42,21 @@ public interface AccessManager {
     public AccessConstraints authorizeListGroups(Subject requester)
         throws AccessManagerException;
 
+    public AccessConstraints authorizeCreateAttribute(Subject requester)
+        throws AccessManagerException;
+
+    public AccessConstraints authorizeModifyAttribute(Subject requester, String attrId)
+        throws AccessManagerException;
+
+    public AccessConstraints authorizeDeleteAttribute(Subject requester, String attrId)
+        throws AccessManagerException;
+
+    public AccessConstraints authorizeShowAttribute(Subject requester, String attrId)
+        throws AccessManagerException;
+
+    public AccessConstraints authorizeListAttributes(Subject requester)
+        throws AccessManagerException;
+
     public void close()
         throws AccessManagerException;
 
