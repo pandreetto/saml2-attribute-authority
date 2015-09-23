@@ -19,6 +19,14 @@ public class SPIDSchemaManager
     public static final String SPID_ATTR_URI = "urn:it:infn:security:saml2:attributes:1.0";
 
     public static final String SPID_SCHEMA_URI = "urn:it:infn:security:saml2:attributes:1.0";
+    
+    public static final String KEY_ATTR_ID = "key";
+    
+    public static final String VALUE_ATTR_ID = "content";
+    
+    public static final String DESCR_ATTR_ID = "description";
+    
+    public static final String ROOT_ATTR_ID = "SPIDAttributes";
 
     private SCIMResourceSchema groupSchema = null;
 
@@ -78,21 +86,21 @@ public class SPIDSchemaManager
 
         SCIMSubAttributeSchema[] empty = null;
 
-        SCIMAttributeSchema keySchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, "key",
+        SCIMAttributeSchema keySchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, KEY_ATTR_ID,
                 SCIMSchemaDefinitions.DataType.STRING, false, null, "Key identifier", SPID_SCHEMA_URI, false, false,
                 true, empty);
 
-        SCIMAttributeSchema contentSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, "content",
+        SCIMAttributeSchema contentSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, VALUE_ATTR_ID,
                 SCIMSchemaDefinitions.DataType.STRING, false, null, "Content identifier", SPID_SCHEMA_URI, false,
                 false, true, empty);
 
-        SCIMAttributeSchema descrSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, "description",
+        SCIMAttributeSchema descrSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, DESCR_ATTR_ID,
                 SCIMSchemaDefinitions.DataType.STRING, false, null, "Short attribute description", SPID_SCHEMA_URI,
                 false, false, true, empty);
 
         SCIMAttributeSchema[] subAttributes = new SCIMAttributeSchema[] { keySchema, contentSchema, descrSchema };
 
-        SCIMAttributeSchema rootSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, "SPIDAttributes",
+        SCIMAttributeSchema rootSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, ROOT_ATTR_ID,
                 null, "Short attribute description", SPID_SCHEMA_URI, false, false, false, subAttributes);
 
         return rootSchema;
