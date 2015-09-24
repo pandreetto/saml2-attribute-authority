@@ -398,7 +398,7 @@ public class XACMLAccessManager
 
         try {
 
-            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.LIST_ATTR_ACTION_URI, messageIssuerId);
+            RequestType xacmlRequest = buildRequest(requester, XACMLAAProfile.LIST_ATTRS_ACTION_URI, messageIssuerId);
             processRequest(xacmlRequest);
 
         } catch (AccessManagerException amEx) {
