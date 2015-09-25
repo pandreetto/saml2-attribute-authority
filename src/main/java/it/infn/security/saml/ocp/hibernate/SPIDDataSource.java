@@ -1,5 +1,16 @@
 package it.infn.security.saml.ocp.hibernate;
 
+import it.infn.security.saml.datasource.DataSource;
+import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.hibernate.HibernateDataSource;
+import it.infn.security.saml.datasource.jpa.AttributeEntity;
+import it.infn.security.saml.datasource.jpa.AttributeEntityId;
+import it.infn.security.saml.datasource.jpa.GroupEntity;
+import it.infn.security.saml.datasource.jpa.UserEntity;
+import it.infn.security.saml.ocp.SPIDSchemaManager;
+import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.AttributeNameInterface;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,26 +37,10 @@ import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.NotFoundException;
 import org.wso2.charon.core.objects.AbstractSCIMObject;
 
-import it.infn.security.saml.datasource.DataSource;
-import it.infn.security.saml.datasource.DataSourceException;
-import it.infn.security.saml.datasource.hibernate.HibernateDataSource;
-import it.infn.security.saml.datasource.jpa.AttributeEntity;
-import it.infn.security.saml.datasource.jpa.AttributeEntityId;
-import it.infn.security.saml.datasource.jpa.GroupEntity;
-import it.infn.security.saml.datasource.jpa.UserEntity;
-
 public class SPIDDataSource
     extends HibernateDataSource {
 
     private static final Logger logger = Logger.getLogger(SPIDDataSource.class.getName());
-
-    private final static String SPID_ATTR_NAME = "SPIDAttributes";
-
-    private final static String KEY_FIELD = "key";
-
-    private final static String CONTENT_FIELD = "content";
-
-    private final static String ATTR_DESCR_FIELD = "description";
 
     private Subject tenant;
 
@@ -69,6 +64,31 @@ public class SPIDDataSource
 
     public Subject getTenant() {
         return tenant;
+    }
+
+    public List<AttributeNameInterface> getAttributeNames()
+        throws DataSourceException {
+        return null;
+    }
+
+    public AttributeEntry getAttribute(String name)
+        throws DataSourceException {
+        return null;
+    }
+
+    public void createAttribute(AttributeEntry attribute)
+        throws DataSourceException {
+
+    }
+
+    public void updateAttribute(AttributeEntry attribute)
+        throws DataSourceException {
+
+    }
+
+    public void removeAttribute(String name)
+        throws DataSourceException {
+
     }
 
     protected List<Attribute> buildAttributeList(Session session, HashSet<String> allIds, List<Attribute> reqAttrs) {
@@ -166,22 +186,40 @@ public class SPIDDataSource
 
         Set<AttributeEntity> result = new HashSet<AttributeEntity>();
 
-        if (!resource.isAttributeExist(SPID_ATTR_NAME)) {
+        if (!resource.isAttributeExist(SPIDSchemaManager.ROOT_ATTR_ID)) {
             return result;
         }
 
-        org.wso2.charon.core.attributes.Attribute extAttribute = resource.getAttribute(SPID_ATTR_NAME);
+        /*
+         * TODO move schema validation in *ResourceEndpoint
+         */
+        org.wso2.charon.core.attributes.Attribute extAttribute = resource.getAttribute(SPIDSchemaManager.ROOT_ATTR_ID);
+        if (extAttribute == null) {
+            throw new CharonException("Missing attribute " + SPIDSchemaManager.ROOT_ATTR_ID);
+        }
         List<org.wso2.charon.core.attributes.Attribute> allSubAttrs = ((MultiValuedAttribute) extAttribute)
                 .getValuesAsSubAttributes();
+
         for (org.wso2.charon.core.attributes.Attribute subAttr : allSubAttrs) {
+
             ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
-            SimpleAttribute keyAttr = (SimpleAttribute) cplxAttr.getSubAttribute(KEY_FIELD);
-            SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(CONTENT_FIELD);
-            SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(ATTR_DESCR_FIELD);
+
+            SimpleAttribute nameAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.NAME_ATTR_ID);
+            if (nameAttr == null) {
+                throw new CharonException("Missing attribute " + SPIDSchemaManager.NAME_ATTR_ID);
+            }
+            SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.VALUE_ATTR_ID);
+            if (cntAttr == null) {
+                throw new CharonException("Missing attribute " + SPIDSchemaManager.VALUE_ATTR_ID);
+            }
+            SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.DESCR_ATTR_ID);
+            if (descrAttr == null) {
+                throw new CharonException("Missing attribute " + SPIDSchemaManager.DESCR_ATTR_ID);
+            }
 
             AttributeEntity attrEnt = new AttributeEntity();
             AttributeEntityId attrEntId = new AttributeEntityId();
-            attrEntId.setKey(keyAttr.getStringValue());
+            attrEntId.setKey(nameAttr.getStringValue());
             attrEntId.setContent(cntAttr.getStringValue());
             attrEnt.setAttributeId(attrEntId);
             attrEnt.setDescription(descrAttr.getStringValue());

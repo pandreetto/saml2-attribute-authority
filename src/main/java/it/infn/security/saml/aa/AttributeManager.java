@@ -1,19 +1,18 @@
-package it.infn.security.saml.ocp;
+package it.infn.security.saml.aa;
 
 import it.infn.security.saml.datasource.DataSource;
-import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
-import it.infn.security.saml.ocp.hibernate.SPIDDataSource;
+import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.SchemaManager;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,19 +28,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.schema.SCIMConstants;
 
 @Path("/attributes")
-public class SPIDAttributeManager {
+public class AttributeManager {
 
-    private static final Logger logger = Logger.getLogger(SPIDAttributeManager.class.getName());
+    private static final Logger logger = Logger.getLogger(AttributeManager.class.getName());
 
-    public SPIDAttributeManager() {
+    public AttributeManager() {
 
     }
 
@@ -63,8 +58,10 @@ public class SPIDAttributeManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeListAttributes(requester);
 
-            SPIDDataSource dataSource = checkDataSource(DataSourceFactory.getDataSource());
-            String encodedKeys = encodeKeyList(dataSource.getAttributeKeys());
+            DataSource dataSource = DataSourceFactory.getDataSource();
+            SchemaManager schemaManager = SchemaManagerFactory.getManager();
+
+            String encodedKeys = schemaManager.encode(dataSource.getAttributeNames(), outputFormat);
             return buildResponse(encodedKeys, outputFormat);
 
         } catch (Exception ex) {
@@ -75,9 +72,9 @@ public class SPIDAttributeManager {
     }
 
     @GET
-    @Path("{attrKey}")
+    @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributesByKey(@PathParam("attrKey") String attrKey,
+    public Response getAttributesByKey(@PathParam("attrKey") String attrName,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -92,10 +89,12 @@ public class SPIDAttributeManager {
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
-            accessManager.authorizeShowAttribute(requester, attrKey);
+            accessManager.authorizeShowAttribute(requester, attrName);
 
-            SPIDDataSource dataSource = checkDataSource(DataSourceFactory.getDataSource());
-            String encodedAttr = encodeAttribute(dataSource.getAttribute(attrKey));
+            DataSource dataSource = DataSourceFactory.getDataSource();
+            SchemaManager schemaManager = SchemaManagerFactory.getManager();
+            AttributeEntry attrEntry = dataSource.getAttribute(attrName);
+            String encodedAttr = schemaManager.encode(attrEntry, outputFormat);
             return buildResponse(encodedAttr, outputFormat);
 
         } catch (Exception ex) {
@@ -106,9 +105,9 @@ public class SPIDAttributeManager {
     }
 
     @DELETE
-    @Path("{attrKey}")
+    @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteAllAttributesByKey(@PathParam("attrKey") String attrKey,
+    public Response deleteAllAttributesByKey(@PathParam("attrKey") String attrName,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -123,10 +122,10 @@ public class SPIDAttributeManager {
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
-            accessManager.authorizeDeleteAttribute(requester, attrKey);
+            accessManager.authorizeDeleteAttribute(requester, attrName);
 
-            SPIDDataSource dataSource = checkDataSource(DataSourceFactory.getDataSource());
-            dataSource.removeAttribute(attrKey);
+            DataSource dataSource = DataSourceFactory.getDataSource();
+            dataSource.removeAttribute(attrName);
             return buildResponse(ResponseCodeConstants.CODE_OK, outputFormat);
 
         } catch (Exception ex) {
@@ -137,9 +136,9 @@ public class SPIDAttributeManager {
     }
 
     @PUT
-    @Path("{attrKey}")
+    @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteAttribute(@PathParam("attrKey") String attrKey,
+    public Response deleteAttribute(@PathParam("attrKey") String attrName,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
@@ -159,11 +158,11 @@ public class SPIDAttributeManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateAttribute(requester);
 
-            SPIDAttribute attrItem = parsePayload(payload);
-            SPIDDataSource dataSource = checkDataSource(DataSourceFactory.getDataSource());
+            SchemaManager schemaManager = SchemaManagerFactory.getManager();
+            AttributeEntry attrItem = schemaManager.parse(payload, inputFormat);
+            DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.updateAttribute(attrItem);
-            String encodedAttr = encodeAttribute(attrItem);
-            return buildResponse(encodedAttr, outputFormat);
+            return buildResponse(payload, outputFormat);
 
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
@@ -193,83 +192,18 @@ public class SPIDAttributeManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateAttribute(requester);
 
-            SPIDAttribute attrItem = parsePayload(payload);
+            SchemaManager schemaManager = SchemaManagerFactory.getManager();
+            AttributeEntry attrItem = schemaManager.parse(payload, inputFormat);
 
-            SPIDDataSource dataSource = checkDataSource(DataSourceFactory.getDataSource());
+            DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.createAttribute(attrItem);
-            String encodedAttr = encodeAttribute(attrItem);
-            return buildResponse(encodedAttr, outputFormat);
+            return buildResponse(payload, outputFormat);
 
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
             return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, outputFormat));
         }
 
-    }
-
-    private SPIDDataSource checkDataSource(DataSource ds)
-        throws DataSourceException {
-        if (!(ds instanceof SPIDDataSource)) {
-            throw new DataSourceException("SPIDDataSource implementation is required");
-        }
-        return (SPIDDataSource) ds;
-    }
-
-    private String encodeAttribute(SPIDAttribute attr)
-        throws JSONException {
-        JSONObject rootObject = new JSONObject();
-        rootObject.put("schemas", SPIDSchemaManager.SPID_SCHEMA_URI);
-        rootObject.put(SPIDSchemaManager.KEY_ATTR_ID, attr.getKey());
-        rootObject.put(SPIDSchemaManager.DESCR_ATTR_ID, attr.getDescription());
-        JSONArray arrayObject = new JSONArray();
-        for (String value : attr.getValues()) {
-            arrayObject.put(value);
-        }
-        rootObject.put(SPIDSchemaManager.VALUE_ATTR_ID, arrayObject);
-        return rootObject.toString();
-    }
-
-    private String encodeKeyList(List<String> keys)
-        throws JSONException {
-        JSONObject rootObject = new JSONObject();
-        rootObject.put("schemas", SPIDSchemaManager.SPID_SCHEMA_URI);
-        JSONArray arrayObject = new JSONArray();
-        for (String key : keys) {
-            arrayObject.put(key);
-        }
-        rootObject.put(SPIDSchemaManager.KEY_ATTR_ID, arrayObject);
-        return rootObject.toString();
-    }
-
-    private SPIDAttribute parsePayload(String payload)
-        throws JSONException {
-        JSONObject rootObject = new JSONObject(new JSONTokener(payload));
-
-        Object keyObj = rootObject.opt(SPIDSchemaManager.KEY_ATTR_ID);
-        if (keyObj == null || !(keyObj instanceof String)) {
-            throw new JSONException("Missing or wrong " + SPIDSchemaManager.KEY_ATTR_ID);
-        }
-
-        Object valObj = rootObject.opt(SPIDSchemaManager.VALUE_ATTR_ID);
-        if (valObj == null || !(valObj instanceof JSONArray)) {
-            throw new JSONException("Missing or wrong " + SPIDSchemaManager.VALUE_ATTR_ID);
-        }
-        JSONArray jValues = (JSONArray) valObj;
-        List<String> values = new ArrayList<String>(jValues.length());
-        for (int k = 0; k < jValues.length(); k++) {
-            Object tmpObj = jValues.get(k);
-            if (tmpObj == null || !(tmpObj instanceof String)) {
-                throw new JSONException("Missing or wrong " + SPIDSchemaManager.VALUE_ATTR_ID);
-            }
-            values.add((String) tmpObj);
-        }
-
-        Object descrObj = rootObject.opt(SPIDSchemaManager.DESCR_ATTR_ID);
-        if (descrObj == null || !(descrObj instanceof String)) {
-            throw new JSONException("Missing or wrong " + SPIDSchemaManager.DESCR_ATTR_ID);
-        }
-
-        return new SPIDAttribute((String) keyObj, values, (String) descrObj);
     }
 
     private Response buildResponse(String message, String format) {

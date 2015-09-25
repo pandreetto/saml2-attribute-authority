@@ -1,17 +1,20 @@
 package it.infn.security.saml.ocp;
 
-import java.util.ArrayList;
+import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.AttributeNameInterface;
+import it.infn.security.saml.schema.AttributeValueInterface;
+import it.infn.security.saml.schema.SchemaManager;
+import it.infn.security.saml.schema.SchemaManagerException;
+
 import java.util.List;
 
-import org.wso2.charon.core.schema.AttributeSchema;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.wso2.charon.core.schema.SCIMAttributeSchema;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
 import org.wso2.charon.core.schema.SCIMSchemaDefinitions;
 import org.wso2.charon.core.schema.SCIMSubAttributeSchema;
-
-import it.infn.security.saml.schema.SchemaManager;
-import it.infn.security.saml.schema.SchemaManagerException;
 
 public class SPIDSchemaManager
     implements SchemaManager {
@@ -19,13 +22,13 @@ public class SPIDSchemaManager
     public static final String SPID_ATTR_URI = "urn:it:infn:security:saml2:attributes:1.0";
 
     public static final String SPID_SCHEMA_URI = "urn:it:infn:security:saml2:attributes:1.0";
-    
-    public static final String KEY_ATTR_ID = "key";
-    
-    public static final String VALUE_ATTR_ID = "content";
-    
+
+    public static final String NAME_ATTR_ID = "name";
+
+    public static final String VALUE_ATTR_ID = "value";
+
     public static final String DESCR_ATTR_ID = "description";
-    
+
     public static final String ROOT_ATTR_ID = "SPIDAttributes";
 
     private SCIMResourceSchema groupSchema = null;
@@ -60,9 +63,6 @@ public class SPIDSchemaManager
 
         }
 
-        fixSubAttributes(groupSchema);
-        fixSubAttributes(userSchema);
-
     }
 
     public SCIMResourceSchema getGroupSchema() {
@@ -71,6 +71,67 @@ public class SPIDSchemaManager
 
     public SCIMResourceSchema getUserSchema() {
         return userSchema;
+    }
+
+    public String encode(AttributeEntry attribute, String format)
+        throws SchemaManagerException {
+
+        if (!SCIMConstants.APPLICATION_JSON.endsWith(format)) {
+            throw new SchemaManagerException("Unsupported format");
+        }
+
+        try {
+
+            JSONObject rootObject = new JSONObject();
+            rootObject.put("schemas", SPID_SCHEMA_URI);
+            rootObject.put(NAME_ATTR_ID, attribute.getName().getName());
+
+            JSONArray arrayObject = new JSONArray();
+            for (AttributeValueInterface value : attribute) {
+                JSONObject attrObject = new JSONObject();
+                attrObject.put(VALUE_ATTR_ID, value.encode(format));
+                attrObject.put(DESCR_ATTR_ID, value.getDescription());
+                arrayObject.put(attrObject);
+            }
+            rootObject.put(ROOT_ATTR_ID, arrayObject);
+
+            return rootObject.toString();
+
+        } catch (Exception ex) {
+            throw new SchemaManagerException("Cannot encode attribute");
+        }
+    }
+
+    public String encode(List<AttributeNameInterface> names, String format)
+        throws SchemaManagerException {
+
+        if (!SCIMConstants.APPLICATION_JSON.endsWith(format)) {
+            throw new SchemaManagerException("Unsupported format");
+        }
+
+        JSONObject rootObject = new JSONObject();
+        try {
+            rootObject.put("schemas", SPID_SCHEMA_URI);
+            JSONArray arrayObject = new JSONArray();
+            for (AttributeNameInterface name : names) {
+                arrayObject.put(name.getName());
+            }
+            rootObject.put(NAME_ATTR_ID, arrayObject);
+        } catch (Exception ex) {
+            throw new SchemaManagerException("Cannot encode attribute");
+        }
+
+        return rootObject.toString();
+    }
+
+    public AttributeEntry parse(String data, String format)
+        throws SchemaManagerException {
+
+        if (!SCIMConstants.APPLICATION_JSON.endsWith(format)) {
+            throw new SchemaManagerException("Unsupported format");
+        }
+
+        return null;
     }
 
     public void close()
@@ -84,48 +145,22 @@ public class SPIDSchemaManager
 
     private SCIMAttributeSchema buildExtAttributeSchema() {
 
-        SCIMSubAttributeSchema[] empty = null;
+        SCIMSubAttributeSchema nameSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
+                NAME_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Name identifier", false, false, true);
 
-        SCIMAttributeSchema keySchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, KEY_ATTR_ID,
-                SCIMSchemaDefinitions.DataType.STRING, false, null, "Key identifier", SPID_SCHEMA_URI, false, false,
-                true, empty);
+        SCIMSubAttributeSchema contentSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
+                VALUE_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Content identifier", false, false, true);
 
-        SCIMAttributeSchema contentSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, VALUE_ATTR_ID,
-                SCIMSchemaDefinitions.DataType.STRING, false, null, "Content identifier", SPID_SCHEMA_URI, false,
-                false, true, empty);
+        SCIMSubAttributeSchema descrSchema = SCIMSubAttributeSchema
+                .createSCIMSubAttributeSchema(SPID_ATTR_URI, DESCR_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING,
+                        "Short attribute description", false, false, true);
 
-        SCIMAttributeSchema descrSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, DESCR_ATTR_ID,
-                SCIMSchemaDefinitions.DataType.STRING, false, null, "Short attribute description", SPID_SCHEMA_URI,
-                false, false, true, empty);
-
-        SCIMAttributeSchema[] subAttributes = new SCIMAttributeSchema[] { keySchema, contentSchema, descrSchema };
+        SCIMSubAttributeSchema[] subAttributes = new SCIMSubAttributeSchema[] { nameSchema, contentSchema, descrSchema };
 
         SCIMAttributeSchema rootSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, ROOT_ATTR_ID,
-                null, "Short attribute description", SPID_SCHEMA_URI, false, false, false, subAttributes);
+                null, true, null, "Short attribute description", SPID_SCHEMA_URI, false, false, false, subAttributes);
 
         return rootSchema;
     }
 
-    /*
-     * Workaround for subAttributes/attributes mismatch in complex multivalued extensions
-     */
-    private void fixSubAttributes(SCIMResourceSchema resourceSchema) {
-        List<AttributeSchema> attributeSchemas = resourceSchema.getAttributesList();
-        for (AttributeSchema attributeSchema : attributeSchemas) {
-
-            SCIMAttributeSchema tmpSchema = (SCIMAttributeSchema) attributeSchema;
-            List<SCIMSubAttributeSchema> subAttributeSchemas = tmpSchema.getSubAttributes();
-            List<SCIMAttributeSchema> topAttributeSchemas = tmpSchema.getAttributes();
-            if (topAttributeSchemas != null && subAttributeSchemas == null) {
-                subAttributeSchemas = new ArrayList<SCIMSubAttributeSchema>();
-                for (SCIMAttributeSchema inAttr : topAttributeSchemas) {
-                    SCIMSubAttributeSchema outAttr = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(
-                            inAttr.getURI(), inAttr.getName(), inAttr.getType(), inAttr.getDescription(),
-                            inAttr.getReadOnly(), inAttr.getRequired(), inAttr.getCaseExact(), new String[0]);
-                    subAttributeSchemas.add(outAttr);
-                }
-                tmpSchema.setSubAttributes(subAttributeSchemas);
-            }
-        }
-    }
 }

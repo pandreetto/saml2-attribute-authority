@@ -33,11 +33,13 @@
         <jaxrs:serviceBeans>
             <ref bean="userManagerBean" />
             <ref bean="groupManagerBean" />
+            <ref bean="attributeManager" />
         </jaxrs:serviceBeans>
     </jaxrs:server>
  
     <bean id="userManagerBean" class="it.infn.security.saml.aa.UserResourceManager" />
     <bean id="groupManagerBean" class="it.infn.security.saml.aa.GroupResourceManager" />
+    <bean id="attributeManager" class="it.infn.security.saml.aa.AttributeManager" />
     
 </beans>
 
