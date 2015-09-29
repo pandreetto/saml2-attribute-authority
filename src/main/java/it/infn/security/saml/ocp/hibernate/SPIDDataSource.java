@@ -342,7 +342,7 @@ public class SPIDDataSource
     }
 
     protected Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
-        throws CharonException, NotFoundException {
+        throws CharonException, NotFoundException, DataSourceException {
 
         Set<AttributeEntity> result = new HashSet<AttributeEntity>();
 
@@ -372,26 +372,18 @@ public class SPIDDataSource
             if (cntAttr == null) {
                 throw new CharonException("Missing attribute " + SPIDSchemaManager.VALUE_ATTR_ID);
             }
-            SimpleAttribute descrAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.DESCR_ATTR_ID);
-            if (descrAttr == null) {
-                throw new CharonException("Missing attribute " + SPIDSchemaManager.DESCR_ATTR_ID);
-            }
 
-            AttributeEntity attrEnt = new AttributeEntity();
             AttributeEntityId attrEntId = new AttributeEntityId();
             attrEntId.setKey(nameAttr.getStringValue());
             attrEntId.setContent(cntAttr.getStringValue());
-            attrEnt.setAttributeId(attrEntId);
-            attrEnt.setDescription(descrAttr.getStringValue());
 
-            /*
-             * TODO check for attribute auto-saving
-             */
-            if (session.get(AttributeEntity.class, attrEntId) == null) {
-                logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
-                session.save(attrEnt);
+            AttributeEntity attrEnt = (AttributeEntity) session.get(AttributeEntity.class, attrEntId);
+
+            if (attrEnt == null) {
+                throw new DataSourceException("Unknown " + attrEntId.getKey() + ": " + attrEntId.getContent());
             }
 
+            logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
             result.add(attrEnt);
 
         }
@@ -400,17 +392,17 @@ public class SPIDDataSource
     }
 
     protected void fillinUserExtAttributes(Session session, AbstractSCIMObject resource, UserEntity uEnt)
-        throws CharonException, NotFoundException {
+        throws CharonException, NotFoundException, DataSourceException {
         uEnt.setAttributes(getExtendedAttributes(session, resource));
     }
 
     protected void fillinGroupExtAttributes(Session session, AbstractSCIMObject resource, GroupEntity gEnt)
-        throws CharonException, NotFoundException {
+        throws CharonException, NotFoundException, DataSourceException {
         gEnt.setAttributes(getExtendedAttributes(session, resource));
     }
 
     protected void cleanUserExtAttributes(Session session, UserEntity uEnt)
-        throws CharonException, NotFoundException {
+        throws DataSourceException {
 
         uEnt.getAttributes().clear();
         session.flush();
@@ -418,7 +410,7 @@ public class SPIDDataSource
     }
 
     protected void cleanGroupExtAttributes(Session session, GroupEntity gEnt)
-        throws CharonException, NotFoundException {
+        throws DataSourceException {
 
         gEnt.getAttributes().clear();
         session.flush();

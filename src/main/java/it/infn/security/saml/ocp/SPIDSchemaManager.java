@@ -201,11 +201,7 @@ public class SPIDSchemaManager
         SCIMSubAttributeSchema contentSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
                 VALUE_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Content identifier", false, false, true);
 
-        SCIMSubAttributeSchema descrSchema = SCIMSubAttributeSchema
-                .createSCIMSubAttributeSchema(SPID_ATTR_URI, DESCR_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING,
-                        "Short attribute description", false, false, true);
-
-        SCIMSubAttributeSchema[] subAttributes = new SCIMSubAttributeSchema[] { nameSchema, contentSchema, descrSchema };
+        SCIMSubAttributeSchema[] subAttributes = new SCIMSubAttributeSchema[] { nameSchema, contentSchema };
 
         SCIMAttributeSchema rootSchema = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI, ROOT_ATTR_ID,
                 null, true, null, "Short attribute description", SPID_SCHEMA_URI, false, false, false, subAttributes);
