@@ -14,7 +14,7 @@ public class SPIDAttributeName
         this.friendlyName = fName;
     }
 
-    public String getName() {
+    public String getNameId() {
         return name;
     }
 

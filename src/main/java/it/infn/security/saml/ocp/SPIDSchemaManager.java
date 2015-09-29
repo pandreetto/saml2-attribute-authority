@@ -7,9 +7,12 @@ import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.wso2.charon.core.schema.SCIMAttributeSchema;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
@@ -19,15 +22,27 @@ import org.wso2.charon.core.schema.SCIMSubAttributeSchema;
 public class SPIDSchemaManager
     implements SchemaManager {
 
+    private static final Logger logger = Logger.getLogger(SPIDSchemaManager.class.getName());
+
     public static final String SPID_ATTR_URI = "urn:it:infn:security:saml2:attributes:1.0";
 
     public static final String SPID_SCHEMA_URI = "urn:it:infn:security:saml2:attributes:1.0";
 
     public static final String NAME_ATTR_ID = "name";
 
+    public static final String NAME_FORMAT_ID = "format";
+
+    public static final String NAME_FRIEND_ID = "friendlyname";
+
     public static final String VALUE_ATTR_ID = "value";
 
+    public static final String VALUE_TYPE_ID = "type";
+
     public static final String DESCR_ATTR_ID = "description";
+
+    public static final String VALUES_ATTR_ID = "values";
+
+    public static final String NAMES_ATTR_ID = "names";
 
     public static final String ROOT_ATTR_ID = "SPIDAttributes";
 
@@ -84,16 +99,19 @@ public class SPIDSchemaManager
 
             JSONObject rootObject = new JSONObject();
             rootObject.put("schemas", SPID_SCHEMA_URI);
-            rootObject.put(NAME_ATTR_ID, attribute.getName().getName());
+            rootObject.put(NAME_ATTR_ID, attribute.getName().getNameId());
+            rootObject.put(NAME_FORMAT_ID, attribute.getName().getNameFormat());
+            rootObject.put(NAME_FRIEND_ID, attribute.getName().getFriendlyName());
 
             JSONArray arrayObject = new JSONArray();
             for (AttributeValueInterface value : attribute) {
                 JSONObject attrObject = new JSONObject();
                 attrObject.put(VALUE_ATTR_ID, value.encode(format));
+                attrObject.put(VALUE_TYPE_ID, value.getType());
                 attrObject.put(DESCR_ATTR_ID, value.getDescription());
                 arrayObject.put(attrObject);
             }
-            rootObject.put(ROOT_ATTR_ID, arrayObject);
+            rootObject.put(VALUES_ATTR_ID, arrayObject);
 
             return rootObject.toString();
 
@@ -114,9 +132,13 @@ public class SPIDSchemaManager
             rootObject.put("schemas", SPID_SCHEMA_URI);
             JSONArray arrayObject = new JSONArray();
             for (AttributeNameInterface name : names) {
-                arrayObject.put(name.getName());
+                JSONObject nameObj = new JSONObject();
+                nameObj.put(NAME_ATTR_ID, name.getNameId());
+                nameObj.put(NAME_FORMAT_ID, name.getNameFormat());
+                nameObj.put(NAME_FRIEND_ID, name.getFriendlyName());
+                arrayObject.put(nameObj);
             }
-            rootObject.put(NAME_ATTR_ID, arrayObject);
+            rootObject.put(NAMES_ATTR_ID, arrayObject);
         } catch (Exception ex) {
             throw new SchemaManagerException("Cannot encode attribute");
         }
@@ -131,7 +153,35 @@ public class SPIDSchemaManager
             throw new SchemaManagerException("Unsupported format");
         }
 
-        return null;
+        try {
+
+            JSONObject jsonObj = new JSONObject(new JSONTokener(data));
+            String nameId = jsonObj.optString(NAME_ATTR_ID);
+            if (nameId == null)
+                throw new SchemaManagerException("Missing " + NAME_ATTR_ID);
+            String fName = jsonObj.optString(NAME_FRIEND_ID);
+
+            AttributeEntry result = new AttributeEntry(new SPIDAttributeName(nameId, fName));
+
+            JSONArray values = jsonObj.optJSONArray(VALUES_ATTR_ID);
+            for (int k = 0; k < values.length(); k++) {
+                JSONObject vObj = values.getJSONObject(k);
+                String value = vObj.optString(VALUE_ATTR_ID);
+                if (value == null)
+                    throw new SchemaManagerException("Missing " + VALUE_ATTR_ID);
+                String vType = vObj.optString(VALUE_TYPE_ID);
+                if (vType == null)
+                    throw new SchemaManagerException("Missing " + VALUE_TYPE_ID);
+                String vDescr = vObj.optString(DESCR_ATTR_ID);
+                logger.fine("Found " + value + " of type " + vType);
+                result.add(new SPIDAttributeValue(value, vType, vDescr));
+            }
+            return result;
+
+        } catch (JSONException jEx) {
+            throw new SchemaManagerException(jEx.getMessage());
+        }
+
     }
 
     public void close()

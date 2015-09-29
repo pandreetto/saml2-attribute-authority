@@ -42,7 +42,7 @@ public class AttributeManager {
 
     @GET
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributeKeys(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+    public Response getAttributeNames(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
         outputFormat = SCIMUtils.normalizeFormat(outputFormat);
@@ -74,7 +74,7 @@ public class AttributeManager {
     @GET
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributesByKey(@PathParam("attrKey") String attrName,
+    public Response getAttributeSet(@PathParam("attrName") String attrName,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -107,7 +107,7 @@ public class AttributeManager {
     @DELETE
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteAllAttributesByKey(@PathParam("attrKey") String attrName,
+    public Response deleteAttributeSet(@PathParam("attrName") String attrName,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -138,7 +138,7 @@ public class AttributeManager {
     @PUT
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteAttribute(@PathParam("attrKey") String attrName,
+    public Response updateAttributeSet(@PathParam("attrName") String attrName,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
@@ -173,7 +173,7 @@ public class AttributeManager {
 
     @POST
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response createAttribute(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
+    public Response createAttributeSet(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
 

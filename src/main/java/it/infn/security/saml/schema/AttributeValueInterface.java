@@ -2,9 +2,14 @@ package it.infn.security.saml.schema;
 
 public interface AttributeValueInterface {
 
-    public Object getRawValue();
+    public String getId();
 
-    public String encode(String format);
+    public String getType();
+
+    public Object getValue();
+
+    public String encode(String format)
+        throws SchemaManagerException;
 
     public String getDescription();
 

@@ -7,15 +7,19 @@ import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.UserEntity;
+import it.infn.security.saml.ocp.SPIDAttributeName;
+import it.infn.security.saml.ocp.SPIDAttributeValue;
 import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.saml.schema.AttributeNameInterface;
+import it.infn.security.saml.schema.AttributeValueInterface;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
@@ -68,26 +72,182 @@ public class SPIDDataSource
 
     public List<AttributeNameInterface> getAttributeNames()
         throws DataSourceException {
-        return null;
+
+        List<AttributeNameInterface> result = new ArrayList<AttributeNameInterface>();
+
+        Session session = sessionFactory.getCurrentSession();
+        try {
+
+            session.beginTransaction();
+
+            StringBuffer queryStr = new StringBuffer("SELECT DISTINCT qAttr.attributeId.key");
+            queryStr.append(" FROM AttributeEntity as qAttr");
+            Query query = session.createQuery(queryStr.toString());
+            /*
+             * TODO missing paging
+             */
+            @SuppressWarnings("unchecked")
+            List<String> namesFound = query.list();
+
+            for (String aName : namesFound) {
+                /*
+                 * TODO missing friendly name
+                 */
+                result.add(new SPIDAttributeName(aName, null));
+
+            }
+
+            session.getTransaction().commit();
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new DataSourceException(th.getMessage());
+        }
+
+        return result;
     }
 
     public AttributeEntry getAttribute(String name)
         throws DataSourceException {
-        return null;
+
+        Session session = sessionFactory.getCurrentSession();
+        try {
+
+            session.beginTransaction();
+
+            StringBuffer queryStr = new StringBuffer("FROM AttributeEntity as qAttr");
+            queryStr.append(" WHERE qAttr.attributeId.key=?");
+            Query query = session.createQuery(queryStr.toString());
+            query.setString(0, name);
+
+            @SuppressWarnings("unchecked")
+            List<AttributeEntity> attrsFound = query.list();
+
+            AttributeEntry result = new AttributeEntry(new SPIDAttributeName(name, null));
+            for (AttributeEntity aEnt : attrsFound) {
+                String value = aEnt.getAttributeId().getContent();
+                result.add(new SPIDAttributeValue(value, aEnt.getType(), aEnt.getDescription()));
+            }
+
+            session.getTransaction().commit();
+
+            return result;
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new DataSourceException(th.getMessage());
+        }
+
     }
 
     public void createAttribute(AttributeEntry attribute)
         throws DataSourceException {
 
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            for (AttributeValueInterface vItem : attribute) {
+                AttributeEntity aEnt = new AttributeEntity();
+                AttributeEntityId aEntId = new AttributeEntityId();
+                aEntId.setKey(attribute.getName().getNameId());
+                aEntId.setContent((String) vItem.getValue());
+                aEnt.setAttributeId(aEntId);
+                aEnt.setDescription(vItem.getDescription());
+                aEnt.setType(vItem.getType());
+                session.save(aEnt);
+            }
+
+            session.getTransaction().commit();
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new DataSourceException(th.getMessage());
+        }
     }
 
     public void updateAttribute(AttributeEntry attribute)
         throws DataSourceException {
 
+        /*
+         * TODO improve update
+         */
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            String name = attribute.getName().getNameId();
+
+            StringBuffer queryStr = new StringBuffer("DELETE FROM AttributeEntity as qAttr");
+            queryStr.append(" WHERE qAttr.attributeId.key=?");
+            Query query = session.createQuery(queryStr.toString());
+            query.setString(0, name);
+
+            int count = query.executeUpdate();
+            if (count == 0) {
+                throw new DataSourceException("No name found " + name);
+            }
+
+            for (AttributeValueInterface vItem : attribute) {
+                AttributeEntity aEnt = new AttributeEntity();
+                AttributeEntityId aEntId = new AttributeEntityId();
+                aEntId.setKey(attribute.getName().getNameId());
+                aEntId.setContent((String) vItem.getValue());
+                aEnt.setAttributeId(aEntId);
+                aEnt.setDescription(vItem.getDescription());
+                aEnt.setType(vItem.getType());
+                session.save(aEnt);
+            }
+
+            session.getTransaction().commit();
+
+        } catch (DataSourceException dEx) {
+            session.getTransaction().rollback();
+            throw dEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new DataSourceException(th.getMessage());
+        }
+
     }
 
     public void removeAttribute(String name)
         throws DataSourceException {
+
+        Session session = sessionFactory.getCurrentSession();
+
+        try {
+
+            session.beginTransaction();
+
+            StringBuffer queryStr = new StringBuffer("DELETE FROM AttributeEntity as qAttr");
+            queryStr.append(" WHERE qAttr.attributeId.key=?");
+            Query query = session.createQuery(queryStr.toString());
+            query.setString(0, name);
+
+            int count = query.executeUpdate();
+            if (count == 0) {
+                throw new DataSourceException("No name found " + name);
+            }
+
+            session.getTransaction().commit();
+
+        } catch (DataSourceException dEx) {
+            session.getTransaction().rollback();
+            throw dEx;
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            session.getTransaction().rollback();
+            throw new DataSourceException(th.getMessage());
+        }
 
     }
 

@@ -24,6 +24,9 @@ public class AttributeEntity
     @Column(name = "attr_description", nullable = false)
     private String description;
 
+    @Column(name = "attr_type", nullable = false)
+    private String type;
+
     public AttributeEntity() {
     }
 
@@ -41,6 +44,14 @@ public class AttributeEntity
 
     public String getDescription() {
         return description;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public boolean equals(Object other) {

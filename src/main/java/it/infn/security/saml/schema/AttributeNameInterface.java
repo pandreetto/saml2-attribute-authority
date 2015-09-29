@@ -2,7 +2,7 @@ package it.infn.security.saml.schema;
 
 public interface AttributeNameInterface {
 
-    public String getName();
+    public String getNameId();
 
     public String getFriendlyName();
 
