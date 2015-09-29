@@ -75,10 +75,6 @@ public class UserResourceEndpoint
             encoder = getEncoder(SCIMConstants.identifyFormat(format));
 
             UserSearchResult searchResult = dataSource.listUsers(filterString, sortBy, sortOrder, startIndex, count);
-            if (searchResult == null || searchResult.isEmpty()) {
-                throw new ResourceNotFoundException("Users not found in the user store for the filter: " + filterString);
-            }
-
             ListedResource listedResource = buildListedResource(searchResult);
             String encodedListedResource = encoder.encodeSCIMObject(listedResource);
             Map<String, String> httpHeaders = new HashMap<String, String>();
@@ -259,10 +255,14 @@ public class UserResourceEndpoint
     private ListedResource buildListedResource(UserSearchResult searchResult)
         throws CharonException {
         ListedResource listedResource = new ListedResource();
-        listedResource.setTotalResults(searchResult.getTotalResults());
-        for (User user : searchResult.getUserList()) {
-            Map<String, Attribute> userAttributes = user.getAttributeList();
-            listedResource.setResources(userAttributes);
+        if (searchResult == null || searchResult.isEmpty()) {
+            listedResource.setTotalResults(0);
+        } else {
+            listedResource.setTotalResults(searchResult.getTotalResults());
+            for (User user : searchResult.getUserList()) {
+                Map<String, Attribute> userAttributes = user.getAttributeList();
+                listedResource.setResources(userAttributes);
+            }
         }
         return listedResource;
     }
