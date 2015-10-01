@@ -20,6 +20,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.xml.security.signature.XMLSignature;
 import org.opensaml.saml2.core.Issuer;
 
 public class PropertyFileConfiguration
@@ -44,6 +45,8 @@ public class PropertyFileConfiguration
     private static final String TRUSTMAN_TYPE = "trust.manager.type";
 
     private static final String TRUSTMAN_PWD = "trust.manager.password";
+
+    private static final String META_EXP_TIME = "metadata.expiration_time";
 
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
 
@@ -170,6 +173,23 @@ public class PropertyFileConfiguration
     public String getAuthorityIDFormat()
         throws ConfigurationException {
         return properties.getProperty(AUTHORITY_ID_FORMAT, Issuer.UNSPECIFIED);
+    }
+
+    public long getMetadataDuration()
+        throws ConfigurationException {
+        try {
+            return Long.parseLong(properties.getProperty(META_EXP_TIME, "432000"));
+        } catch (Exception ex) {
+            return 432000;
+        }
+    }
+
+    public String getSignatureAlgorithm()
+        throws ConfigurationException {
+        /*
+         * TODO support for multiple algos
+         */
+        return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256;
     }
 
     public String getDataSourceParam(String name)
