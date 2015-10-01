@@ -88,6 +88,14 @@ public class SPIDSchemaManager
         return userSchema;
     }
 
+    public String[] getSupportedProtocols() {
+        return new String[] { "urn:oasis:names:tc:SAML:2.0:protocol" };
+    }
+
+    public String[] getSupportedAttributeProfiles() {
+        return new String[] { "urn:oasis:names:tc:SAML:2.0:attrname-format:basic" };
+    }
+
     public String encode(AttributeEntry attribute, String format)
         throws SchemaManagerException {
 

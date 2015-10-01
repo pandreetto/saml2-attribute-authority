@@ -23,6 +23,10 @@ public interface SchemaManager {
     public AttributeEntry parse(String data, String format)
         throws SchemaManagerException;
 
+    public String[] getSupportedProtocols();
+
+    public String[] getSupportedAttributeProfiles();
+
     public void close()
         throws SchemaManagerException;
 
