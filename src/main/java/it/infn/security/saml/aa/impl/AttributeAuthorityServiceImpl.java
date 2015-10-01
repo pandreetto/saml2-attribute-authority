@@ -30,7 +30,6 @@ import javax.security.auth.Subject;
 
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
@@ -41,7 +40,6 @@ import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
 import org.opensaml.security.SAMLSignatureProfileValidator;
-import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
@@ -214,8 +212,7 @@ public class AttributeAuthorityServiceImpl
             /*
              * TODO verify workaround
              */
-            MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
-            marshallerFactory.getMarshaller(assertion).marshall(assertion);
+            SAML2ObjectBuilder.getMarshaller(assertion).marshall(assertion);
 
             Signer.signObject(assertionSignature);
 

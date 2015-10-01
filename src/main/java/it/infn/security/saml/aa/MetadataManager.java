@@ -27,9 +27,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeProfile;
@@ -38,7 +38,6 @@ import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.KeyDescriptor;
 import org.opensaml.saml2.metadata.NameIDFormat;
 import org.opensaml.xml.io.Marshaller;
-import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.credential.Credential;
@@ -59,6 +58,8 @@ import org.wso2.charon.core.schema.SCIMConstants;
 public class MetadataManager {
 
     private static final Logger logger = Logger.getLogger(MetadataManager.class.getName());
+
+    private static final Base64 base64Enc = new Base64(64, new byte[] { '\n' });
 
     @GET
     @Produces("text/xml")
@@ -93,6 +94,9 @@ public class MetadataManager {
             entDescr.getRoleDescriptors().add(aaDescr);
 
             AttributeService attrService = SAML2ObjectBuilder.buildAttributeService();
+            /*
+             * TODO retrieve service URL
+             */
             aaDescr.getAttributeServices().add(attrService);
 
             NameIDFormat nidFormat = SAML2ObjectBuilder.buildNameIDFormat();
@@ -124,10 +128,9 @@ public class MetadataManager {
             keyName.setValue(srvCert.getSubjectDN().getName());
             x509Sbj.setValue(srvCert.getSubjectDN().getName());
             x509Data.getX509SubjectNames().add(x509Sbj);
-            /*
-             * TODO encode cert in base64
-             */
-            x509Cert.setValue("");
+            byte[] certEncoded = srvCert.getEncoded();
+            x509Cert.setValue(base64Enc.encodeToString(certEncoded));
+            x509Data.getX509Certificates().add(x509Cert);
             keyInfo.getKeyNames().add(keyName);
             keyInfo.getX509Datas().add(x509Data);
             keyDescr.setKeyInfo(keyInfo);
@@ -160,8 +163,7 @@ public class MetadataManager {
         /*
          * TODO verify workaround
          */
-        MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
-        Marshaller marshaller = marshallerFactory.getMarshaller(entDescr);
+        Marshaller marshaller = SAML2ObjectBuilder.getMarshaller(entDescr);
         marshaller.marshall(entDescr);
 
         Signer.signObject(entSignature);

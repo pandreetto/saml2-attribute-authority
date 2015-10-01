@@ -25,7 +25,10 @@ import org.opensaml.saml2.metadata.impl.AttributeServiceBuilder;
 import org.opensaml.saml2.metadata.impl.EntityDescriptorBuilder;
 import org.opensaml.saml2.metadata.impl.KeyDescriptorBuilder;
 import org.opensaml.saml2.metadata.impl.NameIDFormatBuilder;
+import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
+import org.opensaml.xml.io.Marshaller;
+import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.signature.KeyInfo;
 import org.opensaml.xml.signature.KeyName;
 import org.opensaml.xml.signature.Signature;
@@ -42,6 +45,8 @@ import org.opensaml.xml.signature.impl.X509SubjectNameBuilder;
 public class SAML2ObjectBuilder {
 
     private static final XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+
+    private static final MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
 
     private static final EntityDescriptorBuilder entDescrBuilder = (EntityDescriptorBuilder) builderFactory
             .getBuilder(EntityDescriptor.DEFAULT_ELEMENT_NAME);
@@ -97,6 +102,10 @@ public class SAML2ObjectBuilder {
     private static final StatusMessageBuilder statusMessageBuilder = (StatusMessageBuilder) builderFactory
             .getBuilder(StatusMessage.DEFAULT_ELEMENT_NAME);
 
+    public static Marshaller getMarshaller(XMLObject xmlObj) {
+        return marshallerFactory.getMarshaller(xmlObj);
+    }
+
     public static EntityDescriptor buildEntityDescriptor() {
         return entDescrBuilder.buildObject();
     }
@@ -120,11 +129,11 @@ public class SAML2ObjectBuilder {
     public static X509Data buildX509Data() {
         return x509DataBuilder.buildObject();
     }
-    
+
     public static X509SubjectName buildX509SubjectName() {
         return x509SbjBuilder.buildObject();
     }
-    
+
     public static X509Certificate buildX509Certificate() {
         return x509CertBuilder.buildObject();
     }
