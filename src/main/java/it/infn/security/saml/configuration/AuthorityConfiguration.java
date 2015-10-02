@@ -19,6 +19,12 @@ public interface AuthorityConfiguration {
     public String getAuthorityIDFormat()
         throws ConfigurationException;
 
+    public long getMetadataDuration()
+        throws ConfigurationException;
+
+    public String getSignatureAlgorithm()
+        throws ConfigurationException;
+
     public String getDataSourceParam(String name)
         throws ConfigurationException;
 

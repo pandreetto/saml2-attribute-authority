@@ -44,6 +44,16 @@ public class XACMLAAProfile {
 
     public static final String LIST_GROUPS_ACTION_URI = "http://infn.it/xacml/aa/list-groups";
 
+    public static final String CREATE_ATTR_ACTION_URI = "http://infn.it/xacml/aa/create-attribute";
+
+    public static final String MODIFY_ATTR_ACTION_URI = "http://infn.it/xacml/aa/modify-attribute";
+
+    public static final String DELETE_ATTR_ACTION_URI = "http://infn.it/xacml/aa/delete-attribute";
+
+    public static final String SHOW_ATTR_ACTION_URI = "http://infn.it/xacml/aa/show-attribute";
+
+    public static final String LIST_ATTRS_ACTION_URI = "http://infn.it/xacml/aa/list-attributes";
+
     /*
      * Environment
      */

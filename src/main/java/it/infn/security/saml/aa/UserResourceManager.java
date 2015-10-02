@@ -7,6 +7,7 @@ import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
+import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 import it.infn.security.saml.utils.charon.UserResourceEndpoint;
 
 import java.util.logging.Level;
@@ -30,7 +31,6 @@ import org.wso2.charon.core.exceptions.FormatNotSupportedException;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.protocol.SCIMResponse;
 import org.wso2.charon.core.schema.SCIMConstants;
-import org.wso2.charon.utils.jaxrs.JAXRSResponseBuilder;
 
 @Path("/Users")
 public class UserResourceManager {
@@ -68,7 +68,7 @@ public class UserResourceManager {
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
-        return new JAXRSResponseBuilder().buildResponse(scimResponse);
+        return JAXRSResponseBuilder.buildResponse(scimResponse);
 
     }
 
@@ -101,7 +101,7 @@ public class UserResourceManager {
             scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
-        return new JAXRSResponseBuilder().buildResponse(scimResponse);
+        return JAXRSResponseBuilder.buildResponse(scimResponse);
 
     }
 
@@ -130,7 +130,7 @@ public class UserResourceManager {
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
-        return new JAXRSResponseBuilder().buildResponse(scimResponse);
+        return JAXRSResponseBuilder.buildResponse(scimResponse);
 
     }
 
@@ -168,7 +168,7 @@ public class UserResourceManager {
             scimResponse = SCIMUtils.responseFromException(ex, format);
         }
 
-        return new JAXRSResponseBuilder().buildResponse(scimResponse);
+        return JAXRSResponseBuilder.buildResponse(scimResponse);
 
     }
 
@@ -204,7 +204,7 @@ public class UserResourceManager {
             scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
         }
 
-        return new JAXRSResponseBuilder().buildResponse(scimResponse);
+        return JAXRSResponseBuilder.buildResponse(scimResponse);
 
     }
 

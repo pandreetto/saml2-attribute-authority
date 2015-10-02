@@ -171,11 +171,6 @@ public class GroupResourceEndpoint
 
             GroupSearchResult returnedGroups = dataSource
                     .listGroups(filterString, sortBy, sortOrder, startIndex, count);
-            if (returnedGroups == null || returnedGroups.isEmpty()) {
-                String error = "Groups not found in the user store for the filter: " + filterString;
-                throw new ResourceNotFoundException(error);
-            }
-
             ListedResource listedResource = createListedResource(returnedGroups);
             String encodedListedResource = encoder.encodeSCIMObject(listedResource);
             Map<String, String> httpHeaders = new HashMap<String, String>();
@@ -259,11 +254,15 @@ public class GroupResourceEndpoint
     private ListedResource createListedResource(GroupSearchResult searchResult)
         throws CharonException, NotFoundException {
         ListedResource listedResource = new ListedResource();
-        listedResource.setTotalResults(searchResult.getTotalResults());
-        for (Group group : searchResult.getGroupList()) {
-            if (group != null) {
-                Map<String, Attribute> attributesOfGroupResource = group.getAttributeList();
-                listedResource.setResources(attributesOfGroupResource);
+        if (searchResult == null || searchResult.isEmpty()) {
+            listedResource.setTotalResults(0);
+        } else {
+            listedResource.setTotalResults(searchResult.getTotalResults());
+            for (Group group : searchResult.getGroupList()) {
+                if (group != null) {
+                    Map<String, Attribute> attributesOfGroupResource = group.getAttributeList();
+                    listedResource.setResources(attributesOfGroupResource);
+                }
             }
         }
         return listedResource;

@@ -16,6 +16,7 @@ import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.AttributeQueryParameters;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
+import it.infn.security.saml.utils.SAML2ObjectBuilder;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -28,9 +29,7 @@ import java.util.logging.Logger;
 import javax.security.auth.Subject;
 
 import org.apache.xml.security.c14n.Canonicalizer;
-import org.apache.xml.security.signature.XMLSignature;
 import org.joda.time.DateTime;
-import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
@@ -40,14 +39,7 @@ import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.saml2.core.impl.IssuerBuilder;
-import org.opensaml.saml2.core.impl.ResponseBuilder;
-import org.opensaml.saml2.core.impl.StatusBuilder;
-import org.opensaml.saml2.core.impl.StatusCodeBuilder;
-import org.opensaml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.security.SAMLSignatureProfileValidator;
-import org.opensaml.xml.XMLObjectBuilderFactory;
-import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
@@ -56,7 +48,6 @@ import org.opensaml.xml.signature.Signature;
 import org.opensaml.xml.signature.SignatureException;
 import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.signature.Signer;
-import org.opensaml.xml.signature.impl.SignatureBuilder;
 import org.opensaml.xml.validation.ValidationException;
 
 public class AttributeAuthorityServiceImpl
@@ -64,15 +55,15 @@ public class AttributeAuthorityServiceImpl
 
     private static final Logger logger = Logger.getLogger(AttributeAuthorityServiceImpl.class.getName());
 
-    public static final XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
-
     public Response attributeQuery(AttributeQuery query) {
 
         Response response = this.newResponse(query.getID());
 
         try {
 
-            Issuer responseIssuer = this.newIssuer();
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+
+            Issuer responseIssuer = this.newIssuer(configuration);
             response.setIssuer(responseIssuer);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
@@ -106,7 +97,7 @@ public class AttributeAuthorityServiceImpl
 
             handler.fillInResponse(response, userAttrs, query);
 
-            signAssertions(response);
+            signAssertions(response, configuration);
 
             Status status = this.newStatus();
             response.setStatus(status);
@@ -131,8 +122,7 @@ public class AttributeAuthorityServiceImpl
 
     private Response newResponse(String respID) {
 
-        ResponseBuilder responseBuilder = (ResponseBuilder) builderFactory.getBuilder(Response.DEFAULT_ELEMENT_NAME);
-        Response response = responseBuilder.buildObject();
+        Response response = SAML2ObjectBuilder.buildResponse();
 
         response.setID("_" + UUID.randomUUID().toString());
         response.setIssueInstant(new DateTime());
@@ -141,13 +131,10 @@ public class AttributeAuthorityServiceImpl
         return response;
     }
 
-    private Issuer newIssuer()
+    private Issuer newIssuer(AuthorityConfiguration configuration)
         throws ConfigurationException {
 
-        AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
-
-        IssuerBuilder issuerBuilder = (IssuerBuilder) builderFactory.getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
-        Issuer responseIssuer = issuerBuilder.buildObject();
+        Issuer responseIssuer = SAML2ObjectBuilder.buildIssuer();
 
         try {
             responseIssuer.setFormat(configuration.getAuthorityIDFormat());
@@ -161,11 +148,8 @@ public class AttributeAuthorityServiceImpl
     }
 
     private Status newStatus() {
-        StatusBuilder statusBuilder = (StatusBuilder) builderFactory.getBuilder(Status.DEFAULT_ELEMENT_NAME);
-        Status status = statusBuilder.buildObject();
-        StatusCodeBuilder statusCodeBuilder = (StatusCodeBuilder) builderFactory
-                .getBuilder(StatusCode.DEFAULT_ELEMENT_NAME);
-        StatusCode statusCode = statusCodeBuilder.buildObject();
+        Status status = SAML2ObjectBuilder.buildStatus();
+        StatusCode statusCode = SAML2ObjectBuilder.buildStatusCode();
         statusCode.setValue(StatusCode.SUCCESS_URI);
         status.setStatusCode(statusCode);
         return status;
@@ -173,20 +157,15 @@ public class AttributeAuthorityServiceImpl
 
     private Status newStatus(Throwable th) {
 
-        StatusBuilder statusBuilder = (StatusBuilder) builderFactory.getBuilder(Status.DEFAULT_ELEMENT_NAME);
-        Status status = statusBuilder.buildObject();
+        Status status = SAML2ObjectBuilder.buildStatus();
 
         if (th.getMessage() != null) {
-            StatusMessageBuilder statusMessageBuilder = (StatusMessageBuilder) builderFactory
-                    .getBuilder(StatusMessage.DEFAULT_ELEMENT_NAME);
-            StatusMessage statusMessage = statusMessageBuilder.buildObject();
+            StatusMessage statusMessage = SAML2ObjectBuilder.buildStatusMessage();
             statusMessage.setMessage(th.getMessage());
             status.setStatusMessage(statusMessage);
         }
 
-        StatusCodeBuilder statusCodeBuilder = (StatusCodeBuilder) builderFactory
-                .getBuilder(StatusCode.DEFAULT_ELEMENT_NAME);
-        StatusCode statusCode = statusCodeBuilder.buildObject();
+        StatusCode statusCode = SAML2ObjectBuilder.buildStatusCode();
 
         if (th instanceof CodedException) {
             CodedException handlerEx = (CodedException) th;
@@ -194,7 +173,7 @@ public class AttributeAuthorityServiceImpl
 
             String subCode = handlerEx.getSubStatusCode();
             if (subCode != null) {
-                StatusCode subStatusCode = statusCodeBuilder.buildObject();
+                StatusCode subStatusCode = SAML2ObjectBuilder.buildStatusCode();
                 subStatusCode.setValue(subCode);
                 statusCode.setStatusCode(subStatusCode);
             }
@@ -209,7 +188,7 @@ public class AttributeAuthorityServiceImpl
 
     }
 
-    private void signAssertions(Response response)
+    private void signAssertions(Response response, AuthorityConfiguration configuration)
         throws SecurityException, ConfigurationException, SignatureException, MarshallingException {
 
         List<Assertion> assertions = response.getAssertions();
@@ -224,19 +203,16 @@ public class AttributeAuthorityServiceImpl
         Credential credential = SecurityHelper.getSimpleCredential(srvCert, srvKey);
 
         for (Assertion assertion : assertions) {
-            SignatureBuilder signatureBuilder = (SignatureBuilder) builderFactory
-                    .getBuilder(Signature.DEFAULT_ELEMENT_NAME);
-            Signature assertionSignature = signatureBuilder.buildObject();
+            Signature assertionSignature = SAML2ObjectBuilder.buildSignature();
             assertionSignature.setSigningCredential(credential);
             assertionSignature.setCanonicalizationAlgorithm(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-            assertionSignature.setSignatureAlgorithm(XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1);
+            assertionSignature.setSignatureAlgorithm(config.getSignatureAlgorithm());
 
             assertion.setSignature(assertionSignature);
             /*
              * TODO verify workaround
              */
-            MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
-            marshallerFactory.getMarshaller(assertion).marshall(assertion);
+            SAML2ObjectBuilder.getMarshaller(assertion).marshall(assertion);
 
             Signer.signObject(assertionSignature);
 

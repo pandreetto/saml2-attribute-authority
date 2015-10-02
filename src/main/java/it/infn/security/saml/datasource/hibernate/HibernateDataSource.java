@@ -665,15 +665,15 @@ public abstract class HibernateDataSource
     }
 
     protected abstract void fillinUserExtAttributes(Session session, AbstractSCIMObject resource, UserEntity uEnt)
-        throws CharonException, NotFoundException;
+        throws CharonException, NotFoundException, DataSourceException;
 
     protected abstract void fillinGroupExtAttributes(Session session, AbstractSCIMObject resource, GroupEntity gEnt)
-        throws CharonException, NotFoundException;
+        throws CharonException, NotFoundException, DataSourceException;
 
     protected abstract void cleanUserExtAttributes(Session session, UserEntity uEnt)
-        throws CharonException, NotFoundException;
+        throws DataSourceException;
 
     protected abstract void cleanGroupExtAttributes(Session session, GroupEntity gEnt)
-        throws CharonException, NotFoundException;
+        throws DataSourceException;
 
 }
