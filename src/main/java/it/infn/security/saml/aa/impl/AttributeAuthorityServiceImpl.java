@@ -17,8 +17,8 @@ import it.infn.security.saml.iam.AttributeQueryParameters;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
+import it.infn.security.saml.utils.SignUtils;
 
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Set;
@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
 
-import org.apache.xml.security.c14n.Canonicalizer;
 import org.joda.time.DateTime;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
@@ -40,14 +39,11 @@ import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
 import org.opensaml.security.SAMLSignatureProfileValidator;
-import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureException;
 import org.opensaml.xml.signature.SignatureValidator;
-import org.opensaml.xml.signature.Signer;
 import org.opensaml.xml.validation.ValidationException;
 
 public class AttributeAuthorityServiceImpl
@@ -97,7 +93,14 @@ public class AttributeAuthorityServiceImpl
 
             handler.fillInResponse(response, userAttrs, query);
 
-            signAssertions(response, configuration);
+            List<Assertion> assertions = response.getAssertions();
+            if (assertions.size() == 0) {
+                throw new SecurityException("Missing assertion in response");
+            }
+
+            for (Assertion assertion : assertions) {
+                SignUtils.signObject(assertion);
+            }
 
             Status status = this.newStatus();
             response.setStatus(status);
@@ -186,37 +189,6 @@ public class AttributeAuthorityServiceImpl
 
         return status;
 
-    }
-
-    private void signAssertions(Response response, AuthorityConfiguration configuration)
-        throws SecurityException, ConfigurationException, SignatureException, MarshallingException {
-
-        List<Assertion> assertions = response.getAssertions();
-        if (assertions.size() == 0) {
-            throw new SecurityException("Missing assertion in response");
-        }
-
-        AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
-
-        X509Certificate srvCert = config.getServiceCertificate();
-        PrivateKey srvKey = config.getServicePrivateKey();
-        Credential credential = SecurityHelper.getSimpleCredential(srvCert, srvKey);
-
-        for (Assertion assertion : assertions) {
-            Signature assertionSignature = SAML2ObjectBuilder.buildSignature();
-            assertionSignature.setSigningCredential(credential);
-            assertionSignature.setCanonicalizationAlgorithm(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-            assertionSignature.setSignatureAlgorithm(config.getSignatureAlgorithm());
-
-            assertion.setSignature(assertionSignature);
-            /*
-             * TODO verify workaround
-             */
-            SAML2ObjectBuilder.getMarshaller(assertion).marshall(assertion);
-
-            Signer.signObject(assertionSignature);
-
-        }
     }
 
     private void verifySignature(AttributeQuery query, Subject requester)
