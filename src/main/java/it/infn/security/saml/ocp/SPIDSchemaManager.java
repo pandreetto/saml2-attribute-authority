@@ -7,12 +7,14 @@ import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.opensaml.saml2.core.AttributeQuery;
 import org.wso2.charon.core.schema.SCIMAttributeSchema;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
@@ -80,20 +82,16 @@ public class SPIDSchemaManager
 
     }
 
+    /*
+     * SCIM section
+     */
+
     public SCIMResourceSchema getGroupSchema() {
         return groupSchema;
     }
 
     public SCIMResourceSchema getUserSchema() {
         return userSchema;
-    }
-
-    public String[] getSupportedProtocols() {
-        return new String[] { "urn:oasis:names:tc:SAML:2.0:protocol" };
-    }
-
-    public String[] getSupportedAttributeProfiles() {
-        return new String[] { "urn:oasis:names:tc:SAML:2.0:attrname-format:basic" };
     }
 
     public String encode(AttributeEntry attribute, String format)
@@ -190,6 +188,50 @@ public class SPIDSchemaManager
             throw new SchemaManagerException(jEx.getMessage());
         }
 
+    }
+
+    /*
+     * SAML2 section
+     */
+
+    public String[] getSupportedProtocols() {
+        return new String[] { "urn:oasis:names:tc:SAML:2.0:protocol" };
+    }
+
+    public String[] getSupportedAttributeProfiles() {
+        return new String[] { "urn:oasis:names:tc:SAML:2.0:attrname-format:basic" };
+    }
+
+    public void checkRequest(AttributeQuery query)
+        throws SchemaManagerException {
+
+    }
+
+    public String getResponseDestination() {
+        /*
+         * TODO missing definition
+         */
+        return null;
+    }
+
+    public boolean requiredSignedAssertion() {
+        return true;
+    }
+
+    public boolean requiredSignedResponse() {
+        return false;
+    }
+
+    public boolean requiredSignedQuery() {
+        return true;
+    }
+
+    public String generateAssertionID() {
+        return "_" + UUID.randomUUID().toString();
+    }
+
+    public String generateResponseID() {
+        return "_" + UUID.randomUUID().toString();
     }
 
     public void close()

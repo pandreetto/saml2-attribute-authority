@@ -1,13 +1,17 @@
 package it.infn.security.saml.utils;
 
 import org.opensaml.Configuration;
+import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
+import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
+import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.ResponseBuilder;
 import org.opensaml.saml2.core.impl.StatusBuilder;
@@ -102,6 +106,12 @@ public class SAML2ObjectBuilder {
     private static final StatusMessageBuilder statusMessageBuilder = (StatusMessageBuilder) builderFactory
             .getBuilder(StatusMessage.DEFAULT_ELEMENT_NAME);
 
+    private static final AssertionBuilder assertionBuilder = (AssertionBuilder) builderFactory
+            .getBuilder(Assertion.DEFAULT_ELEMENT_NAME);
+
+    private static final AttributeStatementBuilder attrStatBuilder = (AttributeStatementBuilder) builderFactory
+            .getBuilder(AttributeStatement.DEFAULT_ELEMENT_NAME);
+
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
     }
@@ -176,5 +186,13 @@ public class SAML2ObjectBuilder {
 
     public static StatusMessage buildStatusMessage() {
         return statusMessageBuilder.buildObject();
+    }
+
+    public static Assertion buildAssertion() {
+        return assertionBuilder.buildObject();
+    }
+
+    public static AttributeStatement buildAttributeStatement() {
+        return attrStatBuilder.buildObject();
     }
 }

@@ -8,14 +8,15 @@ import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.DataSourceFactory;
-import it.infn.security.saml.handler.SAML2Handler;
-import it.infn.security.saml.handler.SAML2HandlerFactory;
 import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.AttributeQueryParameters;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
+import it.infn.security.saml.schema.SchemaManager;
+import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
 import it.infn.security.saml.utils.SignUtils;
 
@@ -33,6 +34,7 @@ import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
+import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
@@ -53,32 +55,40 @@ public class AttributeAuthorityServiceImpl
 
     public Response attributeQuery(AttributeQuery query) {
 
-        Response response = this.newResponse(query.getID());
+        Response response = SAML2ObjectBuilder.buildResponse();
+        response.setIssueInstant(new DateTime());
+        response.setInResponseTo(query.getID());
 
         try {
 
+            SchemaManager schemaManager = SchemaManagerFactory.getManager();
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
-
-            Issuer responseIssuer = this.newIssuer(configuration);
-            response.setIssuer(responseIssuer);
-
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
+            DataSource dataSource = DataSourceFactory.getDataSource();
+
+            response.setID(schemaManager.generateResponseID());
+
+            Issuer responseIssuer = newIssuer(configuration);
+            response.setIssuer(responseIssuer);
 
             if (query.getVersion() != SAMLVersion.VERSION_20) {
                 throw new CodedException("Unsupported version", StatusCode.VERSION_MISMATCH_URI);
             }
 
-            DataSource dataSource = DataSourceFactory.getDataSource();
-            SAML2Handler handler = SAML2HandlerFactory.getHandler();
-
-            handler.checkRequest(query);
+            schemaManager.checkRequest(query);
 
             Subject requester = identityManager.authenticate();
 
-            verifySignature(query, requester);
+            Signature signature = query.getSignature();
+            if (signature == null && schemaManager.requiredSignedQuery()) {
+                throw new CodedException("Missing signature in query", StatusCode.RESPONDER_URI);
+            }
+            if (signature != null) {
+                verifySignature(signature, requester);
+            }
 
-            String samlId = handler.getSubjectID(query);
+            String samlId = query.getSubject().getNameID().getValue();
             String userId = dataSource.samlId2UserId(samlId);
             if (userId == null) {
                 throw new DataSourceException("User not found", StatusCode.RESPONDER_URI,
@@ -91,18 +101,48 @@ public class AttributeAuthorityServiceImpl
             List<Attribute> queryAttrs = constraints.filterAttributes(query.getAttributes());
             List<Attribute> userAttrs = dataSource.findAttributes(userId, queryAttrs);
 
-            handler.fillInResponse(response, userAttrs, query);
-
-            List<Assertion> assertions = response.getAssertions();
-            if (assertions.size() == 0) {
-                throw new SecurityException("Missing assertion in response");
+            String respDestination = schemaManager.getResponseDestination();
+            if (respDestination != null) {
+                response.setDestination(respDestination);
             }
 
-            for (Assertion assertion : assertions) {
+            /* Building the assertion */
+            /*
+             * TODO verify multiple assertions in response
+             */
+            Assertion assertion = SAML2ObjectBuilder.buildAssertion();
+            assertion.setID(schemaManager.generateAssertionID());
+            assertion.setIssueInstant(new DateTime());
+
+            Issuer assertionIssuer = newIssuer(configuration);
+            assertion.setIssuer(assertionIssuer);
+
+            AttributeStatement attributeStatement = SAML2ObjectBuilder.buildAttributeStatement();
+            attributeStatement.getAttributes().addAll(userAttrs);
+            assertion.getAttributeStatements().add(attributeStatement);
+
+            if (schemaManager.requiredSignedAssertion()) {
                 SignUtils.signObject(assertion);
             }
 
-            Status status = this.newStatus();
+            response.getAssertions().add(assertion);
+
+            Status status = SAML2ObjectBuilder.buildStatus();
+            StatusCode statusCode = SAML2ObjectBuilder.buildStatusCode();
+            statusCode.setValue(StatusCode.SUCCESS_URI);
+            status.setStatusCode(statusCode);
+            response.setStatus(status);
+
+            if (schemaManager.requiredSignedResponse()) {
+                SignUtils.signObject(response);
+            }
+
+        } catch (SchemaManagerException cEx) {
+
+            if (response.getID() == null) {
+                response.setID("_" + UUID.randomUUID().toString());
+            }
+            Status status = this.newStatus(cEx);
             response.setStatus(status);
 
         } catch (CodedException cEx) {
@@ -123,17 +163,6 @@ public class AttributeAuthorityServiceImpl
 
     }
 
-    private Response newResponse(String respID) {
-
-        Response response = SAML2ObjectBuilder.buildResponse();
-
-        response.setID("_" + UUID.randomUUID().toString());
-        response.setIssueInstant(new DateTime());
-        response.setInResponseTo(respID);
-
-        return response;
-    }
-
     private Issuer newIssuer(AuthorityConfiguration configuration)
         throws ConfigurationException {
 
@@ -148,14 +177,6 @@ public class AttributeAuthorityServiceImpl
 
         return responseIssuer;
 
-    }
-
-    private Status newStatus() {
-        Status status = SAML2ObjectBuilder.buildStatus();
-        StatusCode statusCode = SAML2ObjectBuilder.buildStatusCode();
-        statusCode.setValue(StatusCode.SUCCESS_URI);
-        status.setStatusCode(statusCode);
-        return status;
     }
 
     private Status newStatus(Throwable th) {
@@ -191,16 +212,8 @@ public class AttributeAuthorityServiceImpl
 
     }
 
-    private void verifySignature(AttributeQuery query, Subject requester)
+    private void verifySignature(Signature signature, Subject requester)
         throws SecurityException, ConfigurationException, ValidationException {
-
-        Signature signature = query.getSignature();
-        if (signature == null) {
-            /*
-             * if signature is mandatory the check must be specified in SAML2Handler
-             */
-            return;
-        }
 
         SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
         profileValidator.validate(signature);
