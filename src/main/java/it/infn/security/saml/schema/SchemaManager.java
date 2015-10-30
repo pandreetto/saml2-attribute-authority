@@ -36,6 +36,8 @@ public interface SchemaManager {
 
     public String[] getSupportedAttributeProfiles();
 
+    public String[] getSupportedNameIDFormats();
+
     public void checkRequest(AttributeQuery query)
         throws SchemaManagerException;
 
@@ -46,7 +48,7 @@ public interface SchemaManager {
     public boolean requiredSignedResponse();
 
     public boolean requiredSignedQuery();
-    
+
     public String generateAssertionID();
 
     public String generateResponseID();

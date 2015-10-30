@@ -202,6 +202,10 @@ public class SPIDSchemaManager
         return new String[] { "urn:oasis:names:tc:SAML:2.0:attrname-format:basic" };
     }
 
+    public String[] getSupportedNameIDFormats() {
+        return new String[] { "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified" };
+    }
+
     public void checkRequest(AttributeQuery query)
         throws SchemaManagerException {
 
