@@ -31,6 +31,7 @@ import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeProfile;
 import org.opensaml.saml2.metadata.AttributeService;
+import org.opensaml.saml2.metadata.ContactPerson;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.KeyDescriptor;
 import org.opensaml.saml2.metadata.NameIDFormat;
@@ -66,8 +67,13 @@ public class MetadataManager {
                 DateTime expDate = new DateTime(System.currentTimeMillis() + (dtime * 1000));
                 entDescr.setValidUntil(expDate);
             }
+
+            for (ContactPerson contact : configuration.getContacts()) {
+                entDescr.getContactPersons().add(contact);
+            }
+
             /*
-             * TODO set organization and contact persons
+             * TODO missing organization
              */
 
             AttributeAuthorityDescriptor aaDescr = SAML2ObjectBuilder.buildAttributeAuthorityDescriptor();
@@ -77,13 +83,15 @@ public class MetadataManager {
             entDescr.getRoleDescriptors().add(aaDescr);
 
             AttributeService attrService = SAML2ObjectBuilder.buildAttributeService();
-            /*
-             * TODO retrieve service URL
-             */
+            attrService.setBinding("urn:oasis:names:tc:SAML:2.0:bindings:SOAP");
+            attrService.setLocation(configuration.getAuthorityURL() + "/samlAA");
             aaDescr.getAttributeServices().add(attrService);
 
-            NameIDFormat nidFormat = SAML2ObjectBuilder.buildNameIDFormat();
-            aaDescr.getNameIDFormats().add(nidFormat);
+            for (String nIdFormat : schemaManager.getSupportedNameIDFormats()) {
+                NameIDFormat nidFormat = SAML2ObjectBuilder.buildNameIDFormat();
+                nidFormat.setFormat(nIdFormat);
+                aaDescr.getNameIDFormats().add(nidFormat);
+            }
 
             for (String prof : schemaManager.getSupportedAttributeProfiles()) {
                 AttributeProfile attrProfile = SAML2ObjectBuilder.buildAttributeProfile();
@@ -119,8 +127,7 @@ public class MetadataManager {
 
         } catch (Exception ex) {
             /*
-             * TODO verify output format
-             *      change error message in response
+             * TODO verify output format change error message in response
              */
             logger.log(Level.SEVERE, ex.getMessage(), ex);
             return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, null));
