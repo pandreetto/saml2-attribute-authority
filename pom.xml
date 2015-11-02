@@ -28,8 +28,8 @@
       </plugin> 
       <plugin>
         <groupId>org.apache.tomcat.maven</groupId>
-        <artifactId>tomcat6-maven-plugin</artifactId>
-        <version>2.2</version>
+        <artifactId>${tomcat.manager.artifactid}</artifactId>
+        <version>${tomcat.manager.version}</version>
         <configuration>
           <url>${tomcat.manager.epr}</url>
           <update>true</update>

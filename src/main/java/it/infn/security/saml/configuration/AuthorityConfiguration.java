@@ -8,6 +8,8 @@ import java.util.ServiceLoader;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.opensaml.saml2.metadata.ContactPerson;
+
 public interface AuthorityConfiguration {
 
     public void init(Map<String, String> parameters)
@@ -16,7 +18,16 @@ public interface AuthorityConfiguration {
     public String getAuthorityID()
         throws ConfigurationException;
 
+    /*
+     * TODO move to schema manager?
+     */
     public String getAuthorityIDFormat()
+        throws ConfigurationException;
+
+    public String getAuthorityURL()
+        throws ConfigurationException;
+
+    public ContactPerson[] getContacts()
         throws ConfigurationException;
 
     public long getMetadataDuration()

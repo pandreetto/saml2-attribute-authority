@@ -1,13 +1,17 @@
 package it.infn.security.saml.utils;
 
 import org.opensaml.Configuration;
+import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
+import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
+import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.ResponseBuilder;
 import org.opensaml.saml2.core.impl.StatusBuilder;
@@ -16,15 +20,25 @@ import org.opensaml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeProfile;
 import org.opensaml.saml2.metadata.AttributeService;
+import org.opensaml.saml2.metadata.ContactPerson;
+import org.opensaml.saml2.metadata.EmailAddress;
 import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.GivenName;
 import org.opensaml.saml2.metadata.KeyDescriptor;
 import org.opensaml.saml2.metadata.NameIDFormat;
+import org.opensaml.saml2.metadata.SurName;
+import org.opensaml.saml2.metadata.TelephoneNumber;
 import org.opensaml.saml2.metadata.impl.AttributeAuthorityDescriptorBuilder;
 import org.opensaml.saml2.metadata.impl.AttributeProfileBuilder;
 import org.opensaml.saml2.metadata.impl.AttributeServiceBuilder;
+import org.opensaml.saml2.metadata.impl.ContactPersonBuilder;
+import org.opensaml.saml2.metadata.impl.EmailAddressBuilder;
 import org.opensaml.saml2.metadata.impl.EntityDescriptorBuilder;
+import org.opensaml.saml2.metadata.impl.GivenNameBuilder;
 import org.opensaml.saml2.metadata.impl.KeyDescriptorBuilder;
 import org.opensaml.saml2.metadata.impl.NameIDFormatBuilder;
+import org.opensaml.saml2.metadata.impl.SurNameBuilder;
+import org.opensaml.saml2.metadata.impl.TelephoneNumberBuilder;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.io.Marshaller;
@@ -102,6 +116,27 @@ public class SAML2ObjectBuilder {
     private static final StatusMessageBuilder statusMessageBuilder = (StatusMessageBuilder) builderFactory
             .getBuilder(StatusMessage.DEFAULT_ELEMENT_NAME);
 
+    private static final AssertionBuilder assertionBuilder = (AssertionBuilder) builderFactory
+            .getBuilder(Assertion.DEFAULT_ELEMENT_NAME);
+
+    private static final AttributeStatementBuilder attrStatBuilder = (AttributeStatementBuilder) builderFactory
+            .getBuilder(AttributeStatement.DEFAULT_ELEMENT_NAME);
+
+    private static final ContactPersonBuilder contactPerBuilder = (ContactPersonBuilder) builderFactory
+            .getBuilder(ContactPerson.DEFAULT_ELEMENT_NAME);
+
+    private static final GivenNameBuilder gNameBuilder = (GivenNameBuilder) builderFactory
+            .getBuilder(GivenName.DEFAULT_ELEMENT_NAME);
+
+    private static final SurNameBuilder sNameBuilder = (SurNameBuilder) builderFactory
+            .getBuilder(SurName.DEFAULT_ELEMENT_NAME);
+
+    private static final EmailAddressBuilder emailBuilder = (EmailAddressBuilder) builderFactory
+            .getBuilder(EmailAddress.DEFAULT_ELEMENT_NAME);
+
+    private static final TelephoneNumberBuilder phoneBuilder = (TelephoneNumberBuilder) builderFactory
+            .getBuilder(TelephoneNumber.DEFAULT_ELEMENT_NAME);
+
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
     }
@@ -176,5 +211,33 @@ public class SAML2ObjectBuilder {
 
     public static StatusMessage buildStatusMessage() {
         return statusMessageBuilder.buildObject();
+    }
+
+    public static Assertion buildAssertion() {
+        return assertionBuilder.buildObject();
+    }
+
+    public static AttributeStatement buildAttributeStatement() {
+        return attrStatBuilder.buildObject();
+    }
+
+    public static ContactPerson buildContactPerson() {
+        return contactPerBuilder.buildObject();
+    }
+
+    public static GivenName buildGivenName() {
+        return gNameBuilder.buildObject();
+    }
+
+    public static SurName buildSurName() {
+        return sNameBuilder.buildObject();
+    }
+
+    public static EmailAddress buildEmailAddress() {
+        return emailBuilder.buildObject();
+    }
+
+    public static TelephoneNumber buildTelephoneNumber() {
+        return phoneBuilder.buildObject();
     }
 }
