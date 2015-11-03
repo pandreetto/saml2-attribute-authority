@@ -1,8 +1,12 @@
 package it.infn.security.saml.datasource.hibernate;
 
 import org.parboiled.BaseParser;
+import org.parboiled.Parboiled;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
+import org.parboiled.parserunners.ReportingParseRunner;
+import org.parboiled.support.ParseTreeUtils;
+import org.parboiled.support.ParsingResult;
 
 @BuildParseTree
 public class QueryFilterParser
@@ -11,17 +15,18 @@ public class QueryFilterParser
     private char[] sepChars = new char[] { ' ', '\t' };
 
     Rule filter() {
-        return FirstOf(attributeExpression(), logicalExpression(), valuePath(),
-                Sequence(Optional("not"), '(', filter(), ')'));
-    }
-
-    Rule attributeExpression() {
-        return FirstOf(Sequence(attributePath(), separator(), "pr"),
-                Sequence(attributePath(), separator(), compOperator(), separator(), compValue()));
+        return Sequence(logicalExpression(),
+                ZeroOrMore(Sequence(sep(), FirstOf("and", "or"), sep(), logicalExpression())));
     }
 
     Rule logicalExpression() {
-        return Sequence(filter(), separator(), FirstOf("and", "or"), separator(), filter());
+        return FirstOf(attributeExpression(), valuePath(),
+                Sequence(Optional(Sequence("not", sep())), '(', filter(), ')'));
+    }
+
+    Rule attributeExpression() {
+        return FirstOf(Sequence(attributePath(), sep(), "pr"),
+                Sequence(attributePath(), sep(), compOperator(), sep(), compValue()));
     }
 
     Rule valuePath() {
@@ -29,11 +34,16 @@ public class QueryFilterParser
     }
 
     Rule valueFilter() {
-        return FirstOf(attributeExpression(), logicalExpression(), Sequence(Optional("not"), '(', valueFilter(), ')'));
+        return Sequence(logValExpression(),
+                ZeroOrMore(Sequence(sep(), FirstOf("and", "or"), sep(), logValExpression())));
+    }
+
+    Rule logValExpression() {
+        return FirstOf(attributeExpression(), Sequence(Optional(Sequence("not", sep())), '(', filter(), ')'));
     }
 
     Rule compValue() {
-        return FirstOf("false", "null", "true", "number", "string");
+        return FirstOf("false", "true", "null", number(), string());
     }
 
     Rule compOperator() {
@@ -51,6 +61,14 @@ public class QueryFilterParser
         return Sequence(alpha(), ZeroOrMore(nameChar()));
     }
 
+    Rule number() {
+        return OneOrMore(CharRange('0', '9'));
+    }
+
+    Rule string() {
+        return Sequence('"', OneOrMore(nameChar()), '"');
+    }
+
     Rule nameChar() {
         return FirstOf('-', '_', alpha(), CharRange('0', '9'));
     }
@@ -63,7 +81,18 @@ public class QueryFilterParser
         return FirstOf(CharRange('a', 'z'), CharRange('A', 'Z'));
     }
 
-    Rule separator() {
+    Rule sep() {
         return AnyOf(sepChars);
+    }
+
+    public static void main(String args[]) {
+        QueryFilterParser parser = Parboiled.createParser(QueryFilterParser.class);
+        @SuppressWarnings("rawtypes")
+        ParsingResult<?> result = new ReportingParseRunner(parser.filter()).run(args[0]);
+        if (result.matched) {
+            System.out.println(ParseTreeUtils.printNodeTree(result));
+        } else {
+            System.out.println("error");
+        }
     }
 }
