@@ -79,15 +79,15 @@ public class QueryNode
 
         } else if ("co".equalsIgnoreCase(operator)) {
 
-            this.operator = "like";
+            this.operator = "like '%-%'";
 
         } else if ("sw".equalsIgnoreCase(operator)) {
 
-            this.operator = "like";
+            this.operator = "like '-%'";
 
         } else if ("ew".equalsIgnoreCase(operator)) {
 
-            this.operator = "like";
+            this.operator = "like '%-'";
 
         } else if ("pr".equalsIgnoreCase(operator)) {
 
@@ -121,13 +121,20 @@ public class QueryNode
 
     }
 
+    private String operAndValue() {
+        if (label != null) {
+            if (operator.startsWith("like")) {
+                return operator.replace("-", ":" + label);
+            }
+            return operator + " :" + label;
+        }
+        return operator;
+    }
+
     protected String getFormatString(String parentAttr) {
 
         if (type == ATTREXPR) {
-            if (label != null) {
-                return parentAttr + "." + attribute + " " + operator + " :" + label;
-            }
-            return parentAttr + "." + attribute + " " + operator;
+            return parentAttr + "." + attribute + " " + operAndValue();
         }
 
         if (type == LOGEXPR) {
@@ -144,10 +151,7 @@ public class QueryNode
 
     public String getFormatString() {
         if (type == ATTREXPR) {
-            if (label != null) {
-                return attribute + " " + operator + " :" + label;
-            }
-            return attribute + " " + operator;
+            return attribute + " " + operAndValue();
         }
 
         if (type == LOGEXPR) {
