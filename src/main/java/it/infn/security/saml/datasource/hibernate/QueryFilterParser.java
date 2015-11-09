@@ -50,6 +50,9 @@ public class QueryFilterParser
         StringVar oper = new StringVar("pr");
         StringVar value = new StringVar("");
 
+        /*
+         * TODO missing check for co sw ew on string
+         */
         return Sequence(attributePath(), attrPath.set(match()), sep(),
                 FirstOf("pr", Sequence(compOperator(), oper.set(match()), sep(), compValue(), value.set(match()))),
                 push(new QueryNode(attrPath.get(), oper.get(), value.get())));

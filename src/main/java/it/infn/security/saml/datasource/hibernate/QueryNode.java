@@ -15,19 +15,60 @@ public class QueryNode
 
     private int type;
 
-    private String attribute;
+    private String attribute = null;
 
     private String operator;
 
-    private String value;
+    private String expr;
 
     public QueryNode(String attribute, String operator, String value) {
         super(null, null);
 
         this.type = ATTREXPR;
-        this.attribute = attribute;
-        this.operator = operator;
-        this.value = value;
+        if ("eq".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " = " + value;
+
+        } else if ("ne".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " != " + value;
+
+        } else if ("gt".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " > " + value;
+
+        } else if ("ge".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " >= " + value;
+
+        } else if ("lt".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " < " + value;
+
+        } else if ("le".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " <= " + value;
+
+        } else if ("co".equalsIgnoreCase(operator)) {
+
+            value = value.substring(1, value.length() - 1);
+            expr = attribute + " like \"%" + value + "%\"";
+
+        } else if ("sw".equalsIgnoreCase(operator)) {
+
+            value = value.substring(1);
+            expr = attribute + " like \"%" + value;
+
+        } else if ("ew".equalsIgnoreCase(operator)) {
+
+            value = value.substring(0, value.length() - 1);
+            expr = attribute + " like " + value + "%\"";
+
+        } else if ("pr".equalsIgnoreCase(operator)) {
+
+            expr = attribute + " != null ";
+        }
+
     }
 
     public QueryNode(QueryNode left, String operator, QueryNode right) {
@@ -54,28 +95,42 @@ public class QueryNode
 
     }
 
-    public String toString() {
+    protected String toString(String parentAttr) {
+
         if (type == ATTREXPR) {
-            return "<AE>" + attribute + ":" + operator + ":" + value + "</AE>";
+            return parentAttr + "." + expr;
         }
 
         if (type == LOGEXPR) {
-            return "<LE>" + left().toString() + ":" + operator + ":" + right().toString() + "</LE>";
+            return left().toString(parentAttr) + " " + operator + " " + right().toString(parentAttr);
         }
 
         if (type == GRPEXPR) {
-            return "<GE>" + ":" + operator + ":" + left().toString() + "</GE>";
-        }
-
-        if (type == VALEXPR) {
-            return "<VE>" + attribute + ":" + left().toString() + "</VE>";
+            return operator + " ( " + left().toString(parentAttr) + " ) ";
         }
 
         return "";
+
     }
 
-    public int getType() {
-        return 0;
+    public String toString() {
+        if (type == ATTREXPR) {
+            return expr;
+        }
+
+        if (type == LOGEXPR) {
+            return left().toString() + " " + operator + " " + right().toString();
+        }
+
+        if (type == GRPEXPR) {
+            return operator + " ( " + left().toString() + " ) ";
+        }
+
+        if (type == VALEXPR) {
+            return left().toString(attribute);
+        }
+
+        return "";
     }
 
 }
