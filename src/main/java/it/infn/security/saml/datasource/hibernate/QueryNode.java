@@ -1,5 +1,7 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import java.util.HashMap;
+
 import org.parboiled.trees.ImmutableBinaryTreeNode;
 
 public class QueryNode
@@ -15,58 +17,82 @@ public class QueryNode
 
     private int type;
 
-    private String attribute = null;
+    private String attribute;
 
     private String operator;
 
-    private String expr;
+    private String label;
+
+    private Object value;
 
     public QueryNode(String attribute, String operator, String value) {
         super(null, null);
 
         this.type = ATTREXPR;
+        this.attribute = attribute;
+
+        if (value == null || value.length() == 0) {
+
+            label = null;
+
+        } else {
+
+            label = String.valueOf(System.currentTimeMillis());
+
+            if (value.startsWith("\"")) {
+                this.value = value.substring(1, value.length() - 1);
+            } else if ("true".equalsIgnoreCase(value)) {
+                this.value = Boolean.TRUE;
+            } else if ("false".equalsIgnoreCase(value)) {
+                this.value = Boolean.FALSE;
+            } else if (value.length() > 0) {
+                this.value = Long.parseLong(value);
+            }
+            /*
+             * TODO missing null
+             */
+        }
+
         if ("eq".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " = " + value;
+            this.operator = "=";
 
         } else if ("ne".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " != " + value;
+            this.operator = "!=";
 
         } else if ("gt".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " > " + value;
+            this.operator = ">";
 
         } else if ("ge".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " >= " + value;
+            this.operator = ">=";
 
         } else if ("lt".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " < " + value;
+            this.operator = "<";
 
         } else if ("le".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " <= " + value;
+            this.operator = "<=";
 
         } else if ("co".equalsIgnoreCase(operator)) {
 
-            value = value.substring(1, value.length() - 1);
-            expr = attribute + " like \"%" + value + "%\"";
+            this.operator = "like";
 
         } else if ("sw".equalsIgnoreCase(operator)) {
 
-            value = value.substring(1);
-            expr = attribute + " like \"%" + value;
+            this.operator = "like";
 
         } else if ("ew".equalsIgnoreCase(operator)) {
 
-            value = value.substring(0, value.length() - 1);
-            expr = attribute + " like " + value + "%\"";
+            this.operator = "like";
 
         } else if ("pr".equalsIgnoreCase(operator)) {
 
-            expr = attribute + " != null ";
+            this.operator = "is not null";
+
         }
 
     }
@@ -95,42 +121,61 @@ public class QueryNode
 
     }
 
-    protected String toString(String parentAttr) {
+    protected String getFormatString(String parentAttr) {
 
         if (type == ATTREXPR) {
-            return parentAttr + "." + expr;
+            if (label != null) {
+                return parentAttr + "." + attribute + " " + operator + " :" + label;
+            }
+            return parentAttr + "." + attribute + " " + operator;
         }
 
         if (type == LOGEXPR) {
-            return left().toString(parentAttr) + " " + operator + " " + right().toString(parentAttr);
+            return left().getFormatString(parentAttr) + " " + operator + " " + right().getFormatString(parentAttr);
         }
 
         if (type == GRPEXPR) {
-            return operator + " ( " + left().toString(parentAttr) + " ) ";
+            return operator + " ( " + left().getFormatString(parentAttr) + " ) ";
         }
 
         return "";
 
     }
 
-    public String toString() {
+    public String getFormatString() {
         if (type == ATTREXPR) {
-            return expr;
+            if (label != null) {
+                return attribute + " " + operator + " :" + label;
+            }
+            return attribute + " " + operator;
         }
 
         if (type == LOGEXPR) {
-            return left().toString() + " " + operator + " " + right().toString();
+            return left().getFormatString() + " " + operator + " " + right().getFormatString();
         }
 
         if (type == GRPEXPR) {
-            return operator + " ( " + left().toString() + " ) ";
+            return operator + " ( " + left().getFormatString() + " ) ";
         }
 
         if (type == VALEXPR) {
-            return left().toString(attribute);
+            return left().getFormatString(attribute);
         }
 
         return "";
+    }
+
+    public void fillinParameters(HashMap<String, Object> parameters) {
+
+        if (type == ATTREXPR && label != null) {
+            parameters.put(label, value);
+        } else if (type == LOGEXPR) {
+            left().fillinParameters(parameters);
+            right().fillinParameters(parameters);
+        } else if (type == GRPEXPR || type == VALEXPR) {
+            left().fillinParameters(parameters);
+        }
+
     }
 
 }

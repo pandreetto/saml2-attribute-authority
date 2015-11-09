@@ -1,17 +1,17 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import java.util.HashMap;
+
+import it.infn.security.saml.datasource.DataSourceException;
+
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
 import org.parboiled.parserunners.ReportingParseRunner;
-import org.parboiled.support.ParseTreeUtils;
 import org.parboiled.support.ParsingResult;
 import org.parboiled.support.StringVar;
-import org.parboiled.support.ToStringFormatter;
 import org.parboiled.support.Var;
-import org.parboiled.trees.GraphNode;
-import org.parboiled.trees.GraphUtils;
 
 @BuildParseTree
 public class QueryFilterParser
@@ -135,24 +135,37 @@ public class QueryFilterParser
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void main(String args[]) {
+    public static QueryNode parse(String input)
+        throws DataSourceException {
+
         QueryFilterParser parser = Parboiled.createParser(QueryFilterParser.class);
-        ParsingResult<?> result = new ReportingParseRunner(parser.start()).run(args[0]);
+        ParsingResult<QueryNode> result = new ReportingParseRunner(parser.start()).run(input);
         if (result.matched) {
-            Object value = result.parseTreeRoot.getValue();
-            if (value != null) {
-                System.out.println(value.toString());
+
+            QueryNode rootNode = result.parseTreeRoot.getValue();
+            if (rootNode != null) {
+                return rootNode;
             }
 
-            if (value instanceof GraphNode) {
-                System.out.println("\nAbstract Syntax Tree:\n"
-                        + GraphUtils.printTree((GraphNode) value, new ToStringFormatter(null)) + '\n');
-            } else {
-                System.out.println("\nParse Tree:\n" + ParseTreeUtils.printNodeTree(result) + '\n');
-            }
-
-        } else {
-            System.out.println("error");
         }
+
+        throw new DataSourceException("Cannot parse query filter");
+    }
+
+    public static void main(String args[]) {
+
+        try {
+            QueryNode rootNode = parse(args[0]);
+            System.out.println(rootNode.getFormatString());
+
+            HashMap<String, Object> params = new HashMap<String, Object>();
+            rootNode.fillinParameters(params);
+            for (String key : params.keySet()) {
+                System.out.println(key + " = " + params.get(key).toString());
+            }
+        } catch (Throwable th) {
+            th.printStackTrace();
+        }
+
     }
 }
