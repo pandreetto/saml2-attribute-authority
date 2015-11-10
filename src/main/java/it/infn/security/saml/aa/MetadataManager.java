@@ -2,6 +2,7 @@ package it.infn.security.saml.aa;
 
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
+import it.infn.security.saml.configuration.ContactInfo;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.schema.AttributeNameInterface;
@@ -31,7 +32,6 @@ import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeProfile;
 import org.opensaml.saml2.metadata.AttributeService;
-import org.opensaml.saml2.metadata.ContactPerson;
 import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.KeyDescriptor;
 import org.opensaml.saml2.metadata.NameIDFormat;
@@ -68,8 +68,8 @@ public class MetadataManager {
                 entDescr.setValidUntil(expDate);
             }
 
-            for (ContactPerson contact : configuration.getContacts()) {
-                entDescr.getContactPersons().add(contact);
+            for (ContactInfo contact : configuration.getContacts()) {
+                entDescr.getContactPersons().add(contact.buildContactPerson());
             }
 
             /*

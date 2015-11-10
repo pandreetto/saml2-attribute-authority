@@ -2,7 +2,7 @@ package it.infn.security.saml.configuration.impl;
 
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.ConfigurationException;
-import it.infn.security.saml.utils.SAML2ObjectBuilder;
+import it.infn.security.saml.configuration.ContactInfo;
 
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -26,12 +26,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.xml.security.signature.XMLSignature;
 import org.opensaml.saml2.core.Issuer;
-import org.opensaml.saml2.metadata.ContactPerson;
-import org.opensaml.saml2.metadata.ContactPersonTypeEnumeration;
-import org.opensaml.saml2.metadata.EmailAddress;
-import org.opensaml.saml2.metadata.GivenName;
-import org.opensaml.saml2.metadata.SurName;
-import org.opensaml.saml2.metadata.TelephoneNumber;
 
 public class PropertyFileConfiguration
     implements AuthorityConfiguration {
@@ -68,7 +62,7 @@ public class PropertyFileConfiguration
 
     private Properties properties;
 
-    private ContactPerson[] contacts;
+    private ContactInfo[] contacts;
 
     private X509KeyManager keyManager = null;
 
@@ -204,7 +198,7 @@ public class PropertyFileConfiguration
         return result;
     }
 
-    public ContactPerson[] getContacts()
+    public ContactInfo[] getContacts()
         throws ConfigurationException {
         return contacts;
     }
@@ -332,69 +326,34 @@ public class PropertyFileConfiguration
     }
 
     private void parseContacts() {
-
-        ArrayList<ContactPerson> cList = new ArrayList<ContactPerson>();
-
+        ArrayList<ContactInfo> cList = new ArrayList<ContactInfo>();
         for (String tmpk : properties.stringPropertyNames()) {
             Matcher matcher = CONTACT_PATTERN.matcher(tmpk);
             if (matcher.matches()) {
                 String cId = matcher.group(1);
-                String cType = properties.getProperty("contact.type." + cId);
-                String gName = properties.getProperty("contact.givenName." + cId, null);
-                String sName = properties.getProperty("contact.surName." + cId, null);
-                String emails = properties.getProperty("contact.emails." + cId, null);
-                String phones = properties.getProperty("contact.phones." + cId, null);
 
-                ContactPerson contact = SAML2ObjectBuilder.buildContactPerson();
-                if (cType.equalsIgnoreCase("administrative")) {
-                    contact.setType(ContactPersonTypeEnumeration.ADMINISTRATIVE);
-                } else if (cType.equalsIgnoreCase("billing")) {
-                    contact.setType(ContactPersonTypeEnumeration.BILLING);
-                } else if (cType.equalsIgnoreCase("support")) {
-                    contact.setType(ContactPersonTypeEnumeration.SUPPORT);
-                } else if (cType.equalsIgnoreCase("technical")) {
-                    contact.setType(ContactPersonTypeEnumeration.TECHNICAL);
-                } else {
-                    contact.setType(ContactPersonTypeEnumeration.OTHER);
+                ContactInfo cInfo = new ContactInfo();
+                cInfo.setType(properties.getProperty("contact.type." + cId));
+                cInfo.setGivenName(properties.getProperty("contact.givenName." + cId, null));
+                cInfo.setSurName(properties.getProperty("contact.surName." + cId, null));
+
+                String emails = properties.getProperty("contact.emails." + cId, "");
+                for (String tmps : emails.split(",")) {
+                    cInfo.addEmail(tmps.trim());
                 }
 
-                if (gName != null) {
-                    GivenName givenName = SAML2ObjectBuilder.buildGivenName();
-                    givenName.setName(gName);
-                    contact.setGivenName(givenName);
-                }
-                if (sName != null) {
-                    SurName surName = SAML2ObjectBuilder.buildSurName();
-                    surName.setName(sName);
-                    contact.setSurName(surName);
-                }
-                if (emails != null) {
-                    for (String tmps : emails.split(",")) {
-                        tmps = tmps.trim();
-                        if (tmps.length() > 0) {
-                            EmailAddress email = SAML2ObjectBuilder.buildEmailAddress();
-                            email.setAddress(tmps);
-                            contact.getEmailAddresses().add(email);
-                        }
-                    }
-                }
-                if (phones != null) {
-                    for (String tmps : phones.split(",")) {
-                        tmps = tmps.trim();
-                        if (tmps.length() > 0) {
-                            TelephoneNumber phone = SAML2ObjectBuilder.buildTelephoneNumber();
-                            phone.setNumber(tmps);
-                            contact.getTelephoneNumbers().add(phone);
-                        }
-                    }
+                String phones = properties.getProperty("contact.phones." + cId, "");
+                for (String tmps : phones.split(",")) {
+                    cInfo.addPhone(tmps.trim());
                 }
 
-                cList.add(contact);
+                cList.add(cInfo);
             }
         }
 
-        contacts = new ContactPerson[cList.size()];
+        contacts = new ContactInfo[cList.size()];
         cList.toArray(contacts);
+
     }
 
 }
