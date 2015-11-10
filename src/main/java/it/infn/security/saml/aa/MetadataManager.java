@@ -13,6 +13,7 @@ import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.SignUtils;
 import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 
+import java.io.StringWriter;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,7 @@ import org.opensaml.saml2.metadata.NameIDFormat;
 import org.opensaml.xml.io.Marshaller;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.schema.SCIMConstants;
@@ -119,7 +121,12 @@ public class MetadataManager {
             marshaller.marshall(entDescr, rootElement);
             DOMImplementationLS lsImpl = (DOMImplementationLS) rootElement.getImplementation();
             LSSerializer domSerializer = lsImpl.createLSSerializer();
-            String payload = domSerializer.writeToString(rootElement);
+            LSOutput lsOutput = lsImpl.createLSOutput();
+            lsOutput.setEncoding("UTF-8");
+            StringWriter xmlWriter = new StringWriter();
+            lsOutput.setCharacterStream(xmlWriter);
+            domSerializer.write(rootElement, lsOutput);
+            String payload = xmlWriter.toString();
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, "text/xml");
