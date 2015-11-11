@@ -26,6 +26,10 @@ import org.opensaml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml2.metadata.GivenName;
 import org.opensaml.saml2.metadata.KeyDescriptor;
 import org.opensaml.saml2.metadata.NameIDFormat;
+import org.opensaml.saml2.metadata.Organization;
+import org.opensaml.saml2.metadata.OrganizationDisplayName;
+import org.opensaml.saml2.metadata.OrganizationName;
+import org.opensaml.saml2.metadata.OrganizationURL;
 import org.opensaml.saml2.metadata.SurName;
 import org.opensaml.saml2.metadata.TelephoneNumber;
 import org.opensaml.saml2.metadata.impl.AttributeAuthorityDescriptorBuilder;
@@ -37,6 +41,10 @@ import org.opensaml.saml2.metadata.impl.EntityDescriptorBuilder;
 import org.opensaml.saml2.metadata.impl.GivenNameBuilder;
 import org.opensaml.saml2.metadata.impl.KeyDescriptorBuilder;
 import org.opensaml.saml2.metadata.impl.NameIDFormatBuilder;
+import org.opensaml.saml2.metadata.impl.OrganizationBuilder;
+import org.opensaml.saml2.metadata.impl.OrganizationDisplayNameBuilder;
+import org.opensaml.saml2.metadata.impl.OrganizationNameBuilder;
+import org.opensaml.saml2.metadata.impl.OrganizationURLBuilder;
 import org.opensaml.saml2.metadata.impl.SurNameBuilder;
 import org.opensaml.saml2.metadata.impl.TelephoneNumberBuilder;
 import org.opensaml.xml.XMLObject;
@@ -136,6 +144,18 @@ public class SAML2ObjectBuilder {
 
     private static final TelephoneNumberBuilder phoneBuilder = (TelephoneNumberBuilder) builderFactory
             .getBuilder(TelephoneNumber.DEFAULT_ELEMENT_NAME);
+
+    private static final OrganizationBuilder organizBuilder = (OrganizationBuilder) builderFactory
+            .getBuilder(Organization.DEFAULT_ELEMENT_NAME);
+
+    private static final OrganizationNameBuilder orgNameBuilder = (OrganizationNameBuilder) builderFactory
+            .getBuilder(OrganizationName.DEFAULT_ELEMENT_NAME);
+
+    private static final OrganizationDisplayNameBuilder orgDispBuilder = (OrganizationDisplayNameBuilder) builderFactory
+            .getBuilder(OrganizationDisplayName.DEFAULT_ELEMENT_NAME);
+
+    private static final OrganizationURLBuilder orgUrlBuilder = (OrganizationURLBuilder) builderFactory
+            .getBuilder(OrganizationURL.DEFAULT_ELEMENT_NAME);
 
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
@@ -239,5 +259,21 @@ public class SAML2ObjectBuilder {
 
     public static TelephoneNumber buildTelephoneNumber() {
         return phoneBuilder.buildObject();
+    }
+
+    public static Organization buildOrganization() {
+        return organizBuilder.buildObject();
+    }
+
+    public static OrganizationName buildOrganizationName() {
+        return orgNameBuilder.buildObject();
+    }
+
+    public static OrganizationDisplayName buildOrganizationDisplayName() {
+        return orgDispBuilder.buildObject();
+    }
+
+    public static OrganizationURL buildOrganizationURL() {
+        return orgUrlBuilder.buildObject();
     }
 }

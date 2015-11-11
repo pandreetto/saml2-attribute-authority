@@ -29,6 +29,9 @@ public interface AuthorityConfiguration {
     public ContactInfo[] getContacts()
         throws ConfigurationException;
 
+    public OrganizationInfo getOrganization()
+        throws ConfigurationException;
+
     public long getMetadataDuration()
         throws ConfigurationException;
 

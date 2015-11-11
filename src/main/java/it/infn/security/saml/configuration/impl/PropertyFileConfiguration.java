@@ -3,6 +3,7 @@ package it.infn.security.saml.configuration.impl;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.configuration.ContactInfo;
+import it.infn.security.saml.configuration.OrganizationInfo;
 
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -61,9 +62,13 @@ public class PropertyFileConfiguration
 
     private static final Pattern CONTACT_PATTERN = Pattern.compile("contact.type.([\\w]+)");
 
+    private static final Pattern ORGANIZ_PATTERN = Pattern.compile("organization.([\\w]+).(\\w\\w)");
+
     private Properties properties;
 
     private ContactInfo[] contacts;
+
+    private OrganizationInfo organizInfo;
 
     private X509KeyManager keyManager = null;
 
@@ -171,6 +176,9 @@ public class PropertyFileConfiguration
         serviceCert = certChain[0];
 
         parseContacts();
+
+        parseOrganization();
+
     }
 
     public String getAuthorityID()
@@ -202,6 +210,11 @@ public class PropertyFileConfiguration
     public ContactInfo[] getContacts()
         throws ConfigurationException {
         return contacts;
+    }
+
+    public OrganizationInfo getOrganization()
+        throws ConfigurationException {
+        return organizInfo;
     }
 
     public long getMetadataDuration()
@@ -376,6 +389,31 @@ public class PropertyFileConfiguration
         contacts = new ContactInfo[cList.size()];
         cList.toArray(contacts);
 
+    }
+
+    private void parseOrganization() {
+
+        organizInfo = new OrganizationInfo();
+
+        for (String tmpk : properties.stringPropertyNames()) {
+            Matcher matcher = ORGANIZ_PATTERN.matcher(tmpk);
+            if (matcher.matches()) {
+
+                String tag = matcher.group(1);
+                String lang = matcher.group(2);
+
+                if (tag.equalsIgnoreCase("name")) {
+                    organizInfo.setName(properties.getProperty(tmpk, ""), lang);
+                    logger.info("Found organization name " + properties.getProperty(tmpk, ""));
+                } else if (tag.equalsIgnoreCase("displayname")) {
+                    organizInfo.setDisplayName(properties.getProperty(tmpk, ""), lang);
+                } else if (tag.equalsIgnoreCase("url")) {
+                    organizInfo.setURL(properties.getProperty(tmpk, ""), lang);
+                }
+
+            }
+
+        }
     }
 
 }

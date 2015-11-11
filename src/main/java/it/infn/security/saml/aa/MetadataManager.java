@@ -3,6 +3,7 @@ package it.infn.security.saml.aa;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ContactInfo;
+import it.infn.security.saml.configuration.OrganizationInfo;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
 import it.infn.security.saml.schema.AttributeNameInterface;
@@ -74,9 +75,10 @@ public class MetadataManager {
                 entDescr.getContactPersons().add(contact.buildContactPerson());
             }
 
-            /*
-             * TODO missing organization
-             */
+            OrganizationInfo orgInfo = configuration.getOrganization();
+            if (orgInfo != null) {
+                entDescr.setOrganization(orgInfo.buildOrganization());
+            }
 
             AttributeAuthorityDescriptor aaDescr = SAML2ObjectBuilder.buildAttributeAuthorityDescriptor();
             for (String proto : schemaManager.getSupportedProtocols()) {
@@ -112,6 +114,9 @@ public class MetadataManager {
             KeyDescriptor keyDescr = SAML2ObjectBuilder.buildKeyDescriptor();
             keyDescr.setKeyInfo(SignUtils.buildKeyInfo(srvCert));
             aaDescr.getKeyDescriptors().add(keyDescr);
+            /*
+             * TODO missing encryptionMethods and use
+             */
 
             SignUtils.signObject(entDescr);
 
