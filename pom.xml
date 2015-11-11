@@ -26,22 +26,6 @@
           <target>1.7</target>
         </configuration>
       </plugin> 
-      <plugin>
-        <groupId>org.apache.tomcat.maven</groupId>
-        <artifactId>${tomcat.manager.artifactid}</artifactId>
-        <version>${tomcat.manager.version}</version>
-        <configuration>
-          <url>${tomcat.manager.epr}</url>
-          <update>true</update>
-          <server>${tomcat.manager.login}</server>
-        </configuration>
-        <executions>
-          <execution>
-            <goals><goal>deploy</goal></goals>
-            <phase>deploy</phase>
-          </execution>
-        </executions>
-      </plugin> 
     </plugins>
   </build>
 
@@ -149,7 +133,47 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-    
+
+  <profiles>
+    <profile>
+      <id>deploy_on_tomcat7</id>
+      <activation>
+        <property>
+          <name>tomcat.manager.type</name>
+          <value>tomcat7</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.tomcat.maven</groupId>
+            <artifactId>tomcat7-maven-plugin</artifactId>
+            <version>2.2</version>
+            <configuration>
+              <url>${tomcat.manager.epr}</url>
+              <update>true</update>
+              <server>${tomcat.manager.login}</server>
+            </configuration>
+            <executions>
+              <execution>
+                <goals><goal>deploy</goal></goals>
+                <phase>deploy</phase>
+              </execution>
+            </executions>
+          </plugin> 
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <repositories>
+    <repository>
+      <id>wso2.releases</id>
+      <name>WSO2 Releases Repository</name>
+      <url>http://maven.wso2.org/nexus/content/repositories/releases/</url>
+    </repository>
+  </repositories>
+
 </project>
 
 
