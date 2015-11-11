@@ -2,6 +2,7 @@ package it.infn.security.saml.configuration;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -46,6 +47,9 @@ public interface AuthorityConfiguration {
     public int getDataSourceParamAsInt(String name, int defValue)
         throws ConfigurationException;
 
+    public HashMap<String, Object> getDataSourceParamMap(String regex)
+        throws ConfigurationException;
+
     public String getAccessManagerParam(String name)
         throws ConfigurationException;
 
@@ -56,6 +60,9 @@ public interface AuthorityConfiguration {
         throws ConfigurationException;
 
     public int getAccessManagerParamAsInt(String name, int defValue)
+        throws ConfigurationException;
+
+    public HashMap<String, Object> getAccessManagerParamMap(String regex)
         throws ConfigurationException;
 
     public X509KeyManager getKeyManager()

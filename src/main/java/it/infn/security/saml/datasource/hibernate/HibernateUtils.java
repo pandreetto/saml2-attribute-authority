@@ -34,10 +34,6 @@ public class HibernateUtils {
     private static String[] hiberCfgMParams = { "hibernate.connection.driver_class", "hibernate.connection.url",
             "hibernate.connection.username", "hibernate.connection.password" };
 
-    private static String[] hiberCfgOParams = { "hibernate.dialect", "hibernate.connection.pool_size",
-            "hibernate.current_session_context_class", "hibernate.cache.provider_class", "hibernate.show_sql",
-            "hibernate.hbm2ddl.auto" };
-
     public static Configuration getHibernateConfig()
         throws ConfigurationException {
 
@@ -52,19 +48,16 @@ public class HibernateUtils {
 
                 hiberCfg = new Configuration();
 
+                HashMap<String, Object> hiberParamMap = config.getDataSourceParamMap("hibernate.");
+
                 for (String param : hiberCfgMParams) {
-                    String tmppar = config.getDataSourceParam(param);
-                    if (tmppar == null) {
+                    if (!hiberParamMap.containsKey(param)) {
                         throw new ConfigurationException("Missing parameter " + param);
                     }
-                    hiberCfg.setProperty(param, tmppar);
                 }
 
-                for (String param : hiberCfgOParams) {
-                    String tmppar = config.getDataSourceParam(param);
-                    if (tmppar != null) {
-                        hiberCfg.setProperty(param, tmppar);
-                    }
+                for (String kName : hiberParamMap.keySet()) {
+                    hiberCfg.setProperty(kName, hiberParamMap.get(kName).toString());
                 }
 
                 hiberCfg.addAnnotatedClass(ResourceEntity.class);
@@ -206,7 +199,7 @@ public class HibernateUtils {
         List<UserAttributeEntity> result = new ArrayList<UserAttributeEntity>();
 
         if (user.isAttributeExist(categName)) {
-            
+
             MultiValuedAttribute mAttr = (MultiValuedAttribute) user.getAttributeList().get(categName);
             if (mAttr.getValuesAsStrings() != null && mAttr.getValuesAsStrings().size() != 0) {
                 for (String tmpValue : mAttr.getValuesAsStrings()) {
@@ -217,13 +210,13 @@ public class HibernateUtils {
                     attEnt.setUser(eUser);
                     result.add(attEnt);
                 }
-                
+
             } else {
-                
+
                 List<Attribute> subAttributes = mAttr.getValuesAsSubAttributes();
                 if (subAttributes != null && subAttributes.size() != 0) {
                     for (Attribute subAttribute : subAttributes) {
-                        
+
                         UserAttributeEntity attEnt = new UserAttributeEntity();
                         attEnt.setKey(itemName);
                         attEnt.setUser(eUser);
@@ -234,18 +227,18 @@ public class HibernateUtils {
                             attEnt.setType(null);
                         } else if (subAttribute instanceof ComplexAttribute) {
                             ComplexAttribute cplxAttr = (ComplexAttribute) subAttribute;
-                            
+
                             SimpleAttribute valueAttribute = (SimpleAttribute) (cplxAttr
                                     .getSubAttribute(SCIMConstants.CommonSchemaConstants.VALUE));
                             attEnt.setValue((String) valueAttribute.getValue());
-                            
+
                             SimpleAttribute typeAttribute = (SimpleAttribute) (cplxAttr
                                     .getSubAttribute(SCIMConstants.CommonSchemaConstants.TYPE));
                             if (typeAttribute != null) {
                                 attEnt.setType((String) typeAttribute.getValue());
                             }
                         }
-                        
+
                         result.add(attEnt);
                     }
                 }

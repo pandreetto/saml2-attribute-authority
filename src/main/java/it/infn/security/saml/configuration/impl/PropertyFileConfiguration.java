@@ -10,6 +10,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -256,6 +257,21 @@ public class PropertyFileConfiguration
         }
     }
 
+    public HashMap<String, Object> getDataSourceParamMap(String regex)
+        throws ConfigurationException {
+        HashMap<String, Object> result = new HashMap<String, Object>();
+        Pattern pattern = Pattern.compile(regex);
+
+        for (Object kName : properties.keySet()) {
+            Matcher matcher = pattern.matcher(kName.toString());
+            if (matcher.find()) {
+                result.put(kName.toString(), properties.get(kName));
+            }
+        }
+
+        return result;
+    }
+
     public String getAccessManagerParam(String name)
         throws ConfigurationException {
         String result = properties.getProperty(name);
@@ -290,6 +306,12 @@ public class PropertyFileConfiguration
             logger.warning("Missing or wrong attribute " + name + "; used default value");
             return defValue;
         }
+    }
+
+    public HashMap<String, Object> getAccessManagerParamMap(String regex)
+        throws ConfigurationException {
+        HashMap<String, Object> result = new HashMap<String, Object>();
+        return result;
     }
 
     public X509KeyManager getKeyManager()
