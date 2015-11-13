@@ -4,18 +4,21 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "external_id", indexes = { @Index(columnList = "tenant", unique = false) })
+@Table(name = "external_id")
 public class ExternalIdEntity {
 
     @Id
     @GeneratedValue
     private Long id;
+
+    /*
+     * TODO verify index or PK (tenant, owner)
+     */
 
     @Column(name = "tenant", nullable = false)
     private String tenant;
