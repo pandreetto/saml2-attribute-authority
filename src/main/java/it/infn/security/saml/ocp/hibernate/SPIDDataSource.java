@@ -26,6 +26,7 @@ import javax.security.auth.Subject;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.exception.ConstraintViolationException;
 import org.opensaml.Configuration;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeValue;
@@ -174,9 +175,6 @@ public class SPIDDataSource
     public void updateAttribute(AttributeEntry attribute)
         throws DataSourceException {
 
-        /*
-         * TODO improve update
-         */
         Session session = sessionFactory.getCurrentSession();
 
         try {
@@ -185,32 +183,59 @@ public class SPIDDataSource
 
             String name = attribute.getName().getNameId();
 
-            StringBuffer queryStr = new StringBuffer("DELETE FROM AttributeEntity as qAttr");
-            queryStr.append(" WHERE qAttr.attributeId.key=?");
-            Query query = session.createQuery(queryStr.toString());
-            query.setString(0, name);
-
-            int count = query.executeUpdate();
-            if (count == 0) {
-                throw new DataSourceException("No name found " + name);
-            }
-
+            HashMap<String, AttributeEntity> valueTable = new HashMap<String, AttributeEntity>();
             for (AttributeValueInterface vItem : attribute) {
+
                 AttributeEntity aEnt = new AttributeEntity();
                 AttributeEntityId aEntId = new AttributeEntityId();
-                aEntId.setKey(attribute.getName().getNameId());
-                aEntId.setContent((String) vItem.getValue());
+                String tmpval = (String) vItem.getValue();
+
+                aEntId.setKey(name);
+                aEntId.setContent(tmpval);
                 aEnt.setAttributeId(aEntId);
                 aEnt.setDescription(vItem.getDescription());
                 aEnt.setType(vItem.getType());
-                session.save(aEnt);
+
+                valueTable.put(tmpval, aEnt);
+            }
+
+            StringBuffer queryStr = new StringBuffer("DELETE FROM AttributeEntity as qAttr");
+            queryStr.append(" WHERE qAttr.attributeId.key=:attrKey AND NOT qAttr.attributeId.content IN (:valList)");
+            Query query = session.createQuery(queryStr.toString());
+            query.setString("attrKey", name);
+            query.setParameterList("valList", valueTable.keySet());
+            query.executeUpdate();
+
+            queryStr = new StringBuffer("FROM AttributeEntity as qAttr");
+            queryStr.append(" WHERE qAttr.attributeId.key=:attrKey AND qAttr.attributeId.content IN (:valList)");
+            query = session.createQuery(queryStr.toString());
+            query.setString("attrKey", name);
+            query.setParameterList("valList", valueTable.keySet());
+
+            @SuppressWarnings("unchecked")
+            List<AttributeEntity> attrsFound = query.list();
+
+            for (AttributeEntity oldEnt : attrsFound) {
+                String tmpval = oldEnt.getAttributeId().getContent();
+                if (valueTable.containsKey(tmpval)) {
+                    String newDescr = valueTable.get(tmpval).getDescription();
+                    if (newDescr != null && !newDescr.equals(oldEnt.getDescription())) {
+                        oldEnt.setDescription(newDescr);
+                        session.persist(oldEnt);
+                    }
+                    valueTable.remove(tmpval);
+                }
+            }
+
+            for (AttributeEntity newEnt : valueTable.values()) {
+                session.save(newEnt);
             }
 
             session.getTransaction().commit();
 
-        } catch (DataSourceException dEx) {
+        } catch (ConstraintViolationException dEx) {
             session.getTransaction().rollback();
-            throw dEx;
+            throw new DataSourceException("Cannot update attribute: still linked to resources");
         } catch (Throwable th) {
             logger.log(Level.SEVERE, th.getMessage(), th);
             session.getTransaction().rollback();
@@ -240,6 +265,9 @@ public class SPIDDataSource
 
             session.getTransaction().commit();
 
+        } catch (ConstraintViolationException dEx) {
+            session.getTransaction().rollback();
+            throw new DataSourceException("Cannot remove attribute: still linked to resources");
         } catch (DataSourceException dEx) {
             session.getTransaction().rollback();
             throw dEx;
