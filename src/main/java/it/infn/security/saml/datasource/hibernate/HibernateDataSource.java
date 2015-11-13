@@ -171,13 +171,13 @@ public abstract class HibernateDataSource
             cleanSCIMAttributes(session, eUser);
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            fillinExternalIds(session, eUser, user.getExternalId(), true);
-
             cleanUserExtAttributes(session, eUser);
             fillinUserExtAttributes(session, user, eUser);
 
             session.save(eUser);
             logger.info("Updated user " + user.getUserName() + " with id " + user.getId());
+
+            updateExternalIds(session, eUser, user.getExternalId());
 
             session.getTransaction().commit();
 
@@ -254,12 +254,12 @@ public abstract class HibernateDataSource
 
             HibernateUtils.copyAttributesInEntity(user, eUser);
 
-            fillinExternalIds(session, eUser, user.getExternalId(), false);
-
             fillinUserExtAttributes(session, user, eUser);
 
             session.save(eUser);
             logger.info("Created user " + user.getUserName() + " with id " + user.getId());
+
+            linkExternalIds(session, eUser, user.getExternalId());
 
             session.getTransaction().commit();
 
@@ -405,10 +405,10 @@ public abstract class HibernateDataSource
 
             fillinGroupExtAttributes(session, group, grpEnt);
 
-            fillinExternalIds(session, grpEnt, group.getExternalId(), false);
-
             session.save(grpEnt);
             logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
+
+            linkExternalIds(session, grpEnt, group.getExternalId());
 
             ResourceGraph rGraph = new ResourceGraph(session);
             rGraph.addMembersToGroup(grpEnt, group.getMembers());
@@ -441,8 +441,6 @@ public abstract class HibernateDataSource
             eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
             eGroup.setDisplayName(group.getDisplayName());
 
-            fillinExternalIds(session, eGroup, group.getExternalId(), true);
-
             cleanGroupExtAttributes(session, eGroup);
             fillinGroupExtAttributes(session, group, eGroup);
 
@@ -451,6 +449,8 @@ public abstract class HibernateDataSource
             rGraph.removeMembersFromGroup(eGroup);
             rGraph.addMembersToGroup(eGroup, group.getMembers());
             rGraph.checkForCycle(eGroup.getId());
+
+            updateExternalIds(session, eGroup, group.getExternalId());
 
             session.save(eGroup);
             logger.info("Updated user " + group.getDisplayName() + " with id " + group.getId());
@@ -564,7 +564,33 @@ public abstract class HibernateDataSource
 
     }
 
-    private void fillinExternalIds(Session session, ResourceEntity resEntity, String extId, boolean update)
+    private void linkExternalIds(Session session, ResourceEntity resEntity, String extId)
+        throws DataSourceException {
+
+        if (this.getTenant() == null) {
+            throw new DataSourceException("Datasource is not a proxy");
+        }
+
+        if (extId == null || extId.length() == 0) {
+            return;
+        }
+
+        Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
+
+        for (Principal tmpp : principalSet) {
+            ExternalIdEntity tmpEnt = new ExternalIdEntity();
+            tmpEnt.setExtId(extId);
+            tmpEnt.setTenant(tmpp.getName());
+            tmpEnt.setOwner(resEntity);
+
+            session.save(tmpEnt);
+
+            resEntity.getExternalIds().add(tmpEnt);
+        }
+
+    }
+
+    private void updateExternalIds(Session session, ResourceEntity resEntity, String extId)
         throws DataSourceException {
 
         if (this.getTenant() == null) {
@@ -572,44 +598,38 @@ public abstract class HibernateDataSource
         }
 
         Set<Principal> principalSet = this.getTenant().getPrincipals(Principal.class);
+        List<String> tenantNames = new ArrayList<String>(principalSet.size());
+        for (Principal tmpp : principalSet) {
+            tenantNames.add(tmpp.getName());
+        }
 
         if (extId == null || extId.length() == 0) {
 
-            if (update) {
-                List<String> tenantNames = new ArrayList<String>(principalSet.size());
-                for (Principal tmpp : principalSet) {
-                    tenantNames.add(tmpp.getName());
-                }
-
-                StringBuffer queryStr = new StringBuffer("DELETE FROM ExternalIdEntity as extId");
-                queryStr.append(" WHERE extId.owner.id=:resourceid");
-                queryStr.append(" AND extId.tenant in (:tenantlist)");
-                Query query = session.createQuery(queryStr.toString());
-                query.setString("resourceid", resEntity.getId());
-                query.setParameterList("tenantlist", tenantNames);
-                int deletedItems = query.executeUpdate();
-                logger.fine("Removed " + deletedItems + " external id for " + resEntity.getId());
-
-            }
+            StringBuffer queryStr = new StringBuffer("DELETE FROM ExternalIdEntity as extId");
+            queryStr.append(" WHERE extId.owner.id=:resourceid");
+            queryStr.append(" AND extId.tenant in (:tenantlist)");
+            Query query = session.createQuery(queryStr.toString());
+            query.setString("resourceid", resEntity.getId());
+            query.setParameterList("tenantlist", tenantNames);
+            int deletedItems = query.executeUpdate();
+            logger.fine("Removed " + deletedItems + " external id for " + resEntity.getId());
 
         } else {
 
-            for (Principal tmpp : principalSet) {
-                ExternalIdEntity tmpEnt = null;
-                if (update) {
-                    tmpEnt = resEntity.getExternalIds().get(tmpp.getName());
-                } else {
-                    tmpEnt = new ExternalIdEntity();
-                    tmpEnt.setTenant(tmpp.getName());
-                    tmpEnt.setOwner(resEntity);
-                }
+            StringBuffer queryStr = new StringBuffer("UPDATE ExternalIdEntity as extIdEnt");
+            queryStr.append(" SET extIdEnt.extId=:newid");
+            queryStr.append(" WHERE extIdEnt.owner.id=:resourceid");
+            queryStr.append(" AND extIdEnt.tenant in (:tenantlist)");
+            Query query = session.createQuery(queryStr.toString());
+            query.setString("newid", extId);
+            query.setString("resourceid", resEntity.getId());
+            query.setParameterList("tenantlist", tenantNames);
+            int updatedItems = query.executeUpdate();
 
-                if (tmpEnt == null) {
-                    throw new DataSourceException("Cannot retrieve external id");
-                }
-
-                tmpEnt.setExtId(extId);
-                resEntity.getExternalIds().put(tmpp.getName(), tmpEnt);
+            if (updatedItems == 0) {
+                linkExternalIds(session, resEntity, extId);
+            } else {
+                logger.fine("Updated " + updatedItems + " external id for " + resEntity.getId());
             }
         }
     }
