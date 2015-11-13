@@ -20,9 +20,7 @@ import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
 import it.infn.security.saml.utils.SignUtils;
 
-import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,13 +38,7 @@ import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
-import org.opensaml.security.SAMLSignatureProfileValidator;
-import org.opensaml.xml.security.SecurityException;
-import org.opensaml.xml.security.SecurityHelper;
-import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.signature.Signature;
-import org.opensaml.xml.signature.SignatureValidator;
-import org.opensaml.xml.validation.ValidationException;
 
 public class AttributeAuthorityServiceImpl
     implements AttributeAuthorityService {
@@ -85,7 +77,7 @@ public class AttributeAuthorityServiceImpl
                 throw new CodedException("Missing signature in query", StatusCode.RESPONDER_URI);
             }
             if (signature != null) {
-                verifySignature(signature, requester);
+                SignUtils.verifySignature(signature, requester);
             }
 
             String samlId = query.getSubject().getNameID().getValue();
@@ -209,33 +201,6 @@ public class AttributeAuthorityServiceImpl
         status.setStatusCode(statusCode);
 
         return status;
-
-    }
-
-    private void verifySignature(Signature signature, Subject requester)
-        throws SecurityException, ConfigurationException, ValidationException {
-
-        SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
-        profileValidator.validate(signature);
-
-        X509Certificate subjectCertificate = null;
-        Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
-        for (X509Certificate[] peerChain : allChain) {
-            subjectCertificate = peerChain[0];
-        }
-        if (subjectCertificate == null) {
-            /*
-             * TODO get the certificate from <KeyInfo/> even if is not mandatory for SAML XMLSig profile certificate
-             * requires validation
-             */
-            throw new SecurityException("Cannot retrieve peer certificate");
-        }
-
-        Credential peerCredential = SecurityHelper.getSimpleCredential(subjectCertificate, null);
-
-        SignatureValidator signatureValidator = new SignatureValidator(peerCredential);
-        signatureValidator.validate(signature);
-        logger.fine("Signature verified for " + subjectCertificate.getSubjectX500Principal().getName());
 
     }
 

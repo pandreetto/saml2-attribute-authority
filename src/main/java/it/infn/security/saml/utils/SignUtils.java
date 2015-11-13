@@ -7,11 +7,17 @@ import it.infn.security.saml.configuration.ConfigurationException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Set;
+import java.util.logging.Logger;
+
+import javax.security.auth.Subject;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.xml.security.c14n.Canonicalizer;
+import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallingException;
+import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.credential.Credential;
 import org.opensaml.xml.signature.KeyInfo;
@@ -19,11 +25,15 @@ import org.opensaml.xml.signature.KeyName;
 import org.opensaml.xml.signature.SignableXMLObject;
 import org.opensaml.xml.signature.Signature;
 import org.opensaml.xml.signature.SignatureException;
+import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.signature.Signer;
 import org.opensaml.xml.signature.X509Data;
 import org.opensaml.xml.signature.X509SubjectName;
+import org.opensaml.xml.validation.ValidationException;
 
 public class SignUtils {
+
+    private static final Logger logger = Logger.getLogger(SignUtils.class.getName());
 
     private static final Base64 base64Enc = new Base64(64, new byte[] { '\n' });
 
@@ -76,6 +86,33 @@ public class SignUtils {
         marshaller.marshall(object);
 
         Signer.signObject(objSignature);
+    }
+
+    public static void verifySignature(Signature signature, Subject requester)
+        throws SecurityException, ConfigurationException, ValidationException {
+
+        SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
+        profileValidator.validate(signature);
+
+        X509Certificate subjectCertificate = null;
+        Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
+        for (X509Certificate[] peerChain : allChain) {
+            subjectCertificate = peerChain[0];
+        }
+        if (subjectCertificate == null) {
+            /*
+             * TODO get the certificate from <KeyInfo/> even if is not mandatory for SAML XMLSig profile certificate
+             * requires validation
+             */
+            throw new SecurityException("Cannot retrieve peer certificate");
+        }
+
+        Credential peerCredential = SecurityHelper.getSimpleCredential(subjectCertificate, null);
+
+        SignatureValidator signatureValidator = new SignatureValidator(peerCredential);
+        signatureValidator.validate(signature);
+        logger.fine("Signature verified for " + subjectCertificate.getSubjectX500Principal().getName());
+
     }
 
 }
