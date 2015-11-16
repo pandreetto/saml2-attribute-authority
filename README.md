@@ -88,6 +88,8 @@ Deployment:
 
   mvn clean tomcat7:deploy
 
+## Setup of the service
+
 Configuration of the web application:
 
 For a single context installation the default configuration file is */etc/saml2-attribute-authority/configuration.conf*.
@@ -105,18 +107,21 @@ The file is a simple java property file (key = value) with the following definit
 - key.manager.alias : the alias of the credential to use inside the keystore file
 - trust.manager.file : the truststore file containing the CA certificates
 - trust.manager.type : the type of the truststore file (JKS, PKCS12)
-- trust.manager.password : 
+- trust.manager.password : the password of the truststore
 
   Metadata definitions:
 - metadata.expiration_time : the expiration time of the published metadata
-- organization.name.<lang> : the localized name of the organization running the service
-- organization.displayname.<lang> : the localized human readable name of the organization
-- organization.url.<lang> : the localized url of the organization site
-- contact.type.<contactid> : the type of the contact for a given contactid (administrative, billing, support, technical, other)
-- contact.givenName.<contactid> : the given name for a given contactid
-- contact.surName.<contactid> : the family name a given contactid
-- contact.emails.<contactid> : a comma separated list of email addresses a given contactid
-- contact.phones.<contactid> : a comma separated list of phone numbers a given contactid
+- organization.name.`<lang>` : the localized name of the organization running the service
+- organization.displayname.`<lang>` : the localized human readable name of the organization
+- organization.url.`<lang>` : the localized url of the organization site
+- contact.type.`<contactid>` : the type of the contact for a given contactid (administrative, billing, support, technical, other)
+- contact.givenName.`<contactid>` : the given name for a given contactid
+- contact.surName.`<contactid>` : the family name a given contactid
+- contact.emails.`<contactid>` : a comma separated list of email addresses a given contactid
+- contact.phones.`<contactid>` : a comma separated list of phone numbers a given contactid
+
+The lang suffix is the standard two-letters representation of the language used. More organization.* properties are allowed if they specify different languages.
+The contactid suffix is 
 
   Datasource definitions (hibernate implementation):
 The set of properties are the ones required by hibernate (http://docs.jboss.org/hibernate/orm/4.3/manual/en-US/html/ch03.html)
@@ -164,13 +169,37 @@ contact.surName.id02=Bianchi
 contact.emails.id02=guido.bianchi@example.net
 contact.phones.id02=3354254523,352452345423
 
-organization.name.en=INFN
-organization.displayname.en=National Institute for Nuclear Physics
-organization.url.en=http://www.infn.it
+organization.name.en=Example.Com
+organization.displayname.en=Site for examples
+organization.url.en=http://www.example.com
 
 ```
 
+Setup of the datasource (Mysql with Hibernate implementation):
 
+The SQL script creating the database is the following:
+```
+create table attributes (attr_content varchar(255) not null, attr_key varchar(255) not null, attr_description varchar(255) not null, attr_type varchar(255) not null, primary key (attr_content, attr_key)) ENGINE=InnoDB;
+create table bind_attribute (resource_id varchar(255) not null, attributes_attr_content varchar(255) not null, attributes_attr_key varchar(255) not null, primary key (resource_id, attributes_attr_content, attributes_attr_key)) ENGINE=InnoDB;
+create table external_id (id bigint not null auto_increment, external_id varchar(255) not null, tenant varchar(255) not null, owner_id varchar(255) not null, primary key (id)) ENGINE=InnoDB;
+create table groups (displayName varchar(255) not null, id varchar(255) not null, primary key (id)) ENGINE=InnoDB;
+create table memberof (source varchar(255) not null, target varchar(255) not null, primary key (source, target)) ENGINE=InnoDB;
+create table resources (id varchar(255) not null, creation_date datetime not null, last_update datetime not null, resource_status integer not null, resource_type integer not null, version varchar(255) not null, primary key (id)) ENGINE=InnoDB;
+create table user_address (id bigint not null auto_increment, country varchar(255), locality varchar(255), zip varchar(255), region varchar(255), street varchar(255), addr_type varchar(255), user_id varchar(255) not null, primary key (id)) ENGINE=InnoDB;
+create table user_attrs (id bigint not null auto_increment, attr_name varchar(255) not null, attr_type varchar(255), attr_value varchar(255) not null, user_id varchar(255) not null, primary key (id)) ENGINE=InnoDB;
+create table users (userName varchar(255) not null, id varchar(255) not null, primary key (id)) ENGINE=InnoDB;
+alter table users add constraint UK_mmns67o5v4bfippoqitu4v3t6  unique (userName);
+alter table bind_attribute add constraint FK_tf0u67x5cfjadtw3ncflsh3sb foreign key (attributes_attr_content, attributes_attr_key) references attributes (attr_content, attr_key);
+alter table bind_attribute add constraint FK_3ya8a5o0ows00kvr2962tcj9 foreign key (resource_id) references resources (id);
+alter table external_id add constraint FK_m6ly072cao8tkkkwgp1xl96nm foreign key (owner_id) references resources (id);
+alter table groups add constraint FK_4p5w2xqcslb4xl3180yx96vmw foreign key (id) references resources (id);
+alter table memberof add constraint FK_gjc3c10e52s216ddmregrgs64 foreign key (target) references resources (id);
+alter table memberof add constraint FK_dd6s4oamvxdg2u6ddish0q486 foreign key (source) references resources (id);
+alter table user_address add constraint FK_kfu0161nvirkey6fwd6orucv7 foreign key (user_id) references users (id);
+alter table user_attrs add constraint FK_an6eakllhpy6an4d49e3m82k5 foreign key (user_id) references users (id);
+alter table users add constraint FK_6jvqtxgs6xvh0h0t261hurgqo foreign key (id) references resources (id);
+
+```
 
 
 
