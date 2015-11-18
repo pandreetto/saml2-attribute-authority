@@ -11,6 +11,10 @@ import javax.net.ssl.X509TrustManager;
 
 public interface AuthorityConfiguration {
 
+    public static final int SIGN_REQUEST_DRIVEN = 1;
+
+    public static final int SIGN_AUTHZ_DRIVEN = 2;
+
     public void init(Map<String, String> parameters)
         throws ConfigurationException;
 
@@ -30,6 +34,9 @@ public interface AuthorityConfiguration {
         throws ConfigurationException;
 
     public String getSignatureAlgorithm()
+        throws ConfigurationException;
+
+    public int getSignaturePolicy()
         throws ConfigurationException;
 
     public String getDataSourceParam(String name)

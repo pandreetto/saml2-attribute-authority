@@ -51,6 +51,10 @@ public class PropertyFileConfiguration
 
     private static final String TRUSTMAN_PWD = "trust.manager.password";
 
+    private static final String SIGN_ALGO = "signature.algorithm";
+
+    private static final String SIGN_POLICY = "signature.policy";
+
     private static final String META_EXP_TIME = "metadata.expiration_time";
 
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
@@ -191,9 +195,6 @@ public class PropertyFileConfiguration
         throws ConfigurationException {
         String result = properties.getProperty(AUTHORITY_URL);
         if (result == null) {
-            /*
-             * TODO try to get the URL from the container
-             */
             throw new ConfigurationException("Missing " + AUTHORITY_URL);
         }
         return result;
@@ -220,10 +221,22 @@ public class PropertyFileConfiguration
 
     public String getSignatureAlgorithm()
         throws ConfigurationException {
-        /*
-         * TODO support for multiple algos
-         */
-        return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256;
+        return properties.getProperty(SIGN_ALGO, XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256);
+    }
+
+    public int getSignaturePolicy()
+        throws ConfigurationException {
+        int result = 0;
+        String[] methods = properties.getProperty(SIGN_POLICY, "").split(",");
+        for (String method : methods) {
+            if (method.equalsIgnoreCase("request_driven")) {
+                result += SIGN_REQUEST_DRIVEN;
+            } else if (method.equalsIgnoreCase("authorization_driven")) {
+                result += SIGN_AUTHZ_DRIVEN;
+            }
+        }
+
+        return result;
     }
 
     public String getDataSourceParam(String name)

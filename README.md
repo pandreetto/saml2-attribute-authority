@@ -107,6 +107,8 @@ The file is a simple java property file (key = value) with the following definit
 - trust.manager.file : the truststore file containing the CA certificates
 - trust.manager.type : the type of the truststore file (JKS, PKCS12)
 - trust.manager.password : the password of the truststore
+- signature.algorithm : the standard algorithm used for signing assertions and metadata (default http://www.w3.org/2001/04/xmldsig-more#rsa-sha256)
+- signature.policy : signature algorithm selection criterion, one of request_driven, authorization_driven, as_in_configuration(default)
 
   Metadata definitions:
 - metadata.expiration_time : the expiration time of the published metadata
@@ -136,6 +138,7 @@ key.manager.alias=tomcat
 trust.manager.file=/etc/tomcat/mytruststore.jks
 trust.manager.type=JKS
 trust.manager.password=myp@ssw0rd
+signature.algorithm=http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
 metadata.expiration_time=432000
 
 hibernate.connection.driver_class=org.gjt.mm.mysql.Driver

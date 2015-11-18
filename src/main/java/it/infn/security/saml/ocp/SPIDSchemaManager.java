@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import org.apache.xml.security.signature.XMLSignature;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -232,6 +233,16 @@ public class SPIDSchemaManager
 
     public boolean requiredSignedQuery() {
         return true;
+    }
+
+    public void checkSignatureAlgorithm(String algorithm)
+        throws SchemaManagerException {
+
+        if (!XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256.equals(algorithm)
+                && !XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384.equals(algorithm)
+                && !XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512.equals(algorithm)) {
+            throw new SchemaManagerException("Signature not supported " + algorithm);
+        }
     }
 
     public String generateAssertionID() {

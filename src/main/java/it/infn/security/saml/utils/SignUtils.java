@@ -3,6 +3,9 @@ package it.infn.security.saml.utils;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
+import it.infn.security.saml.schema.SchemaManager;
+import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
@@ -62,19 +65,26 @@ public class SignUtils {
         return keyInfo;
     }
 
-    public static void signObject(SignableXMLObject object)
-        throws ConfigurationException, SignatureException, MarshallingException, CertificateEncodingException {
+    public static void signObject(SignableXMLObject object, String signAlgorithm)
+        throws ConfigurationException, SchemaManagerException, SignatureException, MarshallingException,
+        CertificateEncodingException {
 
         AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+        SchemaManager schemaManager = SchemaManagerFactory.getManager();
 
         X509Certificate srvCert = configuration.getServiceCertificate();
         PrivateKey srvKey = configuration.getServicePrivateKey();
         Credential credential = SecurityHelper.getSimpleCredential(srvCert, srvKey);
 
+        if (signAlgorithm == null || signAlgorithm.length() == 0) {
+            signAlgorithm = configuration.getSignatureAlgorithm();
+        }
+        schemaManager.checkSignatureAlgorithm(signAlgorithm);
+
         Signature objSignature = SAML2ObjectBuilder.buildSignature();
         objSignature.setSigningCredential(credential);
         objSignature.setCanonicalizationAlgorithm(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-        objSignature.setSignatureAlgorithm(configuration.getSignatureAlgorithm());
+        objSignature.setSignatureAlgorithm(signAlgorithm);
         objSignature.setKeyInfo(SignUtils.buildKeyInfo(srvCert));
 
         object.setSignature(objSignature);
@@ -88,8 +98,17 @@ public class SignUtils {
         Signer.signObject(objSignature);
     }
 
+    public static void signObject(SignableXMLObject object)
+        throws ConfigurationException, SchemaManagerException, SignatureException, MarshallingException,
+        CertificateEncodingException {
+        signObject(object, null);
+    }
+
     public static void verifySignature(Signature signature, Subject requester)
-        throws SecurityException, ConfigurationException, ValidationException {
+        throws SecurityException, SchemaManagerException, ConfigurationException, ValidationException {
+
+        SchemaManager schemaManager = SchemaManagerFactory.getManager();
+        schemaManager.checkSignatureAlgorithm(signature.getSignatureAlgorithm());
 
         SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
         profileValidator.validate(signature);

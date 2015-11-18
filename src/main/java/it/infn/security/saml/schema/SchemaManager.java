@@ -51,6 +51,9 @@ public interface SchemaManager {
 
     public boolean requiredSignedQuery();
 
+    public void checkSignatureAlgorithm(String algorithm)
+        throws SchemaManagerException;
+
     public String generateAssertionID();
 
     public String generateResponseID();
