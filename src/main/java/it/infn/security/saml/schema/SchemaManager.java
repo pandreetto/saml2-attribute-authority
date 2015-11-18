@@ -54,6 +54,9 @@ public interface SchemaManager {
     public void checkSignatureAlgorithm(String algorithm)
         throws SchemaManagerException;
 
+    public void checkDigestAlgorithm(String algorithm)
+        throws SchemaManagerException;
+
     public String generateAssertionID();
 
     public String generateResponseID();

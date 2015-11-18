@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
 import org.apache.xml.security.signature.XMLSignature;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -241,7 +242,16 @@ public class SPIDSchemaManager
         if (!XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256.equals(algorithm)
                 && !XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384.equals(algorithm)
                 && !XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512.equals(algorithm)) {
-            throw new SchemaManagerException("Signature not supported " + algorithm);
+            throw new SchemaManagerException("Signature algorithm not supported: " + algorithm);
+        }
+    }
+
+    public void checkDigestAlgorithm(String algorithm)
+        throws SchemaManagerException {
+        if (!MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA256.equals(algorithm)
+                && !MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA384.equals(algorithm)
+                && !MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA512.equals(algorithm)) {
+            throw new SchemaManagerException("Digest algorithm not supported: " + algorithm);
         }
     }
 

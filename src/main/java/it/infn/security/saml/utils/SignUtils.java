@@ -10,6 +10,7 @@ import it.infn.security.saml.schema.SchemaManagerFactory;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -17,12 +18,14 @@ import javax.security.auth.Subject;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.xml.security.c14n.Canonicalizer;
+import org.opensaml.common.impl.SAMLObjectContentReference;
 import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.credential.Credential;
+import org.opensaml.xml.signature.ContentReference;
 import org.opensaml.xml.signature.KeyInfo;
 import org.opensaml.xml.signature.KeyName;
 import org.opensaml.xml.signature.SignableXMLObject;
@@ -65,7 +68,7 @@ public class SignUtils {
         return keyInfo;
     }
 
-    public static void signObject(SignableXMLObject object, String signAlgorithm)
+    public static void signObject(SignableXMLObject object, String signAlgorithm, String digestAlgorithm)
         throws ConfigurationException, SchemaManagerException, SignatureException, MarshallingException,
         CertificateEncodingException {
 
@@ -89,9 +92,17 @@ public class SignUtils {
 
         object.setSignature(objSignature);
 
-        /*
-         * TODO verify workaround
-         */
+        if (digestAlgorithm == null || digestAlgorithm.length() == 0) {
+            digestAlgorithm = configuration.getDigestAlgorithm();
+        }
+        schemaManager.checkDigestAlgorithm(digestAlgorithm);
+
+        for (ContentReference refItem : objSignature.getContentReferences()) {
+            if (refItem instanceof SAMLObjectContentReference) {
+                ((SAMLObjectContentReference) refItem).setDigestAlgorithm(digestAlgorithm);
+            }
+        }
+
         Marshaller marshaller = SAML2ObjectBuilder.getMarshaller(object);
         marshaller.marshall(object);
 
@@ -101,7 +112,7 @@ public class SignUtils {
     public static void signObject(SignableXMLObject object)
         throws ConfigurationException, SchemaManagerException, SignatureException, MarshallingException,
         CertificateEncodingException {
-        signObject(object, null);
+        signObject(object, null, null);
     }
 
     public static void verifySignature(Signature signature, Subject requester)
@@ -109,6 +120,10 @@ public class SignUtils {
 
         SchemaManager schemaManager = SchemaManagerFactory.getManager();
         schemaManager.checkSignatureAlgorithm(signature.getSignatureAlgorithm());
+
+        /*
+         * TODO check digest algorithm (cannot retrieve algorithm from signature
+         */
 
         SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
         profileValidator.validate(signature);
@@ -132,6 +147,17 @@ public class SignUtils {
         signatureValidator.validate(signature);
         logger.fine("Signature verified for " + subjectCertificate.getSubjectX500Principal().getName());
 
+    }
+
+    public static String extractDigestAlgorithm(Signature signature) {
+        List<ContentReference> refList = signature.getContentReferences();
+        /*
+         * Use the first algorithm found
+         */
+        if (refList.size() > 0) {
+            return ((SAMLObjectContentReference) refList.get(0)).getDigestAlgorithm();
+        }
+        return null;
     }
 
 }

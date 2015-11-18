@@ -36,6 +36,9 @@ public interface AuthorityConfiguration {
     public String getSignatureAlgorithm()
         throws ConfigurationException;
 
+    public String getDigestAlgorithm()
+        throws ConfigurationException;
+
     public int getSignaturePolicy()
         throws ConfigurationException;
 

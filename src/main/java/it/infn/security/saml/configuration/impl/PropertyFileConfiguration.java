@@ -26,6 +26,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
 import org.apache.xml.security.signature.XMLSignature;
 
 public class PropertyFileConfiguration
@@ -52,6 +53,8 @@ public class PropertyFileConfiguration
     private static final String TRUSTMAN_PWD = "trust.manager.password";
 
     private static final String SIGN_ALGO = "signature.algorithm";
+
+    private static final String DIGEST_ALGO = "digest.algorithm";
 
     private static final String SIGN_POLICY = "signature.policy";
 
@@ -222,6 +225,11 @@ public class PropertyFileConfiguration
     public String getSignatureAlgorithm()
         throws ConfigurationException {
         return properties.getProperty(SIGN_ALGO, XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256);
+    }
+    
+    public String getDigestAlgorithm()
+            throws ConfigurationException {
+        return properties.getProperty(DIGEST_ALGO, MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA256);
     }
 
     public int getSignaturePolicy()

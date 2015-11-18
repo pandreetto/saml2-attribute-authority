@@ -117,6 +117,7 @@ public class AttributeAuthorityServiceImpl
             assertion.getAttributeStatements().add(attributeStatement);
 
             String signAlgorithm = null;
+            String digestAlgorithm = null;
             int signPolicy = configuration.getSignaturePolicy();
             if ((signPolicy & AuthorityConfiguration.SIGN_AUTHZ_DRIVEN) > 0) {
                 /*
@@ -125,13 +126,11 @@ public class AttributeAuthorityServiceImpl
             }
             if ((signPolicy & AuthorityConfiguration.SIGN_REQUEST_DRIVEN) > 0 && signAlgorithm == null) {
                 signAlgorithm = signature.getSignatureAlgorithm();
-            }
-            if (signAlgorithm == null) {
-                signAlgorithm = configuration.getSignatureAlgorithm();
+                digestAlgorithm = SignUtils.extractDigestAlgorithm(signature);
             }
 
             if (schemaManager.requiredSignedAssertion()) {
-                SignUtils.signObject(assertion, signAlgorithm);
+                SignUtils.signObject(assertion, signAlgorithm, digestAlgorithm);
             }
 
             response.getAssertions().add(assertion);
@@ -143,7 +142,7 @@ public class AttributeAuthorityServiceImpl
             response.setStatus(status);
 
             if (schemaManager.requiredSignedResponse()) {
-                SignUtils.signObject(response, signAlgorithm);
+                SignUtils.signObject(response, signAlgorithm, digestAlgorithm);
             }
 
         } catch (SchemaManagerException cEx) {
