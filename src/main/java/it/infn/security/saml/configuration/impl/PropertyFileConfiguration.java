@@ -27,7 +27,6 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.xml.security.signature.XMLSignature;
-import org.opensaml.saml2.core.Issuer;
 
 public class PropertyFileConfiguration
     implements AuthorityConfiguration {
@@ -35,8 +34,6 @@ public class PropertyFileConfiguration
     private static final Logger logger = Logger.getLogger(PropertyFileConfiguration.class.getName());
 
     private static final String AUTHORITY_ID = "authority.id";
-
-    private static final String AUTHORITY_ID_FORMAT = "authority.id.format";
 
     private static final String AUTHORITY_URL = "authority.url";
 
@@ -188,11 +185,6 @@ public class PropertyFileConfiguration
             throw new ConfigurationException("Missing " + AUTHORITY_ID);
         }
         return result;
-    }
-
-    public String getAuthorityIDFormat()
-        throws ConfigurationException {
-        return properties.getProperty(AUTHORITY_ID_FORMAT, Issuer.UNSPECIFIED);
     }
 
     public String getAuthorityURL()

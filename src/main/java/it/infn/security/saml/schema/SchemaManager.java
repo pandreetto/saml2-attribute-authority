@@ -32,6 +32,8 @@ public interface SchemaManager {
      * SAML2 section
      */
 
+    public String getAuthorityIDFormat();
+
     public String[] getSupportedProtocols();
 
     public String[] getSupportedAttributeProfiles();

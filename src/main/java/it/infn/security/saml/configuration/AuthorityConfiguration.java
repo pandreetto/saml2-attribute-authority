@@ -17,12 +17,6 @@ public interface AuthorityConfiguration {
     public String getAuthorityID()
         throws ConfigurationException;
 
-    /*
-     * TODO move to schema manager?
-     */
-    public String getAuthorityIDFormat()
-        throws ConfigurationException;
-
     public String getAuthorityURL()
         throws ConfigurationException;
 

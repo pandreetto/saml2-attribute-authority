@@ -4,7 +4,6 @@ import it.infn.security.saml.aa.AttributeAuthorityService;
 import it.infn.security.saml.aa.CodedException;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
-import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.DataSourceFactory;
@@ -61,7 +60,9 @@ public class AttributeAuthorityServiceImpl
 
             response.setID(schemaManager.generateResponseID());
 
-            Issuer responseIssuer = newIssuer(configuration);
+            Issuer responseIssuer = SAML2ObjectBuilder.buildIssuer();
+            responseIssuer.setFormat(schemaManager.getAuthorityIDFormat());
+            responseIssuer.setValue(configuration.getAuthorityID());
             response.setIssuer(responseIssuer);
 
             if (query.getVersion() != SAMLVersion.VERSION_20) {
@@ -106,7 +107,9 @@ public class AttributeAuthorityServiceImpl
             assertion.setID(schemaManager.generateAssertionID());
             assertion.setIssueInstant(new DateTime());
 
-            Issuer assertionIssuer = newIssuer(configuration);
+            Issuer assertionIssuer = SAML2ObjectBuilder.buildIssuer();
+            assertionIssuer.setFormat(schemaManager.getAuthorityIDFormat());
+            assertionIssuer.setValue(configuration.getAuthorityID());
             assertion.setIssuer(assertionIssuer);
 
             AttributeStatement attributeStatement = SAML2ObjectBuilder.buildAttributeStatement();
@@ -152,22 +155,6 @@ public class AttributeAuthorityServiceImpl
         }
 
         return response;
-
-    }
-
-    private Issuer newIssuer(AuthorityConfiguration configuration)
-        throws ConfigurationException {
-
-        Issuer responseIssuer = SAML2ObjectBuilder.buildIssuer();
-
-        try {
-            responseIssuer.setFormat(configuration.getAuthorityIDFormat());
-            responseIssuer.setValue(configuration.getAuthorityID());
-        } catch (ConfigurationException cfgEx) {
-            logger.log(Level.SEVERE, "Cannot get issuer details from configuration", cfgEx);
-        }
-
-        return responseIssuer;
 
     }
 

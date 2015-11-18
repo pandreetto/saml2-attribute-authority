@@ -97,7 +97,6 @@ The file is a simple java property file (key = value) with the following definit
 
   Generale definitions:
 - authority.id : the SAML2 id of the service
-- authority.id.format : the format of the SAML2 id
 - authority.url : the endpoint of the query attribute service
 
   Credential definitions:
@@ -129,7 +128,6 @@ The set of properties are the ones required by hibernate (http://docs.jboss.org/
 This is an example of a configuration file:
 ```
 authority.id=saml2aa.infn.it:8443:it.infn.security.saml
-authority.id.format=urn:oasis:names:tc:SAML:2.0:nameid-format:entity
 authority.url=https://saml2aa.infn.it:8443/saml2-attribute-authority
 key.manager.file=/etc/tomcat/hostkeys.p12
 key.manager.type=PKCS12

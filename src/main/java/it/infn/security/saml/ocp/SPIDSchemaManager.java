@@ -194,6 +194,10 @@ public class SPIDSchemaManager
      * SAML2 section
      */
 
+    public String getAuthorityIDFormat() {
+        return "urn:oasis:names:tc:SAML:2.0:nameid-format:entity";
+    }
+
     public String[] getSupportedProtocols() {
         return new String[] { "urn:oasis:names:tc:SAML:2.0:protocol" };
     }
