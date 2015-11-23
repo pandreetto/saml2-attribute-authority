@@ -207,25 +207,39 @@ alter table users add constraint FK_6jvqtxgs6xvh0h0t261hurgqo foreign key (id) r
 The following examples describes the commands sent to the Attribute Authority service for managing users, groups and attributes.
 The administration interface is REST based, the http client used is curl.
 For all the commands the common set of variables consists of:
-`USERCERT`: the path of the user certificate file (PEM format)
-`USERKEY`: the path of the user private key file (PEM format)
-`PASSWD`: the passphrase that protects the private key file
-`CACERT`: the path of the CA certificate bundle file (PEM format)
-`URL`: the URL of the Attribute Authority web application
+* `USERCERT`: the path of the user certificate file (PEM format)
+* `USERKEY`: the path of the user private key file (PEM format)
+* `PASSWD`: the passphrase that protects the private key file
+* `CACERT`: the path of the CA certificate bundle file (PEM format)
+* `URL`: the URL of the Attribute Authority web application
 
 ### Attribute management
 
 Attribute creation:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X POST --data-binary @${json_file} --header 'Content-Type:application/json' ${URL}/manager/attributes```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X POST --data-binary @${json_file} --header 'Content-Type:application/json' \
+     ${URL}/manager/attributes
+```
 
 Attribute modification:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X PUT --data-binary @${json_file} --header 'Content-Type:application/json' ${URL}/manager/attributes/${attribute_name}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X PUT --data-binary @${json_file} --header 'Content-Type:application/json' \
+     ${URL}/manager/attributes/${attribute_name}
+```
 
 Attribute description:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X GET --header 'Content-Type:application/json' ${URL}/manager/attributes/${attribute_name}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X GET --header 'Content-Type:application/json' ${URL}/manager/attributes/${attribute_name}
+```
 
 Attribute list:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X GET --header 'Content-Type:application/json' ${URL}/manager/attributes```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X GET --header 'Content-Type:application/json' ${URL}/manager/attributes
+```
 
 The `json_file` is the path for the file contains the attribute definition:
 ```
@@ -241,35 +255,71 @@ The `json_file` is the path for the file contains the attribute definition:
 ### User management
 
 User creation:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X POST --data-binary @${json_file} --header 'Content-Type:application/json' ${URL}/manager/Users```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+        -X POST --data-binary @${json_file} --header 'Content-Type:application/json' \
+        ${URL}/manager/Users```
 
 User modification:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X PUT --data-binary @${json_file} --header 'Content-Type:application/json' ${URL}/manager/Users/${user_id}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X PUT --data-binary @${json_file} --header 'Content-Type:application/json' \
+     ${URL}/manager/Users/${user_id}```
 
 User description:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X GET --header 'Content-Type:text/xml; charset=utf-8' ${URL}/manager/Users/${user_id}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X GET --header 'Content-Type:text/xml; charset=utf-8' ${URL}/manager/Users/${user_id}
+```
 
 User deletion:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X DELETE --header 'Content-Type:text/xml; charset=utf-8' ${URL}/manager/Users/${user_id}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X DELETE --header 'Content-Type:text/xml; charset=utf-8' ${URL}/manager/Users/${user_id}
+```
 
 User list:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X GET --header 'Content-Type:text/xml; charset=utf-8' ${URL}'/manager/Users?startIndex='${from_item}'&count='${number_of_item}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X GET --header 'Content-Type:text/xml; charset=utf-8' \
+     ${URL}'/manager/Users?startIndex='${from_item}'&count='${number_of_item}
+```
 
 
 ### Group management
 
 Group creation:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X POST --data-binary @${json_file} --header 'Content-Type:application/json' ${URL}/manager/Groups```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X POST --data-binary @${json_file} --header 'Content-Type:application/json' \
+     ${URL}/manager/Groups
+```
 
 Group modification:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X PUT --data-binary @${json_file} --header 'Content-Type:application/json' ${URL}/manager/Groups/${group_id}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+        -X PUT --data-binary @${json_file} --header 'Content-Type:application/json' \
+        ${URL}/manager/Groups/${group_id}
+```
 
 Group deletion:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X DELETE --header 'Content-Type:text/xml; charset=utf-8' ${URL}/manager/Groups/${group_id}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X DELETE --header 'Content-Type:text/xml; charset=utf-8' \
+     ${URL}/manager/Groups/${group_id}
+```
 
 Group description:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X GET --header 'Content-Type:text/xml; charset=utf-8' ${URL}/manager/Groups/${group_id}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X GET --header 'Content-Type:text/xml; charset=utf-8' \
+     ${URL}/manager/Groups/${group_id}
+```
 
 Group list:
-```curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} -X GET --header 'Content-Type:text/xml; charset=utf-8' ${URL}'/manager/Groups?startIndex='${1}'&count='${number_of_item}```
+```
+curl --cert ${USERCERT}:${PASSWD} --key ${USERKEY} --cacert ${CACERT} \
+     -X GET --header 'Content-Type:text/xml; charset=utf-8' \
+     ${URL}'/manager/Groups?startIndex='${1}'&count='${number_of_item}
+```
 
