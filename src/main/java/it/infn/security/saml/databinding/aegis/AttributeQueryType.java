@@ -1,5 +1,7 @@
 package it.infn.security.saml.databinding.aegis;
 
+import it.infn.security.saml.utils.WrapperStreamReader;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Transformer;
@@ -37,21 +39,18 @@ public class AttributeQueryType
 
         try {
 
-            XMLStreamReader xmlReader = reader.getXMLStreamReader();
-
-            Element element = null;
-
             TransformerFactory tfactory = TransformerFactory.newInstance();
-            if (tfactory.getFeature(StAXSource.FEATURE) && tfactory.getFeature(DOMResult.FEATURE)) {
-                Transformer staxToDom = tfactory.newTransformer();
-                DOMResult dResult = new DOMResult();
-                staxToDom.transform(new StAXSource(xmlReader), dResult);
-                Document mainDoc = (Document) dResult.getNode();
-                element = mainDoc.getDocumentElement();
-
-            } else {
+            if (!(tfactory.getFeature(StAXSource.FEATURE) && tfactory.getFeature(DOMResult.FEATURE))) {
                 throw new DatabindingException("Conversion from stream to dom unsupported");
             }
+
+            XMLStreamReader xmlReader = new WrapperStreamReader(reader.getXMLStreamReader());
+
+            Transformer staxToDom = tfactory.newTransformer();
+            DOMResult dResult = new DOMResult();
+            staxToDom.transform(new StAXSource(xmlReader), dResult);
+            Document mainDoc = (Document) dResult.getNode();
+            Element element = mainDoc.getDocumentElement();
 
             UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
             Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
