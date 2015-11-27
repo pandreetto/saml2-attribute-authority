@@ -1,5 +1,6 @@
 package it.infn.security.saml.iam.impl;
 
+import it.infn.security.saml.aa.AttributeAuthorityServlet;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerException;
 
@@ -31,11 +32,22 @@ public class TLSIdentityManager
 
     }
 
+    /*
+     * TODO change interface servlet, request as argument, move selection somewhere else
+     */
     public Subject authenticate()
         throws IdentityManagerException {
 
         Message currMsg = PhaseInterceptorChain.getCurrentMessage();
         HttpServletRequest request = (HttpServletRequest) currMsg.get("HTTP.REQUEST");
+
+        if (request == null) {
+            request = AttributeAuthorityServlet.getCurrentRequest();
+        }
+
+        if (request == null) {
+            throw new IdentityManagerException("Cannot retrieve current request");
+        }
 
         X509Certificate[] certificateChain = (X509Certificate[]) request
                 .getAttribute("javax.servlet.request.X509Certificate");

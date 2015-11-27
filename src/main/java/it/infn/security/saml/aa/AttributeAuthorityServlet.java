@@ -39,6 +39,8 @@ public class AttributeAuthorityServlet
 
     private static final Logger logger = Logger.getLogger(AttributeAuthorityServlet.class.getName());
 
+    private static ThreadLocal<HttpServletRequest> servletRequest = new ThreadLocal<HttpServletRequest>();
+
     private HTTPSOAP11Encoder messageEncoder;
 
     private HTTPSOAP11Decoder messageDecoder;
@@ -58,6 +60,8 @@ public class AttributeAuthorityServlet
 
     public void doPost(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
         throws ServletException, IOException {
+
+        servletRequest.set(httpRequest);
 
         AAMessageContext messageContext = new AAMessageContext();
         HttpServletRequestAdapter reqAdapter = new HttpServletRequestAdapter(httpRequest);
@@ -105,6 +109,8 @@ public class AttributeAuthorityServlet
             }
         } catch (MessageDecodingException msgEx) {
             buildSOAPFault(messageContext, msgEx);
+        } finally {
+            servletRequest.remove();
         }
 
     }
@@ -143,6 +149,10 @@ public class AttributeAuthorityServlet
         throws ServletException, IOException {
         httpResponse.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         httpResponse.setHeader("Allow", getSupportedMethods());
+    }
+
+    public static HttpServletRequest getCurrentRequest() {
+        return servletRequest.get();
     }
 
     private String getSupportedMethods() {
