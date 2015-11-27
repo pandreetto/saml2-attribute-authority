@@ -38,11 +38,14 @@ public class TLSIdentityManager
     public Subject authenticate()
         throws IdentityManagerException {
 
-        Message currMsg = PhaseInterceptorChain.getCurrentMessage();
-        HttpServletRequest request = (HttpServletRequest) currMsg.get("HTTP.REQUEST");
+        HttpServletRequest request = null;
 
-        if (request == null) {
+        Message currMsg = PhaseInterceptorChain.getCurrentMessage();
+
+        if (currMsg == null) {
             request = AttributeAuthorityServlet.getCurrentRequest();
+        } else {
+            request = (HttpServletRequest) currMsg.get("HTTP.REQUEST");
         }
 
         if (request == null) {
