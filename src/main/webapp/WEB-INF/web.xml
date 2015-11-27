@@ -27,9 +27,26 @@
         </servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
+    <servlet>
+        <servlet-name>AAServlet</servlet-name>
+        <display-name>Attribute Authority Servlet</display-name>
+        <servlet-class>
+            it.infn.security.saml.aa.AttributeAuthorityServlet
+        </servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>CXFServlet</servlet-name>
-        <url-pattern>/*</url-pattern>
+        <url-pattern>/samlAA</url-pattern>
     </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CXFServlet</servlet-name>
+        <url-pattern>/manager</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AAServlet</servlet-name>
+        <url-pattern>/query</url-pattern>
+    </servlet-mapping>
+    
 </web-app>

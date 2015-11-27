@@ -47,6 +47,12 @@ import org.opensaml.saml2.metadata.impl.OrganizationNameBuilder;
 import org.opensaml.saml2.metadata.impl.OrganizationURLBuilder;
 import org.opensaml.saml2.metadata.impl.SurNameBuilder;
 import org.opensaml.saml2.metadata.impl.TelephoneNumberBuilder;
+import org.opensaml.ws.soap.common.SOAPObjectBuilder;
+import org.opensaml.ws.soap.soap11.Body;
+import org.opensaml.ws.soap.soap11.Envelope;
+import org.opensaml.ws.soap.soap11.Fault;
+import org.opensaml.ws.soap.soap11.FaultCode;
+import org.opensaml.ws.soap.soap11.FaultString;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.io.Marshaller;
@@ -156,6 +162,26 @@ public class SAML2ObjectBuilder {
 
     private static final OrganizationURLBuilder orgUrlBuilder = (OrganizationURLBuilder) builderFactory
             .getBuilder(OrganizationURL.DEFAULT_ELEMENT_NAME);
+
+    @SuppressWarnings("unchecked")
+    private static final SOAPObjectBuilder<Fault> faultBuilder = (SOAPObjectBuilder<Fault>) builderFactory
+            .getBuilder(Fault.DEFAULT_ELEMENT_NAME);
+
+    @SuppressWarnings("unchecked")
+    private static final SOAPObjectBuilder<FaultCode> fCodeBuilder = (SOAPObjectBuilder<FaultCode>) builderFactory
+            .getBuilder(FaultCode.DEFAULT_ELEMENT_NAME);
+
+    @SuppressWarnings("unchecked")
+    private static final SOAPObjectBuilder<FaultString> fStrBuilder = (SOAPObjectBuilder<FaultString>) builderFactory
+            .getBuilder(FaultString.DEFAULT_ELEMENT_NAME);
+
+    @SuppressWarnings("unchecked")
+    private static final SOAPObjectBuilder<Envelope> envBuilder = (SOAPObjectBuilder<Envelope>) builderFactory
+            .getBuilder(Envelope.DEFAULT_ELEMENT_NAME);
+
+    @SuppressWarnings("unchecked")
+    private static final SOAPObjectBuilder<Body> bodyBuilder = (SOAPObjectBuilder<Body>) builderFactory
+            .getBuilder(Body.DEFAULT_ELEMENT_NAME);
 
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
@@ -275,5 +301,25 @@ public class SAML2ObjectBuilder {
 
     public static OrganizationURL buildOrganizationURL() {
         return orgUrlBuilder.buildObject();
+    }
+
+    public static Fault buildFault() {
+        return faultBuilder.buildObject();
+    }
+
+    public static FaultCode buildFaultCode() {
+        return fCodeBuilder.buildObject();
+    }
+
+    public static FaultString buildFaultString() {
+        return fStrBuilder.buildObject();
+    }
+
+    public static Envelope buildEnvelope() {
+        return envBuilder.buildObject();
+    }
+
+    public static Body buildBody() {
+        return bodyBuilder.buildObject();
     }
 }
