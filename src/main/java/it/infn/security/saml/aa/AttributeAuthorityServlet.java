@@ -15,8 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.binding.BasicSAMLMessageContext;
-import org.opensaml.saml2.binding.encoding.HTTPSOAP11Encoder;
 import org.opensaml.saml2.binding.decoding.HTTPSOAP11Decoder;
+import org.opensaml.saml2.binding.encoding.HTTPSOAP11Encoder;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
@@ -31,7 +31,6 @@ import org.opensaml.ws.transport.http.HTTPOutTransport;
 import org.opensaml.ws.transport.http.HttpServletRequestAdapter;
 import org.opensaml.ws.transport.http.HttpServletResponseAdapter;
 import org.opensaml.xml.security.SecurityException;
-import org.opensaml.xml.util.XMLHelper;
 
 public class AttributeAuthorityServlet
     extends HttpServlet {
@@ -45,6 +44,8 @@ public class AttributeAuthorityServlet
     private HTTPSOAP11Encoder messageEncoder;
 
     private HTTPSOAP11Decoder messageDecoder;
+
+    private SOAPMessageEncoder soapMsgEncoder;
 
     private AttributeAuthorityService service;
 
@@ -61,6 +62,7 @@ public class AttributeAuthorityServlet
 
         messageDecoder = new HTTPSOAP11Decoder();
         messageEncoder = new HTTPSOAP11Encoder();
+        soapMsgEncoder = new SOAPMessageEncoder();
         service = new AttributeAuthorityServiceImpl();
 
     }
@@ -82,11 +84,6 @@ public class AttributeAuthorityServlet
 
         try {
 
-            if (logger.isLoggable(Level.FINE)) {
-                String tmps = XMLHelper.prettyPrintXML(messageContext.getOutboundMessage().getDOM());
-                logger.fine("SOAP request:\n" + tmps);
-            }
-
             messageDecoder.decode(messageContext);
 
             AttributeQuery request = messageContext.getInboundSAMLMessage();
@@ -106,7 +103,7 @@ public class AttributeAuthorityServlet
             } else {
                 logger.log(Level.SEVERE, secEx.getMessage());
             }
-            buildSOAPFault(messageContext, secEx);
+            buildSOAPFault(messageContext, secEx.getMessage());
 
         } catch (MessageEncodingException msgEx) {
             if (logger.isLoggable(Level.FINE)) {
@@ -114,11 +111,12 @@ public class AttributeAuthorityServlet
             } else {
                 logger.log(Level.SEVERE, msgEx.getMessage());
             }
+            buildSOAPFault(messageContext, "Cannot encode response");
         } catch (MessageDecodingException msgEx) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.SEVERE, msgEx.getMessage(), msgEx);
             }
-            buildSOAPFault(messageContext, msgEx);
+            buildSOAPFault(messageContext, "Request is malformed");
         } finally {
             servletRequest.remove();
         }
@@ -169,12 +167,8 @@ public class AttributeAuthorityServlet
         return "POST";
     }
 
-    public class AAMessageContext
-        extends BasicSAMLMessageContext<AttributeQuery, Response, NameID> {
-
-    }
-
-    private Envelope buildSOAPFault(AAMessageContext messageContext, Exception ex) {
+    private void buildSOAPFault(AAMessageContext messageContext, String errMsg)
+        throws ServletException {
 
         HTTPOutTransport outTransport = (HTTPOutTransport) messageContext.getOutboundMessageTransport();
         outTransport.setStatusCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -187,15 +181,7 @@ public class AttributeAuthorityServlet
 
         FaultString faultString = SAML2ObjectBuilder.buildFaultString();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(ex.getMessage());
-        Throwable cause = ex.getCause();
-        while (cause != null) {
-            sb.append(": ").append(cause.getMessage());
-            cause = cause.getCause();
-        }
-
-        faultString.setValue(sb.toString());
+        faultString.setValue(errMsg);
         fault.setMessage(faultString);
 
         Envelope envelope = SAML2ObjectBuilder.buildEnvelope();
@@ -203,7 +189,34 @@ public class AttributeAuthorityServlet
         Body body = SAML2ObjectBuilder.buildBody();
         body.getUnknownXMLObjects().add(fault);
         envelope.setBody(body);
-        return envelope;
+
+        messageContext.setOutboundMessage(envelope);
+
+        try {
+
+            soapMsgEncoder.encode(messageContext);
+
+        } catch (Throwable th) {
+            logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new ServletException("Cannot encode soap fault");
+        }
+
+    }
+
+    /**
+     * Bug fix class for https://bugs.internet2.edu/jira/browse/JOWS-28
+     */
+    class SOAPMessageEncoder
+        extends org.opensaml.ws.soap.soap11.encoder.http.HTTPSOAP11Encoder {
+
+        protected Envelope buildSOAPEnvelope(AAMessageContext messageContext) {
+            return (Envelope) messageContext.getOutboundMessage();
+        }
+
+    }
+
+    public class AAMessageContext
+        extends BasicSAMLMessageContext<AttributeQuery, Response, NameID> {
 
     }
 
