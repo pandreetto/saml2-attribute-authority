@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.binding.BasicSAMLMessageContext;
 import org.opensaml.saml2.binding.encoding.HTTPSOAP11Encoder;
 import org.opensaml.saml2.binding.decoding.HTTPSOAP11Decoder;
@@ -51,6 +52,12 @@ public class AttributeAuthorityServlet
         throws ServletException {
 
         super.init(config);
+
+        try {
+            DefaultBootstrap.bootstrap();
+        } catch (Throwable th) {
+            throw new ServletException(th.getMessage());
+        }
 
         messageDecoder = new HTTPSOAP11Decoder();
         messageEncoder = new HTTPSOAP11Encoder();
@@ -108,6 +115,9 @@ public class AttributeAuthorityServlet
                 logger.log(Level.SEVERE, msgEx.getMessage());
             }
         } catch (MessageDecodingException msgEx) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.SEVERE, msgEx.getMessage(), msgEx);
+            }
             buildSOAPFault(messageContext, msgEx);
         } finally {
             servletRequest.remove();
