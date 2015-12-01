@@ -32,6 +32,9 @@ import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.saml2.core.Audience;
+import org.opensaml.saml2.core.AudienceRestriction;
+import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
@@ -70,9 +73,9 @@ public class AttributeAuthorityServiceImpl
                 throw new CodedException("Unsupported version", StatusCode.VERSION_MISMATCH_URI);
             }
 
-            schemaManager.checkRequest(query);
-
             Subject requester = identityManager.authenticate();
+
+            schemaManager.checkRequest(query, requester);
 
             Signature signature = query.getSignature();
             if (signature == null && schemaManager.requiredSignedQuery()) {
@@ -95,15 +98,13 @@ public class AttributeAuthorityServiceImpl
             List<Attribute> queryAttrs = constraints.filterAttributes(query.getAttributes());
             List<Attribute> userAttrs = dataSource.findAttributes(userId, queryAttrs);
 
-            String respDestination = schemaManager.getResponseDestination();
+            String respDestination = schemaManager.getResponseDestination(query, requester);
             if (respDestination != null) {
                 response.setDestination(respDestination);
             }
 
             /* Building the assertion */
-            /*
-             * TODO verify multiple assertions in response
-             */
+
             Assertion assertion = SAML2ObjectBuilder.buildAssertion();
             assertion.setID(schemaManager.generateAssertionID());
             assertion.setIssueInstant(new DateTime());
@@ -120,6 +121,38 @@ public class AttributeAuthorityServiceImpl
             assertionIssuer.setFormat(schemaManager.getAuthorityIDFormat());
             assertionIssuer.setValue(configuration.getAuthorityID());
             assertion.setIssuer(assertionIssuer);
+
+            List<String> audienceList = schemaManager.getAudienceList(query, requester);
+            if (schemaManager.assertionExpires() || (audienceList != null && audienceList.size() > 0)) {
+
+                Conditions conditions = SAML2ObjectBuilder.buildConditions();
+
+                if (schemaManager.assertionExpires()) {
+
+                    /*
+                     * TODO validity time parameters from authz
+                     */
+
+                    long startTime = System.currentTimeMillis() + configuration.getAssertionOffsetTime();
+                    long endTime = startTime + configuration.getAssertionDuration();
+
+                    conditions.setNotBefore(new DateTime(startTime));
+                    conditions.setNotOnOrAfter(new DateTime(endTime));
+                }
+
+                if (audienceList != null && audienceList.size() > 0) {
+                    AudienceRestriction audRestr = SAML2ObjectBuilder.buildAudienceRestriction();
+                    for (String audienceStr : audienceList) {
+                        Audience audience = SAML2ObjectBuilder.buildAudience();
+                        audience.setAudienceURI(audienceStr);
+                        audRestr.getAudiences().add(audience);
+                    }
+                    conditions.getAudienceRestrictions().add(audRestr);
+                }
+
+                assertion.setConditions(conditions);
+
+            }
 
             AttributeStatement attributeStatement = SAML2ObjectBuilder.buildAttributeStatement();
             attributeStatement.getAttributes().addAll(userAttrs);

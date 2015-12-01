@@ -6,9 +6,12 @@ import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+
+import javax.security.auth.Subject;
 
 import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
 import org.apache.xml.security.signature.XMLSignature;
@@ -212,12 +215,28 @@ public class SPIDSchemaManager
         return new String[] { "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified" };
     }
 
-    public void checkRequest(AttributeQuery query)
+    public void checkRequest(AttributeQuery query, Subject requester)
         throws SchemaManagerException {
+        /*
+         * TODO check: 1) the issuer of the query is a SPID-registered SP (retrieve metadata via AGID registry)
+         */
+    }
+
+    public boolean assertionExpires() {
+        return true;
+    }
+
+    public List<String> getAudienceList(AttributeQuery query, Subject requester)
+        throws SchemaManagerException {
+
+        ArrayList<String> result = new ArrayList<String>();
+        result.add(query.getIssuer().getValue());
+        return result;
 
     }
 
-    public String getResponseDestination() {
+    public String getResponseDestination(AttributeQuery query, Subject requester)
+        throws SchemaManagerException {
         /*
          * TODO missing definition
          */

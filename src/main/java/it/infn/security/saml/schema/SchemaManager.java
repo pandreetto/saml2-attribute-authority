@@ -3,6 +3,8 @@ package it.infn.security.saml.schema;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import javax.security.auth.Subject;
+
 import org.opensaml.saml2.core.AttributeQuery;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
 
@@ -40,10 +42,16 @@ public interface SchemaManager {
 
     public String[] getSupportedNameIDFormats();
 
-    public void checkRequest(AttributeQuery query)
+    public void checkRequest(AttributeQuery query, Subject requester)
         throws SchemaManagerException;
 
-    public String getResponseDestination();
+    public boolean assertionExpires();
+
+    public List<String> getAudienceList(AttributeQuery query, Subject requester)
+        throws SchemaManagerException;
+
+    public String getResponseDestination(AttributeQuery query, Subject requester)
+        throws SchemaManagerException;
 
     public boolean requiredSignedAssertion();
 

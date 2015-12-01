@@ -60,6 +60,10 @@ public class PropertyFileConfiguration
 
     private static final String SIGN_POLICY = "signature.policy";
 
+    private static final String ASSER_DURATION = "assertion.duration";
+
+    private static final String ASSER_OFFSET = "assertion.offset";
+
     private static final String META_EXP_TIME = "metadata.expiration_time";
 
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
@@ -83,6 +87,10 @@ public class PropertyFileConfiguration
     private X509Certificate serviceCert = null;
 
     private PrivateKey serviceKey = null;
+
+    private long assertionDuration;
+
+    private long assertionOffsetTime;
 
     public void init(Map<String, String> parameters)
         throws ConfigurationException {
@@ -181,6 +189,20 @@ public class PropertyFileConfiguration
             throw new ConfigurationException("Cannot extract certificates from key manager");
         serviceCert = certChain[0];
 
+        try {
+            String tmps = properties.getProperty(ASSER_OFFSET, "0");
+            assertionOffsetTime = Long.parseLong(tmps) * 1000;
+
+            tmps = properties.getProperty(ASSER_DURATION, "3600");
+            assertionDuration = Long.parseLong(tmps) * 1000;
+
+            if (assertionDuration <= 0) {
+                throw new ConfigurationException("Wrong assertion validity time parameters");
+            }
+        } catch (NumberFormatException nEx) {
+            throw new ConfigurationException("Wrong assertion validity time parameters");
+        }
+
         parseContacts();
 
         parseOrganization();
@@ -252,6 +274,16 @@ public class PropertyFileConfiguration
         }
 
         return result;
+    }
+
+    public long getAssertionDuration()
+        throws ConfigurationException {
+        return assertionDuration;
+    }
+
+    public long getAssertionOffsetTime()
+        throws ConfigurationException {
+        return assertionOffsetTime;
     }
 
     public String getDataSourceParam(String name)

@@ -45,6 +45,12 @@ public interface AuthorityConfiguration {
     public int getSignaturePolicy()
         throws ConfigurationException;
 
+    public long getAssertionDuration()
+        throws ConfigurationException;
+
+    public long getAssertionOffsetTime()
+        throws ConfigurationException;
+
     public String getDataSourceParam(String name)
         throws ConfigurationException;
 

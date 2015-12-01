@@ -4,6 +4,9 @@ import org.opensaml.Configuration;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.saml2.core.Audience;
+import org.opensaml.saml2.core.AudienceRestriction;
+import org.opensaml.saml2.core.Conditions;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
@@ -14,6 +17,9 @@ import org.opensaml.saml2.core.Subject;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
 import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
+import org.opensaml.saml2.core.impl.AudienceBuilder;
+import org.opensaml.saml2.core.impl.AudienceRestrictionBuilder;
+import org.opensaml.saml2.core.impl.ConditionsBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.ResponseBuilder;
@@ -193,6 +199,15 @@ public class SAML2ObjectBuilder {
     private static final SOAPObjectBuilder<Body> bodyBuilder = (SOAPObjectBuilder<Body>) builderFactory
             .getBuilder(Body.DEFAULT_ELEMENT_NAME);
 
+    private static final ConditionsBuilder condBuilder = (ConditionsBuilder) builderFactory
+            .getBuilder(Conditions.DEFAULT_ELEMENT_NAME);
+
+    private static final AudienceRestrictionBuilder audResBuilder = (AudienceRestrictionBuilder) builderFactory
+            .getBuilder(AudienceRestriction.DEFAULT_ELEMENT_NAME);
+
+    private static final AudienceBuilder audienceBuilder = (AudienceBuilder) builderFactory
+            .getBuilder(Audience.DEFAULT_ELEMENT_NAME);
+
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
     }
@@ -340,4 +355,17 @@ public class SAML2ObjectBuilder {
     public static Body buildBody() {
         return bodyBuilder.buildObject();
     }
+
+    public static Conditions buildConditions() {
+        return condBuilder.buildObject();
+    }
+
+    public static AudienceRestriction buildAudienceRestriction() {
+        return audResBuilder.buildObject();
+    }
+
+    public static Audience buildAudience() {
+        return audienceBuilder.buildObject();
+    }
+
 }
