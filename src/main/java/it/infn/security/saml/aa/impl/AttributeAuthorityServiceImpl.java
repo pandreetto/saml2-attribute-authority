@@ -33,6 +33,7 @@ import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
@@ -106,6 +107,14 @@ public class AttributeAuthorityServiceImpl
             Assertion assertion = SAML2ObjectBuilder.buildAssertion();
             assertion.setID(schemaManager.generateAssertionID());
             assertion.setIssueInstant(new DateTime());
+
+            org.opensaml.saml2.core.Subject assertionSubject = SAML2ObjectBuilder.buildSubject();
+            NameID sbjNameID = SAML2ObjectBuilder.buildNameID();
+            sbjNameID.setFormat(query.getSubject().getNameID().getFormat());
+            sbjNameID.setNameQualifier(configuration.getAuthorityQualifierName());
+            sbjNameID.setValue(query.getSubject().getNameID().getValue());
+            assertionSubject.setNameID(sbjNameID);
+            assertion.setSubject(assertionSubject);
 
             Issuer assertionIssuer = SAML2ObjectBuilder.buildIssuer();
             assertionIssuer.setFormat(schemaManager.getAuthorityIDFormat());

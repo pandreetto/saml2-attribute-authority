@@ -5,18 +5,22 @@ import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.StatusMessage;
+import org.opensaml.saml2.core.Subject;
 import org.opensaml.saml2.core.impl.AssertionBuilder;
 import org.opensaml.saml2.core.impl.AttributeBuilder;
 import org.opensaml.saml2.core.impl.AttributeStatementBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
+import org.opensaml.saml2.core.impl.NameIDBuilder;
 import org.opensaml.saml2.core.impl.ResponseBuilder;
 import org.opensaml.saml2.core.impl.StatusBuilder;
 import org.opensaml.saml2.core.impl.StatusCodeBuilder;
 import org.opensaml.saml2.core.impl.StatusMessageBuilder;
+import org.opensaml.saml2.core.impl.SubjectBuilder;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeProfile;
 import org.opensaml.saml2.metadata.AttributeService;
@@ -103,6 +107,9 @@ public class SAML2ObjectBuilder {
     private static final AttributeServiceBuilder asBuilder = (AttributeServiceBuilder) builderFactory
             .getBuilder(AttributeService.DEFAULT_ELEMENT_NAME);
 
+    private static final NameIDBuilder nidBuilder = (NameIDBuilder) builderFactory
+            .getBuilder(NameID.DEFAULT_ELEMENT_NAME);
+
     private static final NameIDFormatBuilder nifBuilder = (NameIDFormatBuilder) builderFactory
             .getBuilder(NameIDFormat.DEFAULT_ELEMENT_NAME);
 
@@ -117,6 +124,9 @@ public class SAML2ObjectBuilder {
 
     private static final ResponseBuilder responseBuilder = (ResponseBuilder) builderFactory
             .getBuilder(Response.DEFAULT_ELEMENT_NAME);
+
+    private static final SubjectBuilder subjectBuilder = (SubjectBuilder) builderFactory
+            .getBuilder(Subject.DEFAULT_ELEMENT_NAME);
 
     private static final IssuerBuilder issuerBuilder = (IssuerBuilder) builderFactory
             .getBuilder(Issuer.DEFAULT_ELEMENT_NAME);
@@ -223,6 +233,10 @@ public class SAML2ObjectBuilder {
         return asBuilder.buildObject();
     }
 
+    public static NameID buildNameID() {
+        return nidBuilder.buildObject();
+    }
+
     public static NameIDFormat buildNameIDFormat() {
         return nifBuilder.buildObject();
     }
@@ -241,6 +255,10 @@ public class SAML2ObjectBuilder {
 
     public static Response buildResponse() {
         return responseBuilder.buildObject();
+    }
+
+    public static Subject buildSubject() {
+        return subjectBuilder.buildObject();
     }
 
     public static Issuer buildIssuer() {

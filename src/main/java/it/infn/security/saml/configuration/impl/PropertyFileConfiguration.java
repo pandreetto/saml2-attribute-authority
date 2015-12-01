@@ -36,6 +36,8 @@ public class PropertyFileConfiguration
 
     private static final String AUTHORITY_ID = "authority.id";
 
+    private static final String AUTHORITY_QNAME = "authority.qualifier.name";
+
     private static final String AUTHORITY_URL = "authority.url";
 
     private static final String KEYMAN_FILENAME = "key.manager.file";
@@ -194,6 +196,11 @@ public class PropertyFileConfiguration
         return result;
     }
 
+    public String getAuthorityQualifierName()
+        throws ConfigurationException {
+        return properties.getProperty(AUTHORITY_QNAME, getAuthorityID());
+    }
+
     public String getAuthorityURL()
         throws ConfigurationException {
         String result = properties.getProperty(AUTHORITY_URL);
@@ -226,9 +233,9 @@ public class PropertyFileConfiguration
         throws ConfigurationException {
         return properties.getProperty(SIGN_ALGO, XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256);
     }
-    
+
     public String getDigestAlgorithm()
-            throws ConfigurationException {
+        throws ConfigurationException {
         return properties.getProperty(DIGEST_ALGO, MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA256);
     }
 

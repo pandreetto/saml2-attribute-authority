@@ -21,6 +21,9 @@ public interface AuthorityConfiguration {
     public String getAuthorityID()
         throws ConfigurationException;
 
+    public String getAuthorityQualifierName()
+        throws ConfigurationException;
+
     public String getAuthorityURL()
         throws ConfigurationException;
 
