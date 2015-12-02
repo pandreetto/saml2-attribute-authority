@@ -142,7 +142,7 @@ signature.algorithm=http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
 metadata.expiration_time=432000
 
 hibernate.connection.driver_class=org.gjt.mm.mysql.Driver
-hibernate.connection.url=jdbc:mysql://saml2aa.infn.it:3306/db?autoReconnect=true
+hibernate.connection.url=jdbc:mysql://saml2aa.infn.it:3306/saml2aadb?autoReconnect=true
 hibernate.connection.username=mydbuser
 hibernate.connection.password=myp@ssw0rd
 hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
@@ -180,8 +180,8 @@ Setup of the datasource (Mysql with Hibernate implementation):
 
 The SQL script creating the database is the following:
 ```
-create database samlaadb;
-use samlaadb;
+create database saml2aadb;
+use saml2aadb;
 create table attributes (attr_content varchar(255) not null, attr_key varchar(255) not null, attr_description varchar(255) not null, attr_type varchar(255) not null, primary key (attr_content, attr_key)) ENGINE=InnoDB;
 create table bind_attribute (resource_id varchar(255) not null, attributes_attr_content varchar(255) not null, attributes_attr_key varchar(255) not null, primary key (resource_id, attributes_attr_content, attributes_attr_key)) ENGINE=InnoDB;
 create table external_id (id bigint not null auto_increment, external_id varchar(255) not null, tenant varchar(255) not null, owner_id varchar(255) not null, primary key (id)) ENGINE=InnoDB;
