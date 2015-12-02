@@ -88,7 +88,7 @@ public class MetadataManager {
 
             AttributeService attrService = SAML2ObjectBuilder.buildAttributeService();
             attrService.setBinding("urn:oasis:names:tc:SAML:2.0:bindings:SOAP");
-            attrService.setLocation(configuration.getAuthorityURL() + "/samlAA");
+            attrService.setLocation(configuration.getAuthorityURL() + "/query");
             aaDescr.getAttributeServices().add(attrService);
 
             for (String nIdFormat : schemaManager.getSupportedNameIDFormats()) {

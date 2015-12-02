@@ -53,6 +53,8 @@ public interface SchemaManager {
     public String getResponseDestination(AttributeQuery query, Subject requester)
         throws SchemaManagerException;
 
+    public boolean requiredDestinationInRequest();
+
     public boolean requiredSignedAssertion();
 
     public boolean requiredSignedResponse();

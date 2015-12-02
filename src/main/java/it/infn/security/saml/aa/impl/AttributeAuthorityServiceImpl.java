@@ -85,6 +85,15 @@ public class AttributeAuthorityServiceImpl
                 SignUtils.verifySignature(signature, requester);
             }
 
+            String queryDest = query.getDestination();
+            if (queryDest != null && queryDest.length() > 0) {
+                if (!queryDest.equals(configuration.getAuthorityURL() + "/query")) {
+                    throw new SchemaManagerException("Destination mismatch");
+                }
+            } else if (schemaManager.requiredDestinationInRequest()) {
+                throw new SchemaManagerException("Destination in request is mandatory");
+            }
+
             String samlId = query.getSubject().getNameID().getValue();
             String userId = dataSource.samlId2UserId(samlId);
             if (userId == null) {

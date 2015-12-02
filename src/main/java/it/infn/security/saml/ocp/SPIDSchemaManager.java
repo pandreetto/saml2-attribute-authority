@@ -238,9 +238,13 @@ public class SPIDSchemaManager
     public String getResponseDestination(AttributeQuery query, Subject requester)
         throws SchemaManagerException {
         /*
-         * TODO missing definition
+         * TODO return Attribute Service of the SP ??
          */
         return null;
+    }
+
+    public boolean requiredDestinationInRequest() {
+        return true;
     }
 
     public boolean requiredSignedAssertion() {
