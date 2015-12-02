@@ -5,7 +5,9 @@ import java.util.ServiceLoader;
 
 import javax.security.auth.Subject;
 
+import org.opensaml.saml2.core.Advice;
 import org.opensaml.saml2.core.AttributeQuery;
+import org.opensaml.saml2.core.Audience;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
 
 public interface SchemaManager {
@@ -47,13 +49,14 @@ public interface SchemaManager {
 
     public boolean assertionExpires();
 
-    public List<String> getAudienceList(AttributeQuery query, Subject requester)
+    public List<Audience> getAudienceList(AttributeQuery query, Subject requester)
         throws SchemaManagerException;
 
     public String getResponseDestination(AttributeQuery query, Subject requester)
         throws SchemaManagerException;
 
-    public boolean requiredDestinationInRequest();
+    public Advice getAdvice(AttributeQuery query, Subject requester)
+        throws SchemaManagerException;
 
     public boolean requiredSignedAssertion();
 

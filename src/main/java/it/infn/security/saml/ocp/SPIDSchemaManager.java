@@ -1,10 +1,13 @@
 package it.infn.security.saml.ocp;
 
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.saml.schema.AttributeNameInterface;
 import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.utils.SAML2ObjectBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +22,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.opensaml.saml2.core.Advice;
 import org.opensaml.saml2.core.AttributeQuery;
+import org.opensaml.saml2.core.Audience;
+import org.opensaml.saml2.core.Issuer;
 import org.wso2.charon.core.schema.SCIMAttributeSchema;
 import org.wso2.charon.core.schema.SCIMConstants;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
@@ -217,20 +223,42 @@ public class SPIDSchemaManager
 
     public void checkRequest(AttributeQuery query, Subject requester)
         throws SchemaManagerException {
+
+        Issuer issuer = query.getIssuer();
+        if (issuer == null) {
+            throw new SchemaManagerException("Issuer in request is mandatory");
+        }
         /*
-         * TODO check: 1) the issuer of the query is a SPID-registered SP (retrieve metadata via AGID registry)
+         * TODO check if the issuer of the query is a SPID-registered SP (retrieve metadata via AGID registry)
          */
+
+        String queryDest = query.getDestination();
+        if (queryDest == null || queryDest.length() == 0) {
+            throw new SchemaManagerException("Destination in request is mandatory");
+        }
+
+        try {
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+
+            if (!queryDest.equals(configuration.getAuthorityURL() + "/query")) {
+                throw new SchemaManagerException("Destination mismatch");
+            }
+        } catch (Exception ex) {
+            throw new SchemaManagerException("Cannot retrieve Attribute Service URL");
+        }
     }
 
     public boolean assertionExpires() {
         return true;
     }
 
-    public List<String> getAudienceList(AttributeQuery query, Subject requester)
+    public List<Audience> getAudienceList(AttributeQuery query, Subject requester)
         throws SchemaManagerException {
 
-        ArrayList<String> result = new ArrayList<String>();
-        result.add(query.getIssuer().getValue());
+        ArrayList<Audience> result = new ArrayList<Audience>();
+        Audience audience = SAML2ObjectBuilder.buildAudience();
+        audience.setAudienceURI(query.getIssuer().getValue());
+        result.add(audience);
         return result;
 
     }
@@ -243,8 +271,9 @@ public class SPIDSchemaManager
         return null;
     }
 
-    public boolean requiredDestinationInRequest() {
-        return true;
+    public Advice getAdvice(AttributeQuery query, Subject requester)
+        throws SchemaManagerException {
+        return null;
     }
 
     public boolean requiredSignedAssertion() {

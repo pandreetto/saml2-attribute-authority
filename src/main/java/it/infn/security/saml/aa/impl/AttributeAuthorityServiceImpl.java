@@ -28,6 +28,7 @@ import javax.security.auth.Subject;
 
 import org.joda.time.DateTime;
 import org.opensaml.common.SAMLVersion;
+import org.opensaml.saml2.core.Advice;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
@@ -85,15 +86,6 @@ public class AttributeAuthorityServiceImpl
                 SignUtils.verifySignature(signature, requester);
             }
 
-            String queryDest = query.getDestination();
-            if (queryDest != null && queryDest.length() > 0) {
-                if (!queryDest.equals(configuration.getAuthorityURL() + "/query")) {
-                    throw new SchemaManagerException("Destination mismatch");
-                }
-            } else if (schemaManager.requiredDestinationInRequest()) {
-                throw new SchemaManagerException("Destination in request is mandatory");
-            }
-
             String samlId = query.getSubject().getNameID().getValue();
             String userId = dataSource.samlId2UserId(samlId);
             if (userId == null) {
@@ -131,7 +123,7 @@ public class AttributeAuthorityServiceImpl
             assertionIssuer.setValue(configuration.getAuthorityID());
             assertion.setIssuer(assertionIssuer);
 
-            List<String> audienceList = schemaManager.getAudienceList(query, requester);
+            List<Audience> audienceList = schemaManager.getAudienceList(query, requester);
             if (schemaManager.assertionExpires() || (audienceList != null && audienceList.size() > 0)) {
 
                 Conditions conditions = SAML2ObjectBuilder.buildConditions();
@@ -151,16 +143,17 @@ public class AttributeAuthorityServiceImpl
 
                 if (audienceList != null && audienceList.size() > 0) {
                     AudienceRestriction audRestr = SAML2ObjectBuilder.buildAudienceRestriction();
-                    for (String audienceStr : audienceList) {
-                        Audience audience = SAML2ObjectBuilder.buildAudience();
-                        audience.setAudienceURI(audienceStr);
-                        audRestr.getAudiences().add(audience);
-                    }
+                    audRestr.getAudiences().addAll(audienceList);
                     conditions.getAudienceRestrictions().add(audRestr);
                 }
 
                 assertion.setConditions(conditions);
 
+            }
+
+            Advice assertionAdvice = schemaManager.getAdvice(query, requester);
+            if (assertionAdvice != null) {
+                assertion.setAdvice(assertionAdvice);
             }
 
             AttributeStatement attributeStatement = SAML2ObjectBuilder.buildAttributeStatement();
