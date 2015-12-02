@@ -11,6 +11,14 @@ public class AccessConstraints {
 
     private HashSet<String> filterTable;
 
+    private String signAlgorithm = null;
+
+    private String digestAlgorithm = null;
+
+    private long assertionOffsetTime = -1;
+
+    private long assertionDuration = -1;
+
     public AccessConstraints() {
         filterTable = new HashSet<String>();
     }
@@ -40,6 +48,38 @@ public class AccessConstraints {
         }
         return result;
 
+    }
+
+    public void setSignAlgorithm(String algo) {
+        signAlgorithm = algo;
+    }
+
+    public String getSignAlgorithm() {
+        return signAlgorithm;
+    }
+
+    public void setDigestAlgorithm(String algo) {
+        digestAlgorithm = algo;
+    }
+
+    public String getDigestAlgorithm() {
+        return digestAlgorithm;
+    }
+
+    public void setAssertionOffsetTime(long time) {
+        assertionOffsetTime = time;
+    }
+
+    public long getAssertionOffsetTime() {
+        return assertionOffsetTime;
+    }
+
+    public void setAssertionDuration(long duration) {
+        assertionDuration = duration;
+    }
+
+    public long getAssertionDuration() {
+        return assertionDuration;
     }
 
 }

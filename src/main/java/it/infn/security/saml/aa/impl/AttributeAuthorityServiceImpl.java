@@ -130,12 +130,18 @@ public class AttributeAuthorityServiceImpl
 
                 if (schemaManager.assertionExpires()) {
 
-                    /*
-                     * TODO validity time parameters from authz
-                     */
+                    long tmpOffset = constraints.getAssertionOffsetTime();
+                    if (tmpOffset < 0) {
+                        tmpOffset = configuration.getAssertionOffsetTime();
+                    }
 
-                    long startTime = System.currentTimeMillis() + configuration.getAssertionOffsetTime();
-                    long endTime = startTime + configuration.getAssertionDuration();
+                    long tmpDur = constraints.getAssertionDuration();
+                    if (tmpDur < 0) {
+                        tmpDur = configuration.getAssertionDuration();
+                    }
+
+                    long startTime = System.currentTimeMillis() + tmpOffset;
+                    long endTime = startTime + tmpDur;
 
                     conditions.setNotBefore(new DateTime(startTime));
                     conditions.setNotOnOrAfter(new DateTime(endTime));
@@ -161,15 +167,19 @@ public class AttributeAuthorityServiceImpl
             assertion.getAttributeStatements().add(attributeStatement);
 
             String signAlgorithm = null;
-            String digestAlgorithm = null;
             int signPolicy = configuration.getSignaturePolicy();
             if ((signPolicy & AuthorityConfiguration.SIGN_AUTHZ_DRIVEN) > 0) {
-                /*
-                 * TODO implement
-                 */
+                signAlgorithm = constraints.getSignAlgorithm();
             }
             if ((signPolicy & AuthorityConfiguration.SIGN_REQUEST_DRIVEN) > 0 && signAlgorithm == null) {
                 signAlgorithm = signature.getSignatureAlgorithm();
+            }
+
+            String digestAlgorithm = null;
+            if ((signPolicy & AuthorityConfiguration.SIGN_AUTHZ_DRIVEN) > 0) {
+                digestAlgorithm = constraints.getDigestAlgorithm();
+            }
+            if ((signPolicy & AuthorityConfiguration.SIGN_REQUEST_DRIVEN) > 0 && digestAlgorithm == null) {
                 digestAlgorithm = SignUtils.extractDigestAlgorithm(signature);
             }
 
