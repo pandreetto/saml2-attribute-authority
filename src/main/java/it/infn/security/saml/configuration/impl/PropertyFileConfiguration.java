@@ -136,6 +136,7 @@ public class PropertyFileConfiguration
 
         } catch (Throwable th) {
             logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new ConfigurationException("Cannot load key manager");
         } finally {
             if (fis1 != null) {
                 try {
@@ -144,6 +145,10 @@ public class PropertyFileConfiguration
                     logger.log(Level.SEVERE, ex.getMessage(), ex);
                 }
             }
+        }
+
+        if (keyManager == null) {
+            throw new ConfigurationException("Missing key manager");
         }
 
         FileInputStream fis2 = null;
@@ -168,6 +173,7 @@ public class PropertyFileConfiguration
 
         } catch (Throwable th) {
             logger.log(Level.SEVERE, th.getMessage(), th);
+            throw new ConfigurationException("Cannot load trust manager");
         } finally {
             if (fis2 != null) {
                 try {
@@ -176,6 +182,10 @@ public class PropertyFileConfiguration
                     logger.log(Level.SEVERE, ex.getMessage(), ex);
                 }
             }
+        }
+
+        if (trustManager == null) {
+            throw new ConfigurationException("Missing trust manager");
         }
 
         String keyAlias = properties.getProperty(KEYMAN_ALIAS);
