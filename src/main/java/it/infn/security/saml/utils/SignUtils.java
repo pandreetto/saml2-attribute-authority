@@ -7,13 +7,17 @@ import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.security.PrivateKey;
-import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.Subject;
 
 import org.apache.commons.codec.binary.Base64;
@@ -44,7 +48,7 @@ public class SignUtils {
     private static final Base64 base64Enc = new Base64(64, new byte[] { '\n' });
 
     public static KeyInfo buildKeyInfo(X509Certificate signCert)
-        throws CertificateEncodingException {
+        throws CertificateException {
 
         KeyInfo keyInfo = SAML2ObjectBuilder.buildKeyInfo();
         KeyName keyName = SAML2ObjectBuilder.buildKeyName();
@@ -52,9 +56,6 @@ public class SignUtils {
         X509SubjectName x509Sbj = SAML2ObjectBuilder.buildX509SubjectName();
 
         org.opensaml.xml.signature.X509Certificate x509Cert = SAML2ObjectBuilder.buildX509Certificate();
-        /*
-         * TODO verify keyName
-         */
         keyName.setValue(signCert.getSubjectDN().getName());
         x509Sbj.setValue(signCert.getSubjectDN().getName());
         x509Data.getX509SubjectNames().add(x509Sbj);
@@ -68,9 +69,62 @@ public class SignUtils {
         return keyInfo;
     }
 
+    private static void validateCertificateChain(X509Certificate[] certChain)
+        throws CertificateException {
+        try {
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+
+            X509TrustManager trustMan = configuration.getTrustManager();
+            trustMan.checkClientTrusted(certChain, "RSA");
+
+        } catch (CertificateException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            throw new CertificateException(ex.getMessage());
+        }
+    }
+
+    public static X509Certificate[] extractCertificateChain(Signature signature)
+        throws CertificateException {
+
+        KeyInfo keyInfo = signature.getKeyInfo();
+        if (keyInfo == null) {
+            return null;
+        }
+
+        List<X509Data> x509Datas = keyInfo.getX509Datas();
+        if (x509Datas == null || x509Datas.size() == 0) {
+            return null;
+        }
+
+        for (X509Data tmpData : x509Datas) {
+
+            List<org.opensaml.xml.signature.X509Certificate> tmpCerts = tmpData.getX509Certificates();
+            if (tmpCerts != null && tmpCerts.size() > 0) {
+                X509Certificate[] result = new X509Certificate[tmpCerts.size()];
+
+                for (int idx = 0; idx < tmpCerts.size(); idx++) {
+                    String b64cert = tmpCerts.get(idx).getValue();
+                    ByteArrayInputStream bIn = new ByteArrayInputStream(Base64.decodeBase64(b64cert));
+                    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                    result[idx] = (X509Certificate) cf.generateCertificate(bIn);
+                }
+
+                /*
+                 * use the first x509Data element with certificates
+                 */
+                return result;
+            }
+
+        }
+
+        return null;
+    }
+
     public static void signObject(SignableXMLObject object, String signAlgorithm, String digestAlgorithm)
         throws ConfigurationException, SchemaManagerException, SignatureException, MarshallingException,
-        CertificateEncodingException {
+        CertificateException {
 
         AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
         SchemaManager schemaManager = SchemaManagerFactory.getManager();
@@ -111,33 +165,38 @@ public class SignUtils {
 
     public static void signObject(SignableXMLObject object)
         throws ConfigurationException, SchemaManagerException, SignatureException, MarshallingException,
-        CertificateEncodingException {
+        CertificateException {
         signObject(object, null, null);
     }
 
     public static void verifySignature(Signature signature, Subject requester)
-        throws SecurityException, SchemaManagerException, ConfigurationException, ValidationException {
+        throws SecurityException, SchemaManagerException, ConfigurationException, CertificateException,
+        ValidationException {
 
         SchemaManager schemaManager = SchemaManagerFactory.getManager();
         schemaManager.checkSignatureAlgorithm(signature.getSignatureAlgorithm());
-
-        /*
-         * TODO check digest algorithm (cannot retrieve algorithm from signature
-         */
+        schemaManager.checkDigestAlgorithm(extractDigestAlgorithm(signature));
 
         SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
         profileValidator.validate(signature);
 
         X509Certificate subjectCertificate = null;
-        Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
-        for (X509Certificate[] peerChain : allChain) {
+
+        X509Certificate[] peerChain = extractCertificateChain(signature);
+        if (peerChain != null && peerChain.length > 0) {
+            validateCertificateChain(peerChain);
             subjectCertificate = peerChain[0];
         }
+        
         if (subjectCertificate == null) {
-            /*
-             * TODO get the certificate from <KeyInfo/> even if is not mandatory for SAML XMLSig profile certificate
-             * requires validation
-             */
+            Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
+            for (X509Certificate[] chain : allChain) {
+                subjectCertificate = chain[0];
+                break;
+            }
+        }
+
+        if (subjectCertificate == null) {
             throw new SecurityException("Cannot retrieve peer certificate");
         }
 
