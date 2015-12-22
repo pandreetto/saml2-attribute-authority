@@ -66,6 +66,10 @@ public class PropertyFileConfiguration
 
     private static final String META_EXP_TIME = "metadata.expiration_time";
 
+    private static final String USER_PAGE_SIZE = "user.page.size";
+
+    private static final String GROUP_PAGE_SIZE = "group.page.size";
+
     private static final String CONF_PROPERTY = "saml.aa.configuration.file";
 
     private static final String DEF_CONFFILE = "/etc/saml2-attribute-authority/configuration.conf";
@@ -294,6 +298,26 @@ public class PropertyFileConfiguration
     public long getAssertionOffsetTime()
         throws ConfigurationException {
         return assertionOffsetTime;
+    }
+
+    public int getUserPageSize()
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(properties.getProperty(USER_PAGE_SIZE));
+        } catch (NumberFormatException nEx) {
+            logger.fine("Attribute " + USER_PAGE_SIZE + " is not an integer, default used");
+        }
+        return 100;
+    }
+
+    public int getGroupPageSize()
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(properties.getProperty(GROUP_PAGE_SIZE));
+        } catch (NumberFormatException nEx) {
+            logger.fine("Attribute " + GROUP_PAGE_SIZE + " is not an integer, default used");
+        }
+        return 100;
     }
 
     public String getDataSourceParam(String name)

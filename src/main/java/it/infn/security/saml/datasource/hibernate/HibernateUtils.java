@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import org.hibernate.cfg.Configuration;
 import org.wso2.charon.core.attributes.Attribute;
@@ -29,6 +30,8 @@ import org.wso2.charon.core.schema.SCIMConstants;
 
 public class HibernateUtils {
 
+    private static final Logger logger = Logger.getLogger(HibernateUtils.class.getName());
+    
     private static Configuration hiberCfg = null;
 
     private static String[] hiberCfgMParams = { "hibernate.connection.driver_class", "hibernate.connection.url",
@@ -101,19 +104,18 @@ public class HibernateUtils {
         throw new IllegalArgumentException("Wrong parameter " + sParam);
     }
 
-    /*
-     * TODO read system max user and group count from configuration
-     */
-    private static int MAXUSERPERPAGE = 100;
-
-    private static int MAXGROUPPERPAGE = 100;
-
     public static int checkQueryRange(int count, boolean isUser) {
-        if (isUser) {
-            return (count > MAXUSERPERPAGE || count <= 0) ? MAXUSERPERPAGE : count;
-        } else {
-            return (count > MAXGROUPPERPAGE || count <= 0) ? MAXGROUPPERPAGE : count;
+
+        int pSize = 100;
+        
+        try {
+            AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
+            pSize = isUser ? config.getUserPageSize() : config.getGroupPageSize();
+        }catch(ConfigurationException cEx){
+            logger.severe(cEx.getMessage());
         }
+
+        return (count > pSize || count <= 0) ? pSize : count;
     }
 
     public static String generateNewVersion(String currVer) {

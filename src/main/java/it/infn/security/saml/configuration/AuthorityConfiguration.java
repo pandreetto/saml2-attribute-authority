@@ -51,6 +51,12 @@ public interface AuthorityConfiguration {
     public long getAssertionOffsetTime()
         throws ConfigurationException;
 
+    public int getUserPageSize()
+        throws ConfigurationException;
+
+    public int getGroupPageSize()
+        throws ConfigurationException;
+
     public String getDataSourceParam(String name)
         throws ConfigurationException;
 
