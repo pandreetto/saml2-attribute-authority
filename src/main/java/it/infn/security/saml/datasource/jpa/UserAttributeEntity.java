@@ -23,6 +23,9 @@ public class UserAttributeEntity {
     @Column(name = "attr_name", nullable = false)
     private String key;
 
+    /*
+     * TODO change length of varchar in column
+     */
     @Column(name = "attr_value", nullable = false)
     private String value;
     
