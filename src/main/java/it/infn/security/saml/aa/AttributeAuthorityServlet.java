@@ -39,8 +39,6 @@ public class AttributeAuthorityServlet
 
     private static final Logger logger = Logger.getLogger(AttributeAuthorityServlet.class.getName());
 
-    private static ThreadLocal<HttpServletRequest> servletRequest = new ThreadLocal<HttpServletRequest>();
-
     private HTTPSOAP11Encoder messageEncoder;
 
     private HTTPSOAP11Decoder messageDecoder;
@@ -70,8 +68,6 @@ public class AttributeAuthorityServlet
     public void doPost(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
         throws ServletException, IOException {
 
-        servletRequest.set(httpRequest);
-
         AAMessageContext messageContext = new AAMessageContext();
         HttpServletRequestAdapter reqAdapter = new HttpServletRequestAdapter(httpRequest);
         HttpServletResponseAdapter resAdapter = new HttpServletResponseAdapter(httpResponse, httpRequest.isSecure());
@@ -85,6 +81,8 @@ public class AttributeAuthorityServlet
         try {
 
             messageDecoder.decode(messageContext);
+
+            AttributeAuthorityContext.init(httpRequest, messageContext.getInboundMessage());
 
             AttributeQuery request = messageContext.getInboundSAMLMessage();
             Response response = service.attributeQuery(request);
@@ -118,7 +116,7 @@ public class AttributeAuthorityServlet
             }
             buildSOAPFault(messageContext, "Request is malformed");
         } finally {
-            servletRequest.remove();
+            AttributeAuthorityContext.release();
         }
 
     }
@@ -157,10 +155,6 @@ public class AttributeAuthorityServlet
         throws ServletException, IOException {
         httpResponse.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         httpResponse.setHeader("Allow", getSupportedMethods());
-    }
-
-    public static HttpServletRequest getCurrentRequest() {
-        return servletRequest.get();
     }
 
     private String getSupportedMethods() {
