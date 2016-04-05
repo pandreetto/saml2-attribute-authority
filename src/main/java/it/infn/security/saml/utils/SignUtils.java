@@ -40,6 +40,8 @@ import org.opensaml.xml.signature.Signer;
 import org.opensaml.xml.signature.X509Data;
 import org.opensaml.xml.signature.X509SubjectName;
 import org.opensaml.xml.validation.ValidationException;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 public class SignUtils {
 
@@ -187,7 +189,7 @@ public class SignUtils {
             validateCertificateChain(peerChain);
             subjectCertificate = peerChain[0];
         }
-        
+
         if (subjectCertificate == null) {
             Set<X509Certificate[]> allChain = requester.getPublicCredentials(X509Certificate[].class);
             for (X509Certificate[] chain : allChain) {
@@ -209,13 +211,24 @@ public class SignUtils {
     }
 
     public static String extractDigestAlgorithm(Signature signature) {
-        List<ContentReference> refList = signature.getContentReferences();
-        /*
-         * Use the first algorithm found
-         */
-        if (refList.size() > 0) {
-            return ((SAMLObjectContentReference) refList.get(0)).getDigestAlgorithm();
+
+        Element signElem = signature.getDOM();
+
+        if (signElem == null)
+            return null;
+
+        NodeList tmpl1 = signElem.getElementsByTagName("SignedInfo");
+        if (tmpl1 != null && tmpl1.getLength() > 0) {
+            NodeList tmpl2 = ((Element) tmpl1.item(0)).getElementsByTagName("Reference");
+            if (tmpl2 != null && tmpl2.getLength() > 0) {
+                NodeList tmpl3 = ((Element) tmpl2.item(0)).getElementsByTagName("DigestMethod");
+                if (tmpl3 != null && tmpl3.getLength() > 0) {
+                    String result = ((Element) tmpl3.item(0)).getAttribute("Algorithm");
+                    return result;
+                }
+            }
         }
+
         return null;
     }
 
