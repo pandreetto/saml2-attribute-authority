@@ -177,7 +177,10 @@ public class SignUtils {
 
         SchemaManager schemaManager = SchemaManagerFactory.getManager();
         schemaManager.checkSignatureAlgorithm(signature.getSignatureAlgorithm());
-        schemaManager.checkDigestAlgorithm(extractDigestAlgorithm(signature));
+        /*
+         * TODO check digest algorithm
+         */
+        //schemaManager.checkDigestAlgorithm(extractDigestAlgorithm(signature));
 
         SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
         profileValidator.validate(signature);
