@@ -47,6 +47,8 @@ public class SignUtils {
 
     private static final Logger logger = Logger.getLogger(SignUtils.class.getName());
 
+    private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
+
     private static final Base64 base64Enc = new Base64(64, new byte[] { '\n' });
 
     public static KeyInfo buildKeyInfo(X509Certificate signCert)
@@ -177,10 +179,7 @@ public class SignUtils {
 
         SchemaManager schemaManager = SchemaManagerFactory.getManager();
         schemaManager.checkSignatureAlgorithm(signature.getSignatureAlgorithm());
-        /*
-         * TODO check digest algorithm
-         */
-        //schemaManager.checkDigestAlgorithm(extractDigestAlgorithm(signature));
+        schemaManager.checkDigestAlgorithm(extractDigestAlgorithm(signature));
 
         SAMLSignatureProfileValidator profileValidator = new SAMLSignatureProfileValidator();
         profileValidator.validate(signature);
@@ -220,11 +219,11 @@ public class SignUtils {
         if (signElem == null)
             return null;
 
-        NodeList tmpl1 = signElem.getElementsByTagName("SignedInfo");
+        NodeList tmpl1 = signElem.getElementsByTagNameNS(DS_NS, "SignedInfo");
         if (tmpl1 != null && tmpl1.getLength() > 0) {
-            NodeList tmpl2 = ((Element) tmpl1.item(0)).getElementsByTagName("Reference");
+            NodeList tmpl2 = ((Element) tmpl1.item(0)).getElementsByTagNameNS(DS_NS, "Reference");
             if (tmpl2 != null && tmpl2.getLength() > 0) {
-                NodeList tmpl3 = ((Element) tmpl2.item(0)).getElementsByTagName("DigestMethod");
+                NodeList tmpl3 = ((Element) tmpl2.item(0)).getElementsByTagNameNS(DS_NS, "DigestMethod");
                 if (tmpl3 != null && tmpl3.getLength() > 0) {
                     String result = ((Element) tmpl3.item(0)).getAttribute("Algorithm");
                     return result;
