@@ -60,7 +60,9 @@ public class HibernateUtils {
                 }
 
                 for (String kName : hiberParamMap.keySet()) {
-                    hiberCfg.setProperty(kName, hiberParamMap.get(kName).toString());
+                    String kValue = hiberParamMap.get(kName).toString();
+                    hiberCfg.setProperty(kName, kValue);
+                    logger.info("Set hibernate parameter " + kName + " to " + kValue);
                 }
 
                 hiberCfg.addAnnotatedClass(ResourceEntity.class);

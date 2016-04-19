@@ -104,6 +104,9 @@ public class ResourceGraph {
 
     public void addMembersToGroup(GroupEntity grpEnt, List<String> memberIds) {
 
+        if (memberIds == null || memberIds.size() == 0)
+            return;
+
         StringBuffer queryStr = new StringBuffer("FROM ResourceEntity as qRes");
         queryStr.append(" WHERE qRes.id in (:memberids)");
 
@@ -120,6 +123,9 @@ public class ResourceGraph {
     }
 
     public void updateMembersForGroup(GroupEntity grpEnt, List<String> memberIds) {
+
+        if (memberIds == null || memberIds.size() == 0)
+            return;
 
         StringBuffer queryStr = new StringBuffer("SELECT qRes FROM ResourceEntity as qRes");
         queryStr.append(" INNER JOIN qRes.groups as rGroup WHERE rGroup.id=:groupid");
