@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.wso2.charon.core.attributes.Attribute;
-import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.DuplicateResourceException;
 import org.wso2.charon.core.exceptions.NotFoundException;
@@ -43,6 +42,7 @@ public abstract class HibernateDataSource
 
         User result = null;
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -54,10 +54,18 @@ public abstract class HibernateDataSource
                 result = userFromEntity(session, usrEnt);
             }
             session.getTransaction().commit();
+            nocommit = false;
 
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
-            session.getTransaction().rollback();
+        } catch (DataSourceException dsEx) {
+
+            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
+            throw new CharonException(dsEx.getMessage());
+
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
         return result;
     }
@@ -94,7 +102,7 @@ public abstract class HibernateDataSource
         try {
             return listUsers(null, null, null, startIndex, count).getUserList();
         } catch (CharonException chEx) {
-            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
+            logger.log(Level.SEVERE, chEx.getDescription(), chEx);
             return null;
         }
     }
@@ -107,6 +115,7 @@ public abstract class HibernateDataSource
         UserSearchResult result = new UserSearchResult(count);
 
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -145,10 +154,18 @@ public abstract class HibernateDataSource
             }
 
             session.getTransaction().commit();
+            nocommit = false;
 
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
-            session.getTransaction().rollback();
+        } catch (DataSourceException dsEx) {
+
+            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
+            throw new CharonException(dsEx.getMessage());
+
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
 
         return result;
@@ -158,6 +175,7 @@ public abstract class HibernateDataSource
         throws CharonException {
 
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -180,15 +198,25 @@ public abstract class HibernateDataSource
             updateExternalIds(session, eUser, user.getExternalId());
 
             session.getTransaction().commit();
+            nocommit = false;
 
             return user;
 
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
+        } catch (DataSourceException dsEx) {
 
-            session.getTransaction().rollback();
+            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
+            throw new CharonException(dsEx.getMessage());
 
-            throw new CharonException(th.getMessage());
+        } catch (NotFoundException nfEx) {
+
+            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
+            throw new CharonException(nfEx.getMessage());
+
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
     }
 
@@ -200,6 +228,7 @@ public abstract class HibernateDataSource
         throws NotFoundException, CharonException {
 
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -214,14 +243,13 @@ public abstract class HibernateDataSource
             session.delete(usrEnt);
 
             session.getTransaction().commit();
+            nocommit = false;
 
-        } catch (AbstractCharonException chEx) {
-            session.getTransaction().rollback();
-            throw chEx;
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
-            session.getTransaction().rollback();
-            throw new CharonException(th.getMessage(), th);
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
     }
 
@@ -234,6 +262,7 @@ public abstract class HibernateDataSource
         throws CharonException, DuplicateResourceException {
 
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -262,15 +291,25 @@ public abstract class HibernateDataSource
             linkExternalIds(session, eUser, user.getExternalId());
 
             session.getTransaction().commit();
+            nocommit = false;
 
             return user;
 
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
+        } catch (DataSourceException dsEx) {
 
-            session.getTransaction().rollback();
+            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
+            throw new CharonException(dsEx.getMessage());
 
-            throw new CharonException(th.getMessage());
+        } catch (NotFoundException nfEx) {
+
+            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
+            throw new CharonException(nfEx.getMessage());
+
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
     }
 
@@ -279,6 +318,7 @@ public abstract class HibernateDataSource
 
         Group result = null;
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -290,10 +330,13 @@ public abstract class HibernateDataSource
                 result = groupFromEntity(session, grpEnt);
             }
             session.getTransaction().commit();
+            nocommit = false;
 
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
-            session.getTransaction().rollback();
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
         return result;
     }
@@ -322,7 +365,7 @@ public abstract class HibernateDataSource
         try {
             return listGroups(null, null, null, startIndex, count).getGroupList();
         } catch (CharonException chEx) {
-            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
+            logger.log(Level.SEVERE, chEx.getDescription(), chEx);
             return null;
         }
     }
@@ -335,6 +378,8 @@ public abstract class HibernateDataSource
         GroupSearchResult result = new GroupSearchResult(count);
 
         Session session = sessionFactory.getCurrentSession();
+
+        boolean nocommit = true;
 
         try {
 
@@ -373,10 +418,13 @@ public abstract class HibernateDataSource
             }
 
             session.getTransaction().commit();
+            nocommit = false;
 
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
-            session.getTransaction().rollback();
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
 
         return result;
@@ -385,6 +433,7 @@ public abstract class HibernateDataSource
     public Group createGroup(Group group)
         throws CharonException, DuplicateResourceException {
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -414,16 +463,25 @@ public abstract class HibernateDataSource
             rGraph.addMembersToGroup(grpEnt, group.getMembers());
 
             session.getTransaction().commit();
+            nocommit = false;
 
             return group;
 
-        } catch (Throwable th) {
+        } catch (DataSourceException dsEx) {
 
-            logger.log(Level.SEVERE, th.getMessage(), th);
+            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
+            throw new CharonException(dsEx.getMessage());
 
-            session.getTransaction().rollback();
+        } catch (NotFoundException nfEx) {
 
-            throw new CharonException(th.getMessage());
+            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
+            throw new CharonException(nfEx.getMessage());
+
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
 
     }
@@ -431,6 +489,7 @@ public abstract class HibernateDataSource
     public Group updateGroup(Group oldGroup, Group group)
         throws CharonException {
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -456,16 +515,25 @@ public abstract class HibernateDataSource
             logger.info("Updated user " + group.getDisplayName() + " with id " + group.getId());
 
             session.getTransaction().commit();
+            nocommit = false;
 
             return group;
 
-        } catch (Throwable th) {
+        } catch (DataSourceException dsEx) {
 
-            logger.log(Level.SEVERE, th.getMessage(), th);
+            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
+            throw new CharonException(dsEx.getMessage());
 
-            session.getTransaction().rollback();
+        } catch (NotFoundException nfEx) {
 
-            throw new CharonException(th.getMessage());
+            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
+            throw new CharonException(nfEx.getMessage());
+
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
     }
 
@@ -482,6 +550,7 @@ public abstract class HibernateDataSource
     public void deleteGroup(String groupId)
         throws NotFoundException, CharonException {
         Session session = sessionFactory.getCurrentSession();
+        boolean nocommit = true;
 
         try {
 
@@ -497,14 +566,13 @@ public abstract class HibernateDataSource
 
             session.delete(grpEnt);
             session.getTransaction().commit();
+            nocommit = false;
 
-        } catch (AbstractCharonException chEx) {
-            session.getTransaction().rollback();
-            throw chEx;
-        } catch (Throwable th) {
-            logger.log(Level.SEVERE, th.getMessage(), th);
-            session.getTransaction().rollback();
-            throw new CharonException(th.getMessage(), th);
+        } finally {
+
+            if (nocommit)
+                session.getTransaction().rollback();
+
         }
     }
 
