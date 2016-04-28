@@ -11,6 +11,7 @@ import it.infn.security.saml.iam.AccessConstraints;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.AttributeQueryParameters;
+import it.infn.security.saml.iam.EntityIdPrincipal;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.schema.SchemaManager;
@@ -93,6 +94,7 @@ public class AttributeAuthorityServiceImpl
                         StatusCode.UNKNOWN_PRINCIPAL_URI);
             }
 
+            requester.getPrincipals().add(new EntityIdPrincipal(query.getIssuer()));
             AttributeQueryParameters params = new AttributeQueryParameters(userId);
             AccessConstraints constraints = accessManager.authorizeAttributeQuery(requester, params);
 
