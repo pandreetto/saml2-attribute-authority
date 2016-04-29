@@ -84,6 +84,18 @@ public interface AuthorityConfiguration {
     public int getAccessManagerParamAsInt(String name, int defValue)
         throws ConfigurationException;
 
+    public String getMetadataSourceParam(String name)
+        throws ConfigurationException;
+
+    public String getMetadataSourceParam(String name, String defValue)
+        throws ConfigurationException;
+
+    public int getMetadataSourceParamAsInt(String name)
+        throws ConfigurationException;
+
+    public int getMetadataSourceParamAsInt(String name, int defValue)
+        throws ConfigurationException;
+
     public HashMap<String, Object> getAccessManagerParamMap(String regex)
         throws ConfigurationException;
 

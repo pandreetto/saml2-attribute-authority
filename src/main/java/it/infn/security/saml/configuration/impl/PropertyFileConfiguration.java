@@ -413,6 +413,42 @@ public class PropertyFileConfiguration
         return result;
     }
 
+    public String getMetadataSourceParam(String name)
+        throws ConfigurationException {
+        String result = properties.getProperty(name);
+        if (result == null) {
+            throw new ConfigurationException("Missing " + name);
+        }
+        return result;
+    }
+
+    public String getMetadataSourceParam(String name, String defValue) {
+        String result = properties.getProperty(name);
+        if (result == null) {
+            return defValue;
+        }
+        return result;
+    }
+
+    public int getMetadataSourceParamAsInt(String name)
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(getMetadataSourceParam(name));
+        } catch (NumberFormatException nEx) {
+            throw new ConfigurationException("Attribute " + name + " is not an integer");
+        }
+    }
+
+    public int getMetadataSourceParamAsInt(String name, int defValue)
+        throws ConfigurationException {
+        try {
+            return Integer.parseInt(getMetadataSourceParam(name));
+        } catch (Exception ex) {
+            logger.warning("Missing or wrong attribute " + name + "; used default value");
+            return defValue;
+        }
+    }
+
     public X509KeyManager getKeyManager()
         throws ConfigurationException {
         if (keyManager == null) {
