@@ -56,6 +56,7 @@ public class SimpleAccessManager
                 try {
 
                     EntityIdPrincipal entityId = tmpset.iterator().next();
+                    logger.fine("Calculating access for " + entityId.getName());
 
                     MetadataSource mdSource = MetadataSourceFactory.getMetadataSource();
                     DataSource dataSource = DataSourceFactory.getDataSource();
@@ -78,7 +79,7 @@ public class SimpleAccessManager
                 }
             }
 
-            if (errStr != null)
+            if (errStr == null)
                 errStr = "Authorization denied for query " + queryParams.getId();
             throw new AccessManagerException(errStr);
         }

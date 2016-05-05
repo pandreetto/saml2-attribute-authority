@@ -150,7 +150,6 @@ public class AgIDMetadataSource
             logger.fine("Contacting SP " + mdLocation);
 
             Element response = getXMLDocument(mdURI).getDocumentElement();
-            logger.info("Found metadata element " + response.getTagName());
 
             Unmarshaller unmarshaller = SAML2ObjectBuilder.getUnmarshaller(response);
             EntityDescriptor entDescr = (EntityDescriptor) unmarshaller.unmarshall(response);
@@ -165,13 +164,11 @@ public class AgIDMetadataSource
             }
             SPMetadata result = new SPMetadata();
 
-            //result.setExpiration(entDescr.getValidUntil().getMillis());
-
             List<AttributeConsumingService> attrCS = spDescr.getAttributeConsumingServices();
             for (AttributeConsumingService acsItem : attrCS) {
                 for (RequestedAttribute rAttr : acsItem.getRequestAttributes()) {
-                    logger.info("Detected " + rAttr.getName());
                     result.addAttribute(rAttr.getName());
+                    logger.fine("Attribute from " + mdLocation + ": " + rAttr.getName());
                 }
             }
             return result;
