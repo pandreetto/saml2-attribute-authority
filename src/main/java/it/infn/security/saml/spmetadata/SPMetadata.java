@@ -1,9 +1,13 @@
 package it.infn.security.saml.spmetadata;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SPMetadata {
+public class SPMetadata
+    implements Serializable {
+
+    public static final long serialVersionUID = 1462455875;
 
     private long expirationTime;
 

@@ -9,11 +9,17 @@ import it.infn.security.saml.utils.SAML2ObjectBuilder;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.net.ssl.HttpsURLConnection;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,6 +38,8 @@ public class AgIDMetadataSource
 
     private static final String REQ_PROTO = "urn:oasis:names:tc:SAML:2.0:protocol";
 
+    private static final String CACHE_NAME = "metadata";
+
     private static final String AGID_NS = "http://www.agid.gov.it/spid";
 
     private static final String REGISTRY_HOST = "agid.registry.host";
@@ -39,6 +47,8 @@ public class AgIDMetadataSource
     private static final String REGISTRY_PORT = "agid.registry.port";
 
     private static final String REGISTRY_PATH = "agid.registry.path";
+
+    private static final String CACHE_DURATION = "agid.cache.duration";
 
     private static final Logger logger = Logger.getLogger(AgIDMetadataSource.class.getName());
 
@@ -50,10 +60,9 @@ public class AgIDMetadataSource
 
     private DocumentBuilderFactory dbf;
 
-    /*
-     * TODO replace with a real cache system
-     */
-    private HashMap<String, SPMetadata> spCache;
+    private CacheManager cManager;
+
+    private Cache<String, SPMetadata> spCache;
 
     public void init()
         throws MetadataSourceException {
@@ -69,12 +78,23 @@ public class AgIDMetadataSource
             registryPort = configuration.getMetadataSourceParamAsInt(REGISTRY_PORT, 443);
             registryPath = configuration.getMetadataSourceParam(REGISTRY_PATH, "");
 
+            cManager = Caching.getCachingProvider().getCacheManager();
+            logger.fine("Using cache manager implementation: " + cManager.getClass().getName());
+
+            MutableConfiguration<String, SPMetadata> mConf = new MutableConfiguration<>();
+            mConf.setTypes(String.class, SPMetadata.class);
+            mConf.setStoreByValue(true);
+            int tmpDur = configuration.getMetadataSourceParamAsInt(CACHE_DURATION, 1);
+            Duration cDuration = new Duration(TimeUnit.SECONDS, tmpDur);
+            mConf.setExpiryPolicyFactory(AccessedExpiryPolicy.factoryOf(cDuration));
+
+            spCache = cManager.createCache(CACHE_NAME, mConf);
+            logger.info("Created cache: " + CACHE_NAME);
+
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
             throw new MetadataSourceException(ex.getMessage(), ex);
         }
-
-        spCache = new HashMap<String, SPMetadata>();
 
     }
 
@@ -98,7 +118,7 @@ public class AgIDMetadataSource
     public void close()
         throws MetadataSourceException {
 
-        spCache.clear();
+        cManager.destroyCache(CACHE_NAME);
 
     }
 
