@@ -25,6 +25,8 @@ public class ChainListener
 
     private SCIMListener scimListener;
 
+    private MetadataSourceListener mdListener;
+
     @SuppressWarnings("unchecked")
     public void contextInitialized(ServletContextEvent event) {
 
@@ -40,8 +42,7 @@ public class ChainListener
             }
 
             /*
-             * Configuration and log must be initialized before any other
-             * subsystem
+             * Configuration and log must be initialized before any other subsystem
              */
             AuthorityConfiguration config = AuthorityConfigurationFactory.getConfiguration();
             config.init(pTable);
@@ -54,6 +55,8 @@ public class ChainListener
             dsListener.contextInitialized(event);
             scimListener = new SCIMListener();
             scimListener.contextInitialized(event);
+            mdListener = new MetadataSourceListener();
+            mdListener.contextInitialized(event);
 
         } catch (Throwable th) {
 
@@ -67,6 +70,7 @@ public class ChainListener
 
         try {
 
+            mdListener.contextDestroyed(event);
             scimListener.contextDestroyed(event);
             dsListener.contextDestroyed(event);
             accessListener.contextInitialized(event);
