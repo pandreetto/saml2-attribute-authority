@@ -11,6 +11,7 @@ import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
+import it.infn.security.scim.protocol.SCIMConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,9 +28,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-
-import org.wso2.charon.core.protocol.ResponseCodeConstants;
-import org.wso2.charon.core.schema.SCIMConstants;
 
 @Path("/attributes")
 public class AttributeManager {
@@ -48,7 +46,7 @@ public class AttributeManager {
         outputFormat = SCIMUtils.normalizeFormat(outputFormat);
 
         if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(ResponseCodeConstants.CODE_BAD_REQUEST, outputFormat);
+            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
         }
 
         try {
@@ -81,7 +79,7 @@ public class AttributeManager {
         outputFormat = SCIMUtils.normalizeFormat(outputFormat);
 
         if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(ResponseCodeConstants.CODE_BAD_REQUEST, outputFormat);
+            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
         }
 
         try {
@@ -114,7 +112,7 @@ public class AttributeManager {
         outputFormat = SCIMUtils.normalizeFormat(outputFormat);
 
         if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(ResponseCodeConstants.CODE_BAD_REQUEST, outputFormat);
+            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
         }
 
         try {
@@ -126,7 +124,7 @@ public class AttributeManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.removeAttribute(attrName);
-            return buildResponse(ResponseCodeConstants.CODE_OK, outputFormat);
+            return buildResponse(SCIMConstants.CODE_OK, outputFormat);
 
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
@@ -148,7 +146,7 @@ public class AttributeManager {
 
         if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(inputFormat))
                 || !SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(ResponseCodeConstants.CODE_BAD_REQUEST, outputFormat);
+            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
         }
 
         try {
@@ -182,7 +180,7 @@ public class AttributeManager {
 
         if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(inputFormat))
                 || !SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(ResponseCodeConstants.CODE_BAD_REQUEST, outputFormat);
+            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
         }
 
         try {
@@ -210,7 +208,7 @@ public class AttributeManager {
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, format);
-        return JAXRSResponseBuilder.buildResponse(ResponseCodeConstants.CODE_OK, httpHeaders, message);
+        return JAXRSResponseBuilder.buildResponse(SCIMConstants.CODE_OK, httpHeaders, message);
 
     }
 

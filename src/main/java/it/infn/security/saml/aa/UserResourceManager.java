@@ -9,6 +9,7 @@ import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 import it.infn.security.saml.utils.charon.UserResourceEndpoint;
+import it.infn.security.scim.protocol.SCIMConstants;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,14 +24,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.exceptions.BadRequestException;
-import org.wso2.charon.core.exceptions.FormatNotSupportedException;
-import org.wso2.charon.core.protocol.ResponseCodeConstants;
 import org.wso2.charon.core.protocol.SCIMResponse;
-import org.wso2.charon.core.schema.SCIMConstants;
 
 @Path("/Users")
 public class UserResourceManager {
@@ -43,8 +39,8 @@ public class UserResourceManager {
 
     @GET
     @Path("{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getUser(@PathParam(SCIMConstants.CommonSchemaConstants.ID) String id,
+    @Produces(SCIMConstants.APPLICATION_JSON)
+    public Response getUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -73,6 +69,7 @@ public class UserResourceManager {
     }
 
     @POST
+    @Produces(SCIMConstants.APPLICATION_JSON)
     public Response createUser(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
@@ -82,7 +79,7 @@ public class UserResourceManager {
 
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new FormatNotSupportedException(error);
+                throw new CodedException(error);
             }
             inputFormat = SCIMUtils.normalizeFormat(inputFormat);
             outputFormat = SCIMUtils.normalizeFormat(outputFormat);
@@ -107,7 +104,8 @@ public class UserResourceManager {
 
     @DELETE
     @Path("{id}")
-    public Response deleteUser(@PathParam(SCIMConstants.CommonSchemaConstants.ID) String id,
+    @Produces(SCIMConstants.APPLICATION_JSON)
+    public Response deleteUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -135,6 +133,7 @@ public class UserResourceManager {
     }
 
     @GET
+    @Produces(SCIMConstants.APPLICATION_JSON)
     public Response getUser(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
             @QueryParam("attributes") String searchAttribute, @QueryParam("filter") String filter,
@@ -155,7 +154,7 @@ public class UserResourceManager {
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
-                throw new BadRequestException(ResponseCodeConstants.DESC_BAD_REQUEST_GET);
+                throw new CodedException(SCIMConstants.DESC_BAD_REQUEST_GET);
             } else {
                 int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
                 int cnt = (count != null) ? Integer.parseInt(count) : -1;
@@ -174,7 +173,8 @@ public class UserResourceManager {
 
     @PUT
     @Path("{id}")
-    public Response updateUser(@PathParam(SCIMConstants.CommonSchemaConstants.ID) String id,
+    @Produces(SCIMConstants.APPLICATION_JSON)
+    public Response updateUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
@@ -184,7 +184,7 @@ public class UserResourceManager {
 
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new FormatNotSupportedException(error);
+                throw new CodedException(error);
             }
             inputFormat = SCIMUtils.normalizeFormat(inputFormat);
             outputFormat = SCIMUtils.normalizeFormat(outputFormat);

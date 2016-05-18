@@ -13,6 +13,7 @@ import it.infn.security.saml.utils.SAML2ObjectBuilder;
 import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.SignUtils;
 import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
+import it.infn.security.scim.protocol.SCIMConstants;
 
 import java.io.StringWriter;
 import java.security.cert.X509Certificate;
@@ -42,8 +43,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
-import org.wso2.charon.core.protocol.ResponseCodeConstants;
-import org.wso2.charon.core.schema.SCIMConstants;
 
 @Path("/service_metadata")
 public class MetadataManager {
@@ -51,7 +50,7 @@ public class MetadataManager {
     private static final Logger logger = Logger.getLogger(MetadataManager.class.getName());
 
     @GET
-    @Produces("text/xml")
+    @Produces(SCIMConstants.TEXT_XML)
     public Response getAttributeNames() {
 
         try {
@@ -134,8 +133,8 @@ public class MetadataManager {
             String payload = xmlWriter.toString();
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, "text/xml");
-            return JAXRSResponseBuilder.buildResponse(ResponseCodeConstants.CODE_OK, httpHeaders, payload);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.TEXT_XML);
+            return JAXRSResponseBuilder.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
 
         } catch (Exception ex) {
             /*
