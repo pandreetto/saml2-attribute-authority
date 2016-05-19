@@ -4,6 +4,8 @@ public class SCIMConstants {
 
     public static final String GROUP_ENDPOINT = "/Groups";
 
+    public static final String USER_ENDPOINT = "/Users";
+
     /*
      * TODO change to application/scim+json
      */
@@ -26,6 +28,8 @@ public class SCIMConstants {
     public static final int CODE_BAD_REQUEST = 400;
 
     public static final int CODE_OK = 200;
+
+    public static final int CODE_CREATED = 201;
 
     public static final String DESC_BAD_REQUEST_GET = "GET request does not support the "
             + "requested URL query parameter combination.";

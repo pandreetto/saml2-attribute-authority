@@ -81,7 +81,7 @@ public class GroupResourceEndpoint {
             throw new InternalServerException(message);
         }
 
-        return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);
+        return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedGroup);
 
     }
 
