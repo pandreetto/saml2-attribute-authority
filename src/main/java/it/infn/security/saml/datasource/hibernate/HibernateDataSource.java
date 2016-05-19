@@ -47,10 +47,10 @@ public abstract class HibernateDataSource
             session.beginTransaction();
             UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, userId);
             if (usrEnt == null) {
-                logger.info("Entity not found " + userId);
-            } else {
-                result = userFromEntity(session, usrEnt);
+                throw new DataSourceException("Entity not found " + userId);
             }
+
+            result = userFromEntity(session, usrEnt);
             session.getTransaction().commit();
             nocommit = false;
 
@@ -312,10 +312,10 @@ public abstract class HibernateDataSource
             session.beginTransaction();
             GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, groupId);
             if (grpEnt == null) {
-                logger.info("Entity not found " + groupId);
-            } else {
-                result = groupFromEntity(session, grpEnt);
+                throw new DataSourceException("Entity not found " + groupId);
             }
+
+            result = groupFromEntity(session, grpEnt);
             session.getTransaction().commit();
             nocommit = false;
 
