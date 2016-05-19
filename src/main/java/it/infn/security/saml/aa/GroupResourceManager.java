@@ -8,10 +8,9 @@ import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.charon.GroupResourceEndpoint;
-import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 import it.infn.security.scim.protocol.SCIMConstants;
+import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
@@ -26,9 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.protocol.SCIMResponse;
-
-@Path("/Groups")
+@Path(SCIMConstants.GROUP_ENDPOINT)
 public class GroupResourceManager {
 
     private static final Logger logger = Logger.getLogger(GroupResourceManager.class.getName());
@@ -44,7 +41,7 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
-        SCIMResponse scimResponse = null;
+        Response result = null;
         try {
 
             format = SCIMUtils.normalizeFormat(format);
@@ -56,14 +53,15 @@ public class GroupResourceManager {
 
             DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            scimResponse = groupResourceEndpoint.get(id, format, userManager);
+            result = groupResourceEndpoint.get(id, format, userManager);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            scimResponse = SCIMUtils.responseFromException(ex, format);
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
 
-        return JAXRSResponseBuilder.buildResponse(scimResponse);
+        return result;
 
     }
 
@@ -73,7 +71,7 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
 
-        SCIMResponse scimResponse = null;
+        Response result = null;
         try {
 
             if (inputFormat == null) {
@@ -90,14 +88,15 @@ public class GroupResourceManager {
 
             DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            scimResponse = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
+            result = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
 
-        return JAXRSResponseBuilder.buildResponse(scimResponse);
+        return result;
 
     }
 
@@ -108,7 +107,7 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
-        SCIMResponse scimResponse = null;
+        Response result = null;
         try {
 
             format = SCIMUtils.normalizeFormat(format);
@@ -120,14 +119,15 @@ public class GroupResourceManager {
 
             DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            scimResponse = groupResourceEndpoint.delete(id, userManager, format);
+            result = groupResourceEndpoint.delete(id, userManager, format);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            scimResponse = SCIMUtils.responseFromException(ex, format);
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
 
-        return JAXRSResponseBuilder.buildResponse(scimResponse);
+        return result;
 
     }
 
@@ -139,7 +139,7 @@ public class GroupResourceManager {
             @QueryParam("startIndex") String startIndex, @QueryParam("count") String count,
             @QueryParam("sortBy") String sortBy, @QueryParam("sortOrder") String sortOrder) {
 
-        SCIMResponse scimResponse = null;
+        Response result = null;
         try {
 
             format = SCIMUtils.normalizeFormat(format);
@@ -157,16 +157,16 @@ public class GroupResourceManager {
             } else {
                 int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
                 int cnt = (count != null) ? Integer.parseInt(count) : -1;
-                scimResponse = groupResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, dataSource,
-                        format);
+                result = groupResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, dataSource, format);
             }
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            scimResponse = SCIMUtils.responseFromException(ex, format);
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
 
-        return JAXRSResponseBuilder.buildResponse(scimResponse);
+        return result;
 
     }
 
@@ -178,7 +178,7 @@ public class GroupResourceManager {
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
 
-        SCIMResponse scimResponse = null;
+        Response result = null;
         try {
             if (inputFormat == null) {
                 String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
@@ -195,15 +195,15 @@ public class GroupResourceManager {
 
             DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            scimResponse = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat,
-                    userManager);
+            result = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, userManager);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            scimResponse = SCIMUtils.responseFromException(ex, outputFormat);
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
 
-        return JAXRSResponseBuilder.buildResponse(scimResponse);
+        return result;
 
     }
 

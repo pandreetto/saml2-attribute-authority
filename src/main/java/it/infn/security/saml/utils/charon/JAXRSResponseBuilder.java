@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class JAXRSResponseBuilder {
 
+    @Deprecated
     public static Response buildResponse(int code, Map<String, String> httpHeaders, String message) {
 
         Response.ResponseBuilder responseBuilder = Response.status(code);
@@ -24,6 +25,7 @@ public class JAXRSResponseBuilder {
         return responseBuilder.build();
     }
 
+    @Deprecated
     public static Response buildResponse(SCIMResponse scimResponse) {
         return buildResponse(scimResponse.getResponseCode(), scimResponse.getHeaderParameterMap(),
                 scimResponse.getResponseMessage());

@@ -35,6 +35,7 @@ public class SCIMUtils {
         throw new IllegalArgumentException("Encoder unsupported " + format);
     }
 
+    @Deprecated
     public static SCIMResponse responseFromException(Exception ex, String format) {
 
         AbstractCharonException chEx = null;
