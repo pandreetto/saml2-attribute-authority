@@ -51,10 +51,10 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeShowUser(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.get(id, format, userManager);
+            result = userResourceEndpoint.get(id, format, dataSource);
 
         } catch (Exception ex) {
 
@@ -87,9 +87,9 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateUser(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
+            result = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, dataSource);
 
         } catch (Exception ex) {
 
@@ -118,9 +118,9 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeDeleteUser(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.delete(id, userManager, format);
+            result = userResourceEndpoint.delete(id, dataSource, format);
 
         } catch (Exception ex) {
 
@@ -150,7 +150,7 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeListUsers(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
@@ -158,7 +158,7 @@ public class UserResourceManager {
             } else {
                 int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
                 int cnt = (count != null) ? Integer.parseInt(count) : -1;
-                result = userResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, userManager, format);
+                result = userResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, dataSource, format);
             }
 
         } catch (Exception ex) {
@@ -194,9 +194,9 @@ public class UserResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeModifyUser(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, userManager);
+            result = userResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, dataSource);
 
         } catch (Exception ex) {
 

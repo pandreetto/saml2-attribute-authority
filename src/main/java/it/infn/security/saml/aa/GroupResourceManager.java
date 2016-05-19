@@ -51,9 +51,9 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeShowGroup(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.get(id, format, userManager);
+            result = groupResourceEndpoint.get(id, format, dataSource);
 
         } catch (Exception ex) {
 
@@ -86,9 +86,9 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeCreateGroup(requester);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, userManager);
+            result = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, dataSource);
 
         } catch (Exception ex) {
 
@@ -117,9 +117,9 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeDeleteGroup(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.delete(id, userManager, format);
+            result = groupResourceEndpoint.delete(id, dataSource, format);
 
         } catch (Exception ex) {
 
@@ -193,9 +193,9 @@ public class GroupResourceManager {
             Subject requester = identityManager.authenticate();
             accessManager.authorizeModifyGroup(requester, id);
 
-            DataSource userManager = DataSourceFactory.getDataSource().getProxyDataSource(requester);
+            DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, userManager);
+            result = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, dataSource);
 
         } catch (Exception ex) {
 

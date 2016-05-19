@@ -4,6 +4,7 @@ import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
+import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
@@ -24,7 +25,6 @@ import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.InternalServerException;
 import org.wso2.charon.core.exceptions.NotFoundException;
 import org.wso2.charon.core.exceptions.ResourceNotFoundException;
-import org.wso2.charon.core.extensions.UserManager;
 import org.wso2.charon.core.objects.Group;
 import org.wso2.charon.core.objects.ListedResource;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
@@ -34,10 +34,10 @@ public class GroupResourceEndpoint {
 
     private static Logger logger = Logger.getLogger(GroupResourceEndpoint.class.getName());
 
-    public Response get(String id, String format, UserManager userManager)
-        throws SchemaManagerException, AbstractCharonException {
+    public Response get(String id, String format, DataSource dataSource)
+        throws SchemaManagerException, AbstractCharonException, DataSourceException {
 
-        Group group = ((UserManager) userManager).getGroup(id);
+        Group group = dataSource.getGroup(id);
         if (group == null) {
             String message = "Group not found in the user store.";
             throw new ResourceNotFoundException(message);
@@ -55,8 +55,8 @@ public class GroupResourceEndpoint {
 
     }
 
-    public Response create(String scimObjectString, String inFormat, String outFormat, UserManager userManager)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException {
+    public Response create(String scimObjectString, String inFormat, String outFormat, DataSource dataSource)
+        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
 
         JSONEncoder encoder = new JSONEncoder();
         JSONDecoder decoder = new JSONDecoder();
@@ -66,7 +66,7 @@ public class GroupResourceEndpoint {
         Group group = (Group) decoder.decodeResource(scimObjectString, groupSchema, new Group());
 
         ServerSideValidator.validateCreatedSCIMObject(group, groupSchema);
-        Group createdGroup = ((UserManager) userManager).createGroup(group);
+        Group createdGroup = dataSource.createGroup(group);
 
         String encodedGroup;
         Map<String, String> httpHeaders = new HashMap<String, String>();
@@ -85,10 +85,10 @@ public class GroupResourceEndpoint {
 
     }
 
-    public Response delete(String id, UserManager userManager, String outputFormat)
-        throws AbstractCharonException {
+    public Response delete(String id, DataSource dataSource, String outputFormat)
+        throws AbstractCharonException, DataSourceException {
 
-        userManager.deleteGroup(id);
+        dataSource.deleteGroup(id);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, null, null);
 
@@ -96,7 +96,7 @@ public class GroupResourceEndpoint {
 
     public Response listByParams(String filterString, String sortBy, String sortOrder, int startIndex, int count,
             DataSource dataSource, String format)
-        throws AbstractCharonException {
+        throws AbstractCharonException, DataSourceException {
 
         JSONEncoder encoder = new JSONEncoder();
 
@@ -110,8 +110,8 @@ public class GroupResourceEndpoint {
     }
 
     public Response updateWithPUT(String existingId, String scimObjectString, String inputFormat, String outputFormat,
-            UserManager userManager)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException {
+            DataSource dataSource)
+        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
 
         JSONEncoder encoder = new JSONEncoder();
         JSONDecoder decoder = new JSONDecoder();
@@ -120,20 +120,13 @@ public class GroupResourceEndpoint {
 
         Group group = (Group) decoder.decodeResource(scimObjectString, groupSchema, new Group());
         Group updatedGroup = null;
-        if (userManager != null) {
-            Group oldGroup = userManager.getGroup(existingId);
-            if (oldGroup != null) {
-                Group validatedGroup = (Group) ServerSideValidator.validateUpdatedSCIMObject(oldGroup, group,
-                        groupSchema);
-                updatedGroup = userManager.updateGroup(oldGroup, validatedGroup);
-            } else {
-                String message = "No group exists with the given id: " + existingId;
-                throw new ResourceNotFoundException(message);
-            }
-
+        Group oldGroup = dataSource.getGroup(existingId);
+        if (oldGroup != null) {
+            Group validatedGroup = (Group) ServerSideValidator.validateUpdatedSCIMObject(oldGroup, group, groupSchema);
+            updatedGroup = dataSource.updateGroup(oldGroup, validatedGroup);
         } else {
-            String message = "Provided User manager handler is null.";
-            throw new InternalServerException(message);
+            String message = "No group exists with the given id: " + existingId;
+            throw new ResourceNotFoundException(message);
         }
 
         String encodedGroup;
@@ -154,7 +147,7 @@ public class GroupResourceEndpoint {
     }
 
     public Response updateWithPATCH(String existingId, String scimObjectString, String inputFormat,
-            String outputFormat, UserManager userManager)
+            String outputFormat, DataSource dataSource)
         throws SchemaManagerException, AbstractCharonException, ConfigurationException {
         throw new SchemaManagerException("PATCH command not implemented");
     }

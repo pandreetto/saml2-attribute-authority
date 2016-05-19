@@ -16,14 +16,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.wso2.charon.core.attributes.Attribute;
 import org.wso2.charon.core.exceptions.CharonException;
-import org.wso2.charon.core.exceptions.DuplicateResourceException;
 import org.wso2.charon.core.exceptions.NotFoundException;
 import org.wso2.charon.core.objects.AbstractSCIMObject;
 import org.wso2.charon.core.objects.Group;
@@ -38,7 +36,7 @@ public abstract class HibernateDataSource
     }
 
     public User getUser(String userId)
-        throws CharonException {
+        throws DataSourceException {
 
         User result = null;
         Session session = sessionFactory.getCurrentSession();
@@ -56,10 +54,9 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
-        } catch (DataSourceException dsEx) {
+        } catch (CharonException chEx) {
 
-            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
-            throw new CharonException(dsEx.getMessage());
+            throw new DataSourceException(chEx.getMessage());
 
         } finally {
 
@@ -71,44 +68,34 @@ public abstract class HibernateDataSource
     }
 
     public List<User> listUsers()
-        throws CharonException {
+        throws DataSourceException {
         return listUsers(null, null, null, -1, -1).getUserList();
     }
 
-    public List<User> listUsersByAttribute(Attribute attribute) {
+    public List<User> listUsersByAttribute(Attribute attribute)
+        throws DataSourceException {
         return null;
     }
 
     public List<User> listUsersByFilter(String filter, String operation, String value)
-        throws CharonException {
-        try {
-            return listUsers(filter + operation + value, null, null, -1, -1).getUserList();
-        } catch (CharonException chEx) {
-            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
-            return null;
-        }
+        throws DataSourceException {
+
+        return listUsers(filter + operation + value, null, null, -1, -1).getUserList();
+
     }
 
-    public List<User> listUsersBySort(String sortBy, String sortOrder) {
-        try {
-            return listUsers(null, sortBy, sortOrder, -1, -1).getUserList();
-        } catch (CharonException chEx) {
-            logger.log(Level.SEVERE, chEx.getMessage(), chEx);
-            return null;
-        }
+    public List<User> listUsersBySort(String sortBy, String sortOrder)
+        throws DataSourceException {
+        return listUsers(null, sortBy, sortOrder, -1, -1).getUserList();
     }
 
-    public List<User> listUsersWithPagination(int startIndex, int count) {
-        try {
-            return listUsers(null, null, null, startIndex, count).getUserList();
-        } catch (CharonException chEx) {
-            logger.log(Level.SEVERE, chEx.getDescription(), chEx);
-            return null;
-        }
+    public List<User> listUsersWithPagination(int startIndex, int count)
+        throws DataSourceException {
+        return listUsers(null, null, null, startIndex, count).getUserList();
     }
 
     public UserSearchResult listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count)
-        throws CharonException {
+        throws DataSourceException {
 
         count = HibernateUtils.checkQueryRange(count, true);
 
@@ -156,10 +143,9 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
-        } catch (DataSourceException dsEx) {
+        } catch (CharonException chEx) {
 
-            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
-            throw new CharonException(dsEx.getMessage());
+            throw new DataSourceException(chEx.getMessage());
 
         } finally {
 
@@ -172,7 +158,7 @@ public abstract class HibernateDataSource
     }
 
     public User updateUser(User user)
-        throws CharonException {
+        throws DataSourceException {
 
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
@@ -202,15 +188,13 @@ public abstract class HibernateDataSource
 
             return user;
 
-        } catch (DataSourceException dsEx) {
+        } catch (CharonException chEx) {
 
-            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
-            throw new CharonException(dsEx.getMessage());
+            throw new DataSourceException(chEx.getMessage());
 
         } catch (NotFoundException nfEx) {
 
-            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
-            throw new CharonException(nfEx.getMessage());
+            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -220,12 +204,13 @@ public abstract class HibernateDataSource
         }
     }
 
-    public User updateUser(List<Attribute> updatedAttributes) {
+    public User updateUser(List<Attribute> updatedAttributes)
+        throws DataSourceException {
         return null;
     }
 
     public void deleteUser(String userId)
-        throws NotFoundException, CharonException {
+        throws DataSourceException {
 
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
@@ -245,6 +230,10 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
+        } catch (NotFoundException nfEx) {
+
+            throw new DataSourceException(nfEx.getMessage());
+
         } finally {
 
             if (nocommit)
@@ -254,12 +243,12 @@ public abstract class HibernateDataSource
     }
 
     public User createUser(User user)
-        throws CharonException, DuplicateResourceException {
+        throws DataSourceException {
         return createUser(user, false);
     }
 
     public User createUser(User user, boolean isBulkUserAdd)
-        throws CharonException, DuplicateResourceException {
+        throws DataSourceException {
 
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
@@ -295,15 +284,13 @@ public abstract class HibernateDataSource
 
             return user;
 
-        } catch (DataSourceException dsEx) {
+        } catch (CharonException chEx) {
 
-            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
-            throw new CharonException(dsEx.getMessage());
+            throw new DataSourceException(chEx.getMessage());
 
         } catch (NotFoundException nfEx) {
 
-            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
-            throw new CharonException(nfEx.getMessage());
+            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -314,7 +301,7 @@ public abstract class HibernateDataSource
     }
 
     public Group getGroup(String groupId)
-        throws CharonException {
+        throws DataSourceException {
 
         Group result = null;
         Session session = sessionFactory.getCurrentSession();
@@ -332,6 +319,10 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
+        } catch (CharonException chEx) {
+
+            throw new DataSourceException(chEx.getMessage());
+
         } finally {
 
             if (nocommit)
@@ -342,36 +333,32 @@ public abstract class HibernateDataSource
     }
 
     public List<Group> listGroups()
-        throws CharonException {
+        throws DataSourceException {
         return listGroups(null, null, null, -1, -1).getGroupList();
     }
 
     public List<Group> listGroupsByAttribute(Attribute attribute)
-        throws CharonException {
+        throws DataSourceException {
         return null;
     }
 
     public List<Group> listGroupsByFilter(String filter, String operation, String value)
-        throws CharonException {
+        throws DataSourceException {
         return listGroups(filter + operation + value, null, null, -1, -1).getGroupList();
     }
 
     public List<Group> listGroupsBySort(String sortBy, String sortOrder)
-        throws CharonException {
+        throws DataSourceException {
         return listGroups(null, sortBy, sortOrder, -1, -1).getGroupList();
     }
 
-    public List<Group> listGroupsWithPagination(int startIndex, int count) {
-        try {
-            return listGroups(null, null, null, startIndex, count).getGroupList();
-        } catch (CharonException chEx) {
-            logger.log(Level.SEVERE, chEx.getDescription(), chEx);
-            return null;
-        }
+    public List<Group> listGroupsWithPagination(int startIndex, int count)
+        throws DataSourceException {
+        return listGroups(null, null, null, startIndex, count).getGroupList();
     }
 
     public GroupSearchResult listGroups(String filter, String sortBy, String sortOrder, int startIndex, int count)
-        throws CharonException {
+        throws DataSourceException {
 
         count = HibernateUtils.checkQueryRange(count, false);
 
@@ -420,6 +407,10 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
+        } catch (CharonException chEx) {
+
+            throw new DataSourceException(chEx.getMessage());
+
         } finally {
 
             if (nocommit)
@@ -431,7 +422,7 @@ public abstract class HibernateDataSource
     }
 
     public Group createGroup(Group group)
-        throws CharonException, DuplicateResourceException {
+        throws DataSourceException {
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
 
@@ -467,15 +458,13 @@ public abstract class HibernateDataSource
 
             return group;
 
-        } catch (DataSourceException dsEx) {
+        } catch (CharonException chEx) {
 
-            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
-            throw new CharonException(dsEx.getMessage());
+            throw new DataSourceException(chEx.getMessage());
 
         } catch (NotFoundException nfEx) {
 
-            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
-            throw new CharonException(nfEx.getMessage());
+            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -487,7 +476,7 @@ public abstract class HibernateDataSource
     }
 
     public Group updateGroup(Group oldGroup, Group group)
-        throws CharonException {
+        throws DataSourceException {
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
 
@@ -519,15 +508,13 @@ public abstract class HibernateDataSource
 
             return group;
 
-        } catch (DataSourceException dsEx) {
+        } catch (CharonException chEx) {
 
-            logger.log(Level.SEVERE, dsEx.getMessage(), dsEx);
-            throw new CharonException(dsEx.getMessage());
+            throw new DataSourceException(chEx.getMessage());
 
         } catch (NotFoundException nfEx) {
 
-            logger.log(Level.SEVERE, nfEx.getMessage(), nfEx);
-            throw new CharonException(nfEx.getMessage());
+            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -538,17 +525,17 @@ public abstract class HibernateDataSource
     }
 
     public Group patchGroup(Group oldGroup, Group group)
-        throws CharonException {
+        throws DataSourceException {
         return null;
     }
 
     public Group updateGroup(List<Attribute> attributes)
-        throws CharonException {
+        throws DataSourceException {
         return null;
     }
 
     public void deleteGroup(String groupId)
-        throws NotFoundException, CharonException {
+        throws DataSourceException {
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
 
@@ -567,6 +554,10 @@ public abstract class HibernateDataSource
             session.delete(grpEnt);
             session.getTransaction().commit();
             nocommit = false;
+
+        } catch (NotFoundException nfEx) {
+
+            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
