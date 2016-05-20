@@ -16,8 +16,6 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.exceptions.AbstractCharonException;
-
 @Deprecated
 public class UserResourceEndpoint {
 
@@ -53,7 +51,7 @@ public class UserResourceEndpoint {
     @Deprecated
     public Response create(String scimObjectString, String inputFormat, String outputFormat, DataSource dataSource,
             boolean isBulkUserAdd)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
+        throws SchemaManagerException, ConfigurationException, DataSourceException {
 
         UserResource user = SCIMProtocolCodec.decodeUser(scimObjectString, true);
 
@@ -71,7 +69,7 @@ public class UserResourceEndpoint {
 
     @Deprecated
     public Response create(String scimObjStr, String inFormat, String outFormat, DataSource dataSource)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
+        throws SchemaManagerException, ConfigurationException, DataSourceException {
 
         return create(scimObjStr, inFormat, outFormat, dataSource, false);
 
@@ -79,7 +77,7 @@ public class UserResourceEndpoint {
 
     @Deprecated
     public Response delete(String id, DataSource dataSource, String outputFormat)
-        throws AbstractCharonException, DataSourceException {
+        throws DataSourceException {
 
         dataSource.deleteUser(id);
 
@@ -90,7 +88,7 @@ public class UserResourceEndpoint {
     @Deprecated
     public Response updateWithPUT(String existingId, String scimObjectString, String inputFormat, String outputFormat,
             DataSource dataSource)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
+        throws SchemaManagerException, ConfigurationException, DataSourceException {
 
         UserResource oldUser = dataSource.getUser(existingId);
         UserResource newUser = SCIMProtocolCodec.decodeUser(scimObjectString, false);
@@ -111,7 +109,7 @@ public class UserResourceEndpoint {
 
     public Response updateWithPATCH(String existingId, String scimObjectString, String inputFormat,
             String outputFormat, DataSource dataSource)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException {
+        throws SchemaManagerException, ConfigurationException {
         throw new SchemaManagerException("PATCH command not implemented");
     }
 

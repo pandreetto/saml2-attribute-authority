@@ -2,10 +2,9 @@ package it.infn.security.saml.ocp;
 
 import java.util.Date;
 
-import org.wso2.charon.core.schema.SCIMConstants;
-
 import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.scim.protocol.SCIMConstants;
 
 public class SPIDAttributeValue
     implements AttributeValueInterface {
@@ -51,7 +50,8 @@ public class SPIDAttributeValue
 
     public String getId() {
         /*
-         * with SPID the ID of the value IS the value itself or a representation of it
+         * with SPID the ID of the value IS the value itself or a representation
+         * of it
          */
         if (type.equals(SPID_STRING_TYPE)) {
 

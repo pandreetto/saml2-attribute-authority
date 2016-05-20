@@ -8,11 +8,6 @@ import java.util.logging.Logger;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import org.wso2.charon.core.encoder.json.JSONDecoder;
-import org.wso2.charon.core.encoder.json.JSONEncoder;
-import org.wso2.charon.core.protocol.endpoints.AbstractResourceEndpoint;
-import org.wso2.charon.core.schema.SCIMConstants;
-
 public class SCIMListener
     implements ServletContextListener {
 
@@ -21,10 +16,6 @@ public class SCIMListener
     public void contextInitialized(ServletContextEvent event) {
 
         try {
-
-            logger.log(Level.INFO, "Registering codecs");
-            AbstractResourceEndpoint.registerEncoder(SCIMConstants.JSON, new JSONEncoder());
-            AbstractResourceEndpoint.registerDecoder(SCIMConstants.JSON, new JSONDecoder());
 
             logger.log(Level.INFO, "Loading schema");
             SchemaManagerFactory.getManager();
