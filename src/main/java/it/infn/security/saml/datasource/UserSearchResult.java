@@ -3,32 +3,30 @@ package it.infn.security.saml.datasource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.wso2.charon.core.objects.User;
-
 public class UserSearchResult {
 
     private int total;
 
-    private List<User> users;
+    private List<UserResource> users;
 
     public UserSearchResult() {
         total = 0;
-        users = new ArrayList<User>();
-    }
-    
-    public UserSearchResult(int initCap) {
-        total = 0;
-        users = new ArrayList<User>(initCap);
+        users = new ArrayList<UserResource>();
     }
 
-    public void add(User user) {
+    public UserSearchResult(int initCap) {
+        total = 0;
+        users = new ArrayList<UserResource>(initCap);
+    }
+
+    public void add(UserResource user) {
         users.add(user);
     }
 
-    public List<User> getUserList() {
+    public List<UserResource> getUserList() {
         return users;
     }
-    
+
     public boolean isEmpty() {
         return users.isEmpty();
     }

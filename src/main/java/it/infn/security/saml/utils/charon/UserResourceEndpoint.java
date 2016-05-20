@@ -5,6 +5,7 @@ import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.scim.protocol.SCIMConstants;
@@ -17,7 +18,6 @@ import java.util.logging.Logger;
 import javax.ws.rs.core.Response;
 
 import org.wso2.charon.core.exceptions.AbstractCharonException;
-import org.wso2.charon.core.objects.User;
 
 public class UserResourceEndpoint {
 
@@ -25,9 +25,9 @@ public class UserResourceEndpoint {
 
     @Deprecated
     public Response get(String id, String format, DataSource dataSource)
-        throws SchemaManagerException, AbstractCharonException, DataSourceException {
+        throws SchemaManagerException, DataSourceException {
 
-        User user = dataSource.getUser(id);
+        UserResource user = dataSource.getUser(id);
 
         String encodedUser = SCIMProtocolCodec.encodeUser(user, true, false);
 
@@ -57,14 +57,14 @@ public class UserResourceEndpoint {
             boolean isBulkUserAdd)
         throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
 
-        User user = SCIMProtocolCodec.decodeUser(scimObjectString, true);
+        UserResource user = SCIMProtocolCodec.decodeUser(scimObjectString, true);
 
-        User createdUser = dataSource.createUser(user, isBulkUserAdd);
+        UserResource createdUser = dataSource.createUser(user, isBulkUserAdd);
 
         String encodedUser = SCIMProtocolCodec.encodeUser(createdUser, false, true);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(createdUser.getId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(createdUser.getUserId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outputFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedUser);
@@ -94,17 +94,17 @@ public class UserResourceEndpoint {
             DataSource dataSource)
         throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
 
-        User oldUser = dataSource.getUser(existingId);
-        User newUser = SCIMProtocolCodec.decodeUser(scimObjectString, false);
+        UserResource oldUser = dataSource.getUser(existingId);
+        UserResource newUser = SCIMProtocolCodec.decodeUser(scimObjectString, false);
 
-        User validatedUser = SCIMProtocolCodec.checkUserUpdate(oldUser, newUser);
+        UserResource validatedUser = SCIMProtocolCodec.checkUserUpdate(oldUser, newUser);
 
-        User updatedUser = dataSource.updateUser(validatedUser);
+        UserResource updatedUser = dataSource.updateUser(validatedUser);
 
         String encodedUser = SCIMProtocolCodec.encodeUser(updatedUser, false, true);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(updatedUser.getId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(updatedUser.getUserId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outputFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);

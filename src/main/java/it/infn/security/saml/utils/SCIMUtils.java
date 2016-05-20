@@ -11,6 +11,7 @@ import org.wso2.charon.core.schema.SCIMConstants;
 
 public class SCIMUtils {
 
+    @Deprecated
     public static String normalizeFormat(String format) {
         if (format == null) {
             return SCIMConstants.APPLICATION_JSON;
@@ -24,6 +25,7 @@ public class SCIMUtils {
         return result;
     }
 
+    @Deprecated
     public static Encoder getEncoder(String format) {
 
         format = normalizeFormat(format);

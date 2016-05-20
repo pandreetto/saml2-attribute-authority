@@ -5,6 +5,7 @@ import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.scim.protocol.SCIMConstants;
@@ -16,9 +17,6 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.exceptions.AbstractCharonException;
-import org.wso2.charon.core.objects.Group;
-
 public class GroupResourceEndpoint {
 
     private static Logger logger = Logger.getLogger(GroupResourceEndpoint.class.getName());
@@ -27,7 +25,7 @@ public class GroupResourceEndpoint {
     public Response get(String id, String format, DataSource dataSource)
         throws SchemaManagerException, DataSourceException {
 
-        Group group = dataSource.getGroup(id);
+        GroupResource group = dataSource.getGroup(id);
 
         String encodedGroup = SCIMProtocolCodec.encodeGroup(group, true);
 
@@ -39,16 +37,16 @@ public class GroupResourceEndpoint {
 
     @Deprecated
     public Response create(String scimObjectString, String inFormat, String outFormat, DataSource dataSource)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
+        throws SchemaManagerException, ConfigurationException, DataSourceException {
 
-        Group group = SCIMProtocolCodec.decodeGroup(scimObjectString, true);
+        GroupResource group = SCIMProtocolCodec.decodeGroup(scimObjectString, true);
 
-        Group createdGroup = dataSource.createGroup(group);
+        GroupResource createdGroup = dataSource.createGroup(group);
 
         String encodedGroup = SCIMProtocolCodec.encodeGroup(createdGroup, false);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(createdGroup.getId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(createdGroup.getGroupId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedGroup);
@@ -83,18 +81,18 @@ public class GroupResourceEndpoint {
     @Deprecated
     public Response updateWithPUT(String existingId, String scimObjectString, String inputFormat, String outputFormat,
             DataSource dataSource)
-        throws SchemaManagerException, AbstractCharonException, ConfigurationException, DataSourceException {
+        throws SchemaManagerException, ConfigurationException, DataSourceException {
 
-        Group oldGroup = dataSource.getGroup(existingId);
-        Group newGroup = SCIMProtocolCodec.decodeGroup(scimObjectString, false);
-        Group validatedGroup = SCIMProtocolCodec.checkGroupUpdate(oldGroup, newGroup);
+        GroupResource oldGroup = dataSource.getGroup(existingId);
+        GroupResource newGroup = SCIMProtocolCodec.decodeGroup(scimObjectString, false);
+        GroupResource validatedGroup = SCIMProtocolCodec.checkGroupUpdate(oldGroup, newGroup);
 
-        Group updatedGroup = dataSource.updateGroup(oldGroup, validatedGroup);
+        GroupResource updatedGroup = dataSource.updateGroup(oldGroup, validatedGroup);
 
         String encodedGroup = SCIMProtocolCodec.encodeGroup(updatedGroup, false);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(updatedGroup.getId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(updatedGroup.getGroupId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outputFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);

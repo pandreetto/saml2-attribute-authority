@@ -9,8 +9,6 @@ import java.util.ServiceLoader;
 import javax.security.auth.Subject;
 
 import org.opensaml.saml2.core.Attribute;
-import org.wso2.charon.core.objects.Group;
-import org.wso2.charon.core.objects.User;
 
 public interface DataSource {
 
@@ -23,34 +21,34 @@ public interface DataSource {
     public List<Attribute> findAttributes(String userId, List<Attribute> requiredAttrs)
         throws DataSourceException;
 
-    public User createUser(User user)
+    public UserResource createUser(UserResource user)
         throws DataSourceException;
 
-    public User createUser(User user, boolean isBulkUserAdd)
+    public UserResource createUser(UserResource user, boolean isBulkUserAdd)
         throws DataSourceException;
 
-    public User getUser(String userId)
+    public UserResource getUser(String userId)
         throws DataSourceException;
 
-    public List<User> listUsers()
+    public List<UserResource> listUsers()
         throws DataSourceException;
 
-    public List<User> listUsersByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
+    public List<UserResource> listUsersByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
         throws DataSourceException;
 
-    public List<User> listUsersByFilter(String filter, String operation, String value)
+    public List<UserResource> listUsersByFilter(String filter, String operation, String value)
         throws DataSourceException;
 
-    public List<User> listUsersBySort(String sortBy, String sortOrder)
+    public List<UserResource> listUsersBySort(String sortBy, String sortOrder)
         throws DataSourceException;
 
-    public List<User> listUsersWithPagination(int startIndex, int count)
+    public List<UserResource> listUsersWithPagination(int startIndex, int count)
         throws DataSourceException;
 
-    public User updateUser(User user)
+    public UserResource updateUser(UserResource user)
         throws DataSourceException;
 
-    public User updateUser(List<org.wso2.charon.core.attributes.Attribute> updatedAttributes)
+    public UserResource updateUser(List<org.wso2.charon.core.attributes.Attribute> updatedAttributes)
         throws DataSourceException;
 
     public void deleteUser(String userId)
@@ -59,34 +57,34 @@ public interface DataSource {
     public UserSearchResult listUsers(String filter, String sortBy, String sortOrder, int startIndex, int count)
         throws DataSourceException;
 
-    public Group createGroup(Group group)
+    public GroupResource createGroup(GroupResource group)
         throws DataSourceException;
 
-    public Group getGroup(String groupId)
+    public GroupResource getGroup(String groupId)
         throws DataSourceException;
 
-    public Group patchGroup(Group oldGroup, Group newGroup)
+    public GroupResource patchGroup(GroupResource oldGroup, GroupResource newGroup)
         throws DataSourceException;
 
-    public List<Group> listGroups()
+    public List<GroupResource> listGroups()
         throws DataSourceException;
 
-    public List<Group> listGroupsByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
+    public List<GroupResource> listGroupsByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
         throws DataSourceException;
 
-    public List<Group> listGroupsByFilter(String filter, String operation, String value)
+    public List<GroupResource> listGroupsByFilter(String filter, String operation, String value)
         throws DataSourceException;
 
-    public List<Group> listGroupsBySort(String sortBy, String sortOrder)
+    public List<GroupResource> listGroupsBySort(String sortBy, String sortOrder)
         throws DataSourceException;
 
-    public List<Group> listGroupsWithPagination(int startIndex, int count)
+    public List<GroupResource> listGroupsWithPagination(int startIndex, int count)
         throws DataSourceException;
 
-    public Group updateGroup(Group oldGroup, Group newGroup)
+    public GroupResource updateGroup(GroupResource oldGroup, GroupResource newGroup)
         throws DataSourceException;
 
-    public Group updateGroup(List<org.wso2.charon.core.attributes.Attribute> attributes)
+    public GroupResource updateGroup(List<org.wso2.charon.core.attributes.Attribute> attributes)
         throws DataSourceException;
 
     public void deleteGroup(String groupId)

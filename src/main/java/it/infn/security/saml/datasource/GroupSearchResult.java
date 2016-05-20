@@ -3,29 +3,27 @@ package it.infn.security.saml.datasource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.wso2.charon.core.objects.Group;
-
 public class GroupSearchResult {
 
     private int total;
 
-    private List<Group> users;
+    private List<GroupResource> users;
 
     public GroupSearchResult() {
         total = 0;
-        users = new ArrayList<Group>();
+        users = new ArrayList<GroupResource>();
     }
 
     public GroupSearchResult(int initCap) {
         total = 0;
-        users = new ArrayList<Group>(initCap);
+        users = new ArrayList<GroupResource>(initCap);
     }
 
-    public void add(Group user) {
+    public void add(GroupResource user) {
         users.add(user);
     }
 
-    public List<Group> getGroupList() {
+    public List<GroupResource> getGroupList() {
         return users;
     }
 

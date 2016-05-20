@@ -1,10 +1,14 @@
 package it.infn.security.scim.protocol;
 
+import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.iam.AccessManagerException;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
+import it.infn.security.scim.core.SCIMGroup;
+import it.infn.security.scim.core.SCIMUser;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,10 +32,11 @@ public class SCIMProtocolCodec {
 
     private static Logger logger = Logger.getLogger(SCIMProtocolCodec.class.getName());
 
-    public static String encodeUser(User user, boolean validate, boolean removePwd)
+    public static String encodeUser(UserResource userRes, boolean validate, boolean removePwd)
         throws SchemaManagerException {
 
         JSONEncoder encoder = new JSONEncoder();
+        User user = (User) userRes;
         try {
 
             if (validate) {
@@ -50,13 +55,13 @@ public class SCIMProtocolCodec {
         }
     }
 
-    public static User decodeUser(String usrStr, boolean validate)
+    public static UserResource decodeUser(String usrStr, boolean validate)
         throws SchemaManagerException {
         JSONDecoder decoder = new JSONDecoder();
         try {
 
             SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
-            User user = (User) decoder.decodeResource(usrStr, schema, new User());
+            SCIMUser user = (SCIMUser) decoder.decodeResource(usrStr, schema, new SCIMUser());
             if (validate) {
                 ServerSideValidator.validateCreatedSCIMObject(user, schema);
             }
@@ -67,11 +72,14 @@ public class SCIMProtocolCodec {
         }
     }
 
-    public static User checkUserUpdate(User oldUsr, User newUsr)
+    public static UserResource checkUserUpdate(UserResource oldUsr, UserResource newUsr)
         throws SchemaManagerException {
         SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
         try {
-            return (User) ServerSideValidator.validateUpdatedSCIMObject(oldUsr, newUsr, schema);
+            /*
+             * TODO check cast
+             */
+            return (UserResource) ServerSideValidator.validateUpdatedSCIMObject((User) oldUsr, (User) newUsr, schema);
         } catch (AbstractCharonException chEx) {
             throw new SchemaManagerException(chEx.getMessage(), chEx);
         }
@@ -87,8 +95,8 @@ public class SCIMProtocolCodec {
                 listedResource.setTotalResults(0);
             } else {
                 listedResource.setTotalResults(searchResult.getTotalResults());
-                for (User user : searchResult.getUserList()) {
-                    Map<String, Attribute> userAttributes = user.getAttributeList();
+                for (UserResource user : searchResult.getUserList()) {
+                    Map<String, Attribute> userAttributes = ((User) user).getAttributeList();
                     listedResource.setResources(userAttributes);
                 }
             }
@@ -98,10 +106,11 @@ public class SCIMProtocolCodec {
         }
     }
 
-    public static String encodeGroup(Group group, boolean validate)
+    public static String encodeGroup(GroupResource groupRes, boolean validate)
         throws SchemaManagerException {
 
         JSONEncoder encoder = new JSONEncoder();
+        Group group = (Group) groupRes;
         try {
 
             if (validate) {
@@ -115,14 +124,14 @@ public class SCIMProtocolCodec {
         }
     }
 
-    public static Group decodeGroup(String grpStr, boolean validate)
+    public static GroupResource decodeGroup(String grpStr, boolean validate)
         throws SchemaManagerException {
 
         JSONDecoder decoder = new JSONDecoder();
         try {
 
             SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
-            Group group = (Group) decoder.decodeResource(grpStr, groupSchema, new Group());
+            SCIMGroup group = (SCIMGroup) decoder.decodeResource(grpStr, groupSchema, new SCIMGroup());
             if (validate) {
                 ServerSideValidator.validateCreatedSCIMObject(group, groupSchema);
             }
@@ -133,11 +142,15 @@ public class SCIMProtocolCodec {
         }
     }
 
-    public static Group checkGroupUpdate(Group oldGrp, Group newGrp)
+    public static GroupResource checkGroupUpdate(GroupResource oldGrp, GroupResource newGrp)
         throws SchemaManagerException {
         SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
         try {
-            return (Group) ServerSideValidator.validateUpdatedSCIMObject(oldGrp, newGrp, groupSchema);
+            /*
+             * TODO check cast
+             */
+            return (GroupResource) ServerSideValidator.validateUpdatedSCIMObject((Group) oldGrp, (Group) newGrp,
+                    groupSchema);
         } catch (AbstractCharonException chEx) {
             throw new SchemaManagerException(chEx.getMessage(), chEx);
         }
@@ -153,9 +166,9 @@ public class SCIMProtocolCodec {
                 listedResource.setTotalResults(0);
             } else {
                 listedResource.setTotalResults(searchResult.getTotalResults());
-                for (Group group : searchResult.getGroupList()) {
+                for (GroupResource group : searchResult.getGroupList()) {
                     if (group != null) {
-                        Map<String, Attribute> attributesOfGroupResource = group.getAttributeList();
+                        Map<String, Attribute> attributesOfGroupResource = ((Group) group).getAttributeList();
                         listedResource.setResources(attributesOfGroupResource);
                     }
                 }
