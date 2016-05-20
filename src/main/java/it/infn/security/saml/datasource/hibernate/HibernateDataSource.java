@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.wso2.charon.core.attributes.Attribute;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.NotFoundException;
 import org.wso2.charon.core.objects.AbstractSCIMObject;
@@ -74,11 +73,6 @@ public abstract class HibernateDataSource
     public List<UserResource> listUsers()
         throws DataSourceException {
         return listUsers(null, null, null, -1, -1).getUserList();
-    }
-
-    public List<UserResource> listUsersByAttribute(Attribute attribute)
-        throws DataSourceException {
-        return null;
     }
 
     public List<UserResource> listUsersByFilter(String filter, String operation, String value)
@@ -170,7 +164,7 @@ public abstract class HibernateDataSource
         try {
 
             session.beginTransaction();
-            
+
             User user = (User) userRes;
 
             UserEntity eUser = (UserEntity) session.get(UserEntity.class, user.getId());
@@ -208,11 +202,6 @@ public abstract class HibernateDataSource
                 session.getTransaction().rollback();
 
         }
-    }
-
-    public UserResource updateUser(List<Attribute> updatedAttributes)
-        throws DataSourceException {
-        return null;
     }
 
     public void deleteUser(String userId)
@@ -269,9 +258,9 @@ public abstract class HibernateDataSource
              * ServerSideValidator#validateCreatedSCIMObject(AbstractSCIMObject,
              * SCIMResourceSchema)
              */
-            
+
             User user = (User) userRes;
-            
+
             eUser.setId(user.getId());
             eUser.setType(ResourceType.USER);
             eUser.setStatus(ResourceStatus.ACTIVE);
@@ -345,11 +334,6 @@ public abstract class HibernateDataSource
     public List<GroupResource> listGroups()
         throws DataSourceException {
         return listGroups(null, null, null, -1, -1).getGroupList();
-    }
-
-    public List<GroupResource> listGroupsByAttribute(Attribute attribute)
-        throws DataSourceException {
-        return null;
     }
 
     public List<GroupResource> listGroupsByFilter(String filter, String operation, String value)
@@ -499,7 +483,7 @@ public abstract class HibernateDataSource
             session.beginTransaction();
 
             Group group = (Group) groupRes;
-            
+
             GroupEntity eGroup = (GroupEntity) session.get(GroupEntity.class, group.getId());
             eGroup.setModifyDate(group.getLastModified());
             eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
@@ -541,11 +525,6 @@ public abstract class HibernateDataSource
     }
 
     public GroupResource patchGroup(GroupResource oldGroup, GroupResource group)
-        throws DataSourceException {
-        return null;
-    }
-
-    public GroupResource updateGroup(List<Attribute> attributes)
         throws DataSourceException {
         return null;
     }

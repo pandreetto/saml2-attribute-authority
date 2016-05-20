@@ -33,9 +33,6 @@ public interface DataSource {
     public List<UserResource> listUsers()
         throws DataSourceException;
 
-    public List<UserResource> listUsersByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
-        throws DataSourceException;
-
     public List<UserResource> listUsersByFilter(String filter, String operation, String value)
         throws DataSourceException;
 
@@ -46,9 +43,6 @@ public interface DataSource {
         throws DataSourceException;
 
     public UserResource updateUser(UserResource user)
-        throws DataSourceException;
-
-    public UserResource updateUser(List<org.wso2.charon.core.attributes.Attribute> updatedAttributes)
         throws DataSourceException;
 
     public void deleteUser(String userId)
@@ -69,9 +63,6 @@ public interface DataSource {
     public List<GroupResource> listGroups()
         throws DataSourceException;
 
-    public List<GroupResource> listGroupsByAttribute(org.wso2.charon.core.attributes.Attribute attribute)
-        throws DataSourceException;
-
     public List<GroupResource> listGroupsByFilter(String filter, String operation, String value)
         throws DataSourceException;
 
@@ -82,9 +73,6 @@ public interface DataSource {
         throws DataSourceException;
 
     public GroupResource updateGroup(GroupResource oldGroup, GroupResource newGroup)
-        throws DataSourceException;
-
-    public GroupResource updateGroup(List<org.wso2.charon.core.attributes.Attribute> attributes)
         throws DataSourceException;
 
     public void deleteGroup(String groupId)
