@@ -45,6 +45,9 @@ public class SCIMProtocolCodec {
             }
 
             if (removePwd) {
+                /*
+                 * TODO check missing deep copy
+                 */
                 ServerSideValidator.removePasswordOnReturn(user);
             }
 

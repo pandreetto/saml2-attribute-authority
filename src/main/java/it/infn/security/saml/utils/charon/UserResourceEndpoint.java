@@ -13,15 +13,13 @@ import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
 import org.wso2.charon.core.exceptions.AbstractCharonException;
 
+@Deprecated
 public class UserResourceEndpoint {
-
-    private static Logger logger = Logger.getLogger(UserResourceEndpoint.class.getName());
 
     @Deprecated
     public Response get(String id, String format, DataSource dataSource)

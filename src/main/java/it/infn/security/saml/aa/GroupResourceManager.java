@@ -1,16 +1,21 @@
 package it.infn.security.saml.aa;
 
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
-import it.infn.security.saml.utils.SCIMUtils;
-import it.infn.security.saml.utils.charon.GroupResourceEndpoint;
+import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.scim.protocol.SCIMConstants;
 import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
@@ -37,14 +42,15 @@ public class GroupResourceManager {
     @GET
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getGroup(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response getGroup(@PathParam(SCIMConstants.ID)
+    String id, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
         Response result = null;
         try {
 
-            format = SCIMUtils.normalizeFormat(format);
+            checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -52,8 +58,14 @@ public class GroupResourceManager {
             accessManager.authorizeShowGroup(requester, id);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.get(id, format, dataSource);
+
+            GroupResource group = dataSource.getGroup(id);
+
+            String encodedGroup = SCIMProtocolCodec.encodeGroup(group, true);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);
 
         } catch (Exception ex) {
 
@@ -67,19 +79,18 @@ public class GroupResourceManager {
 
     @POST
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response createGroup(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
+    public Response createGroup(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
+    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, String resourceString) {
 
         Response result = null;
         try {
 
-            if (inputFormat == null) {
-                String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new CodedException(error);
-            }
-            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
-            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+            checkContentFormat(inputFormat);
+            checkAcceptedFormat(outputFormat);
+
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -87,8 +98,20 @@ public class GroupResourceManager {
             accessManager.authorizeCreateGroup(requester);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.create(resourceString, inputFormat, outputFormat, dataSource);
+
+            GroupResource group = SCIMProtocolCodec.decodeGroup(resourceString, true);
+
+            GroupResource createdGroup = dataSource.createGroup(group);
+
+            String encodedGroup = SCIMProtocolCodec.encodeGroup(createdGroup, false);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.GROUP_ENDPOINT + "/"
+                    + createdGroup.getGroupId();
+            httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedGroup);
 
         } catch (Exception ex) {
 
@@ -103,14 +126,15 @@ public class GroupResourceManager {
     @DELETE
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteGroup(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response deleteGroup(@PathParam(SCIMConstants.ID)
+    String id, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
         Response result = null;
         try {
 
-            format = SCIMUtils.normalizeFormat(format);
+            checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -118,8 +142,10 @@ public class GroupResourceManager {
             accessManager.authorizeDeleteGroup(requester, id);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.delete(id, dataSource, format);
+
+            dataSource.deleteGroup(id);
+
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, null, null);
 
         } catch (Exception ex) {
 
@@ -133,16 +159,20 @@ public class GroupResourceManager {
 
     @GET
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getGroup(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
-            @QueryParam("attributes") String searchAttribute, @QueryParam("filter") String filter,
-            @QueryParam("startIndex") String startIndex, @QueryParam("count") String count,
-            @QueryParam("sortBy") String sortBy, @QueryParam("sortOrder") String sortOrder) {
+    public Response getGroup(@HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, @QueryParam("attributes")
+    String searchAttribute, @QueryParam("filter")
+    String filter, @QueryParam("startIndex")
+    String startIndex, @QueryParam("count")
+    String count, @QueryParam("sortBy")
+    String sortBy, @QueryParam("sortOrder")
+    String sortOrder) {
 
         Response result = null;
         try {
 
-            format = SCIMUtils.normalizeFormat(format);
+            checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -150,14 +180,21 @@ public class GroupResourceManager {
             accessManager.authorizeListGroups(requester);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
 
             if (searchAttribute != null) {
+                logger.severe("Unsupported query with attributes");
                 throw new CodedException(SCIMConstants.DESC_BAD_REQUEST_GET);
             } else {
                 int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
                 int cnt = (count != null) ? Integer.parseInt(count) : -1;
-                result = groupResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, dataSource, format);
+
+                GroupSearchResult returnedGroups = dataSource.listGroups(filter, sortBy, sortOrder, sIdx, cnt);
+
+                String encodedListedResource = SCIMProtocolCodec.encodeGroupSearchResult(returnedGroups);
+
+                Map<String, String> httpHeaders = new HashMap<String, String>();
+                httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+                result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedListedResource);
             }
 
         } catch (Exception ex) {
@@ -173,20 +210,19 @@ public class GroupResourceManager {
     @PUT
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response updateGroup(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
+    public Response updateGroup(@PathParam(SCIMConstants.ID)
+    String id, @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
+    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, String resourceString) {
 
         Response result = null;
         try {
-            if (inputFormat == null) {
-                String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new CodedException(error);
-            }
 
-            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
-            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+            checkContentFormat(inputFormat);
+            checkAcceptedFormat(outputFormat);
+
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -194,8 +230,22 @@ public class GroupResourceManager {
             accessManager.authorizeModifyGroup(requester, id);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            GroupResourceEndpoint groupResourceEndpoint = new GroupResourceEndpoint();
-            result = groupResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, dataSource);
+
+            GroupResource oldGroup = dataSource.getGroup(id);
+            GroupResource newGroup = SCIMProtocolCodec.decodeGroup(resourceString, false);
+            GroupResource validatedGroup = SCIMProtocolCodec.checkGroupUpdate(oldGroup, newGroup);
+
+            GroupResource updatedGroup = dataSource.updateGroup(oldGroup, validatedGroup);
+
+            String encodedGroup = SCIMProtocolCodec.encodeGroup(updatedGroup, false);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.GROUP_ENDPOINT + "/"
+                    + updatedGroup.getGroupId();
+            httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);
 
         } catch (Exception ex) {
 
@@ -205,6 +255,20 @@ public class GroupResourceManager {
 
         return result;
 
+    }
+
+    private void checkAcceptedFormat(String format)
+        throws SchemaManagerException {
+        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+            throw new SchemaManagerException("Unsupported accepted format " + format);
+    }
+
+    private void checkContentFormat(String format)
+        throws SchemaManagerException {
+        if (format == null)
+            throw new SchemaManagerException("Missing content type format");
+        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+            throw new SchemaManagerException("Unsupported content type format " + format);
     }
 
 }

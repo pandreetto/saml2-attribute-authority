@@ -13,13 +13,11 @@ import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
+@Deprecated
 public class GroupResourceEndpoint {
-
-    private static Logger logger = Logger.getLogger(GroupResourceEndpoint.class.getName());
 
     @Deprecated
     public Response get(String id, String format, DataSource dataSource)

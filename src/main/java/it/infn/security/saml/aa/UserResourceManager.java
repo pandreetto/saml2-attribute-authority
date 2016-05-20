@@ -1,16 +1,21 @@
 package it.infn.security.saml.aa;
 
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.datasource.UserResource;
+import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
-import it.infn.security.saml.utils.SCIMUtils;
-import it.infn.security.saml.utils.charon.UserResourceEndpoint;
+import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.scim.protocol.SCIMConstants;
 import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
@@ -37,14 +42,15 @@ public class UserResourceManager {
     @GET
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getUser(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response getUser(@PathParam(SCIMConstants.ID)
+    String id, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
         Response result = null;
         try {
 
-            format = SCIMUtils.normalizeFormat(format);
+            checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -53,8 +59,13 @@ public class UserResourceManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
-            UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.get(id, format, dataSource);
+            UserResource user = dataSource.getUser(id);
+
+            String encodedUser = SCIMProtocolCodec.encodeUser(user, true, false);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);
 
         } catch (Exception ex) {
 
@@ -68,19 +79,18 @@ public class UserResourceManager {
 
     @POST
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response createUser(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
+    public Response createUser(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
+    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, String resourceString) {
 
         Response result = null;
         try {
 
-            if (inputFormat == null) {
-                String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new CodedException(error);
-            }
-            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
-            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+            checkContentFormat(inputFormat);
+            checkAcceptedFormat(outputFormat);
+
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -88,8 +98,20 @@ public class UserResourceManager {
             accessManager.authorizeCreateUser(requester);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.create(resourceString, inputFormat, outputFormat, dataSource);
+
+            UserResource user = SCIMProtocolCodec.decodeUser(resourceString, true);
+
+            UserResource createdUser = dataSource.createUser(user);
+
+            String encodedUser = SCIMProtocolCodec.encodeUser(createdUser, false, true);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
+                    + createdUser.getUserId();
+            httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedUser);
 
         } catch (Exception ex) {
 
@@ -104,14 +126,15 @@ public class UserResourceManager {
     @DELETE
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteUser(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response deleteUser(@PathParam(SCIMConstants.ID)
+    String id, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
         Response result = null;
         try {
 
-            format = SCIMUtils.normalizeFormat(format);
+            checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -119,8 +142,9 @@ public class UserResourceManager {
             accessManager.authorizeDeleteUser(requester, id);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.delete(id, dataSource, format);
+            dataSource.deleteUser(id);
+
+            return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, null, null);
 
         } catch (Exception ex) {
 
@@ -134,16 +158,20 @@ public class UserResourceManager {
 
     @GET
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getUser(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
-            @QueryParam("attributes") String searchAttribute, @QueryParam("filter") String filter,
-            @QueryParam("startIndex") String startIndex, @QueryParam("count") String count,
-            @QueryParam("sortBy") String sortBy, @QueryParam("sortOrder") String sortOrder) {
+    public Response getUser(@HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, @QueryParam("attributes")
+    String searchAttribute, @QueryParam("filter")
+    String filter, @QueryParam("startIndex")
+    String startIndex, @QueryParam("count")
+    String count, @QueryParam("sortBy")
+    String sortBy, @QueryParam("sortOrder")
+    String sortOrder) {
 
         Response result = null;
         try {
 
-            format = SCIMUtils.normalizeFormat(format);
+            checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -151,14 +179,22 @@ public class UserResourceManager {
             accessManager.authorizeListUsers(requester);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
 
             if (searchAttribute != null) {
+                logger.fine("Unsupported query with attributes");
                 throw new CodedException(SCIMConstants.DESC_BAD_REQUEST_GET);
             } else {
                 int sIdx = (startIndex != null) ? Integer.parseInt(startIndex) : -1;
                 int cnt = (count != null) ? Integer.parseInt(count) : -1;
-                result = userResourceEndpoint.listByParams(filter, sortBy, sortOrder, sIdx, cnt, dataSource, format);
+                
+                UserSearchResult searchResult = dataSource.listUsers(filter, sortBy, sortOrder, sIdx, cnt);
+
+                String encodedListedResource = SCIMProtocolCodec.encodeUserSearchResult(searchResult);
+
+                Map<String, String> httpHeaders = new HashMap<String, String>();
+                httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+                result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedListedResource);
+
             }
 
         } catch (Exception ex) {
@@ -174,20 +210,19 @@ public class UserResourceManager {
     @PUT
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response updateUser(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
+    public Response updateUser(@PathParam(SCIMConstants.ID)
+    String id, @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
+    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, String resourceString) {
 
         Response result = null;
         try {
 
-            if (inputFormat == null) {
-                String error = SCIMConstants.CONTENT_TYPE_HEADER + " not present in the request header.";
-                throw new CodedException(error);
-            }
-            inputFormat = SCIMUtils.normalizeFormat(inputFormat);
-            outputFormat = SCIMUtils.normalizeFormat(outputFormat);
+            checkContentFormat(inputFormat);
+            checkAcceptedFormat(outputFormat);
+            
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -195,8 +230,23 @@ public class UserResourceManager {
             accessManager.authorizeModifyUser(requester, id);
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
-            UserResourceEndpoint userResourceEndpoint = new UserResourceEndpoint();
-            result = userResourceEndpoint.updateWithPUT(id, resourceString, inputFormat, outputFormat, dataSource);
+
+            UserResource oldUser = dataSource.getUser(id);
+            UserResource newUser = SCIMProtocolCodec.decodeUser(resourceString, false);
+
+            UserResource validatedUser = SCIMProtocolCodec.checkUserUpdate(oldUser, newUser);
+
+            UserResource updatedUser = dataSource.updateUser(validatedUser);
+
+            String encodedUser = SCIMProtocolCodec.encodeUser(updatedUser, false, true);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
+                    + updatedUser.getUserId();
+            httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);
 
         } catch (Exception ex) {
 
@@ -208,4 +258,17 @@ public class UserResourceManager {
 
     }
 
+    private void checkAcceptedFormat(String format)
+        throws SchemaManagerException {
+        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+            throw new SchemaManagerException("Unsupported accepted format " + format);
+    }
+
+    private void checkContentFormat(String format)
+        throws SchemaManagerException {
+        if (format == null)
+            throw new SchemaManagerException("Missing content type format");
+        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+            throw new SchemaManagerException("Unsupported content type format " + format);
+    }
 }
