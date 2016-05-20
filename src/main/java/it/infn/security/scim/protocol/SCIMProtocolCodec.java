@@ -1,5 +1,7 @@
 package it.infn.security.scim.protocol;
 
+import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.iam.AccessManagerException;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
@@ -11,11 +13,13 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
+import org.wso2.charon.core.attributes.Attribute;
 import org.wso2.charon.core.encoder.Encoder;
 import org.wso2.charon.core.encoder.json.JSONDecoder;
 import org.wso2.charon.core.encoder.json.JSONEncoder;
 import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.objects.Group;
+import org.wso2.charon.core.objects.ListedResource;
 import org.wso2.charon.core.objects.User;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
 import org.wso2.charon.core.schema.ServerSideValidator;
@@ -73,6 +77,27 @@ public class SCIMProtocolCodec {
         }
     }
 
+    public static final String encodeUserSearchResult(UserSearchResult searchResult)
+        throws SchemaManagerException {
+
+        JSONEncoder encoder = new JSONEncoder();
+        try {
+            ListedResource listedResource = new ListedResource();
+            if (searchResult == null || searchResult.isEmpty()) {
+                listedResource.setTotalResults(0);
+            } else {
+                listedResource.setTotalResults(searchResult.getTotalResults());
+                for (User user : searchResult.getUserList()) {
+                    Map<String, Attribute> userAttributes = user.getAttributeList();
+                    listedResource.setResources(userAttributes);
+                }
+            }
+            return encoder.encodeSCIMObject(listedResource);
+        } catch (AbstractCharonException chEx) {
+            throw new SchemaManagerException(chEx.getMessage(), chEx);
+        }
+    }
+
     public static String encodeGroup(Group group, boolean validate)
         throws SchemaManagerException {
 
@@ -113,6 +138,29 @@ public class SCIMProtocolCodec {
         SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
         try {
             return (Group) ServerSideValidator.validateUpdatedSCIMObject(oldGrp, newGrp, groupSchema);
+        } catch (AbstractCharonException chEx) {
+            throw new SchemaManagerException(chEx.getMessage(), chEx);
+        }
+    }
+
+    public static String encodeGroupSearchResult(GroupSearchResult searchResult)
+        throws SchemaManagerException {
+
+        JSONEncoder encoder = new JSONEncoder();
+        try {
+            ListedResource listedResource = new ListedResource();
+            if (searchResult == null || searchResult.isEmpty()) {
+                listedResource.setTotalResults(0);
+            } else {
+                listedResource.setTotalResults(searchResult.getTotalResults());
+                for (Group group : searchResult.getGroupList()) {
+                    if (group != null) {
+                        Map<String, Attribute> attributesOfGroupResource = group.getAttributeList();
+                        listedResource.setResources(attributesOfGroupResource);
+                    }
+                }
+            }
+            return encoder.encodeSCIMObject(listedResource);
         } catch (AbstractCharonException chEx) {
             throw new SchemaManagerException(chEx.getMessage(), chEx);
         }

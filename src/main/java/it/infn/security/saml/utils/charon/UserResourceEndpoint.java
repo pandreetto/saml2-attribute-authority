@@ -16,11 +16,7 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.attributes.Attribute;
-import org.wso2.charon.core.encoder.json.JSONEncoder;
 import org.wso2.charon.core.exceptions.AbstractCharonException;
-import org.wso2.charon.core.exceptions.CharonException;
-import org.wso2.charon.core.objects.ListedResource;
 import org.wso2.charon.core.objects.User;
 
 public class UserResourceEndpoint {
@@ -41,15 +37,15 @@ public class UserResourceEndpoint {
 
     }
 
+    @Deprecated
     public Response listByParams(String filterString, String sortBy, String sortOrder, int startIndex, int count,
             DataSource dataSource, String format)
-        throws AbstractCharonException, DataSourceException {
-
-        JSONEncoder encoder = new JSONEncoder();
+        throws SchemaManagerException, DataSourceException {
 
         UserSearchResult searchResult = dataSource.listUsers(filterString, sortBy, sortOrder, startIndex, count);
-        ListedResource listedResource = buildListedResource(searchResult);
-        String encodedListedResource = encoder.encodeSCIMObject(listedResource);
+
+        String encodedListedResource = SCIMProtocolCodec.encodeUserSearchResult(searchResult);
+
         Map<String, String> httpHeaders = new HashMap<String, String>();
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, format);
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedListedResource);
@@ -119,21 +115,6 @@ public class UserResourceEndpoint {
             String outputFormat, DataSource dataSource)
         throws SchemaManagerException, AbstractCharonException, ConfigurationException {
         throw new SchemaManagerException("PATCH command not implemented");
-    }
-
-    private ListedResource buildListedResource(UserSearchResult searchResult)
-        throws CharonException {
-        ListedResource listedResource = new ListedResource();
-        if (searchResult == null || searchResult.isEmpty()) {
-            listedResource.setTotalResults(0);
-        } else {
-            listedResource.setTotalResults(searchResult.getTotalResults());
-            for (User user : searchResult.getUserList()) {
-                Map<String, Attribute> userAttributes = user.getAttributeList();
-                listedResource.setResources(userAttributes);
-            }
-        }
-        return listedResource;
     }
 
     private String getUserEndpointURL(String uId)
