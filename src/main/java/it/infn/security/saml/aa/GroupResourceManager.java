@@ -10,7 +10,6 @@ import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
-import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.scim.protocol.SCIMConstants;
 import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
@@ -50,7 +49,7 @@ public class GroupResourceManager {
         Response result = null;
         try {
 
-            checkAcceptedFormat(format);
+            SCIMProtocolCodec.checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -87,8 +86,8 @@ public class GroupResourceManager {
         Response result = null;
         try {
 
-            checkContentFormat(inputFormat);
-            checkAcceptedFormat(outputFormat);
+            SCIMProtocolCodec.checkContentFormat(inputFormat);
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
@@ -134,7 +133,7 @@ public class GroupResourceManager {
         Response result = null;
         try {
 
-            checkAcceptedFormat(format);
+            SCIMProtocolCodec.checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -172,7 +171,7 @@ public class GroupResourceManager {
         Response result = null;
         try {
 
-            checkAcceptedFormat(format);
+            SCIMProtocolCodec.checkAcceptedFormat(format);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -219,8 +218,8 @@ public class GroupResourceManager {
         Response result = null;
         try {
 
-            checkContentFormat(inputFormat);
-            checkAcceptedFormat(outputFormat);
+            SCIMProtocolCodec.checkContentFormat(inputFormat);
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
 
@@ -255,20 +254,6 @@ public class GroupResourceManager {
 
         return result;
 
-    }
-
-    private void checkAcceptedFormat(String format)
-        throws SchemaManagerException {
-        if (!format.equals(SCIMConstants.APPLICATION_JSON))
-            throw new SchemaManagerException("Unsupported accepted format " + format);
-    }
-
-    private void checkContentFormat(String format)
-        throws SchemaManagerException {
-        if (format == null)
-            throw new SchemaManagerException("Missing content type format");
-        if (!format.equals(SCIMConstants.APPLICATION_JSON))
-            throw new SchemaManagerException("Unsupported content type format " + format);
     }
 
 }

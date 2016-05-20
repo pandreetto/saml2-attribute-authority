@@ -231,4 +231,20 @@ public class SCIMProtocolCodec {
         return responseBuilder.build();
     }
 
+    public static void checkAcceptedFormat(String format)
+        throws SchemaManagerException {
+        if (format == null)
+            return;
+        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+            throw new SchemaManagerException("Unsupported accepted format " + format);
+    }
+
+    public static void checkContentFormat(String format)
+        throws SchemaManagerException {
+        if (format == null)
+            throw new SchemaManagerException("Missing content type format");
+        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+            throw new SchemaManagerException("Unsupported content type format " + format);
+    }
+
 }

@@ -9,14 +9,11 @@ import it.infn.security.saml.iam.IdentityManagerFactory;
 import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerFactory;
-import it.infn.security.saml.utils.SCIMUtils;
-import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 import it.infn.security.scim.protocol.SCIMConstants;
+import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
 import javax.ws.rs.DELETE;
@@ -32,24 +29,20 @@ import javax.ws.rs.core.Response;
 @Path("/attributes")
 public class AttributeManager {
 
-    private static final Logger logger = Logger.getLogger(AttributeManager.class.getName());
-
     public AttributeManager() {
 
     }
 
     @GET
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributeNames(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response getAttributeNames(@HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
-        outputFormat = SCIMUtils.normalizeFormat(outputFormat);
-
-        if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
-        }
-
+        Response result = null;
         try {
+
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -60,29 +53,33 @@ public class AttributeManager {
             SchemaManager schemaManager = SchemaManagerFactory.getManager();
 
             String encodedKeys = schemaManager.encode(dataSource.getAttributeNames(), outputFormat);
-            return buildResponse(encodedKeys, outputFormat);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedKeys);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, outputFormat));
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
+
+        return result;
 
     }
 
     @GET
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributeSet(@PathParam("attrName") String attrName,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response getAttributeSet(@PathParam("attrName")
+    String attrName, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
-        outputFormat = SCIMUtils.normalizeFormat(outputFormat);
-
-        if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
-        }
-
+        Response result = null;
         try {
+
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -93,29 +90,33 @@ public class AttributeManager {
             SchemaManager schemaManager = SchemaManagerFactory.getManager();
             AttributeEntry attrEntry = dataSource.getAttribute(attrName);
             String encodedAttr = schemaManager.encode(attrEntry, outputFormat);
-            return buildResponse(encodedAttr, outputFormat);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedAttr);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, outputFormat));
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
+
+        return result;
 
     }
 
     @DELETE
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteAttributeSet(@PathParam("attrName") String attrName,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+    public Response deleteAttributeSet(@PathParam("attrName")
+    String attrName, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization) {
 
-        outputFormat = SCIMUtils.normalizeFormat(outputFormat);
-
-        if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
-        }
-
+        Response result = null;
         try {
+
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -124,32 +125,35 @@ public class AttributeManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.removeAttribute(attrName);
-            return buildResponse(SCIMConstants.CODE_OK, outputFormat);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, null);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, outputFormat));
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
+
+        return result;
 
     }
 
     @PUT
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response updateAttributeSet(@PathParam("attrName") String attrName,
-            @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
+    public Response updateAttributeSet(@PathParam("attrName")
+    String attrName, @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
+    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, String payload) {
 
-        inputFormat = SCIMUtils.normalizeFormat(inputFormat);
-        outputFormat = SCIMUtils.normalizeFormat(outputFormat);
-
-        if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(inputFormat))
-                || !SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
-        }
-
+        Response result = null;
         try {
+
+            SCIMProtocolCodec.checkContentFormat(inputFormat);
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -160,30 +164,32 @@ public class AttributeManager {
             AttributeEntry attrItem = schemaManager.parse(payload, inputFormat);
             DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.updateAttribute(attrItem);
-            return buildResponse(payload, outputFormat);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, outputFormat));
+
+            result = SCIMProtocolCodec.responseFromException(ex);
         }
+
+        return result;
 
     }
 
     @POST
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response createAttributeSet(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
+    public Response createAttributeSet(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
+    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
+    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
+    String authorization, String payload) {
 
-        inputFormat = SCIMUtils.normalizeFormat(inputFormat);
-        outputFormat = SCIMUtils.normalizeFormat(outputFormat);
-
-        if (!SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(inputFormat))
-                || !SCIMConstants.APPLICATION_JSON.equals(SCIMUtils.normalizeFormat(outputFormat))) {
-            return buildResponse(SCIMConstants.CODE_BAD_REQUEST, outputFormat);
-        }
-
+        Response result = null;
         try {
+
+            SCIMProtocolCodec.checkContentFormat(inputFormat);
+            SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -195,27 +201,19 @@ public class AttributeManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.createAttribute(attrItem);
-            return buildResponse(payload, outputFormat);
+
+            Map<String, String> httpHeaders = new HashMap<String, String>();
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, ex.getMessage(), ex);
-            return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, outputFormat));
+
+            result = SCIMProtocolCodec.responseFromException(ex);
+
         }
 
-    }
+        return result;
 
-    private Response buildResponse(String message, String format) {
-
-        Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, format);
-        return JAXRSResponseBuilder.buildResponse(SCIMConstants.CODE_OK, httpHeaders, message);
-
-    }
-
-    private Response buildResponse(int code, String format) {
-        Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, format);
-        return JAXRSResponseBuilder.buildResponse(code, httpHeaders, null);
     }
 
 }
