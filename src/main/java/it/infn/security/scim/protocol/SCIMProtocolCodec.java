@@ -79,9 +79,6 @@ public class SCIMProtocolCodec {
         throws SchemaManagerException {
         SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
         try {
-            /*
-             * TODO check cast
-             */
             return (UserResource) ServerSideValidator.validateUpdatedSCIMObject((User) oldUsr, (User) newUsr, schema);
         } catch (AbstractCharonException chEx) {
             throw new SchemaManagerException(chEx.getMessage(), chEx);
@@ -149,9 +146,6 @@ public class SCIMProtocolCodec {
         throws SchemaManagerException {
         SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
         try {
-            /*
-             * TODO check cast
-             */
             return (GroupResource) ServerSideValidator.validateUpdatedSCIMObject((Group) oldGrp, (Group) newGrp,
                     groupSchema);
         } catch (AbstractCharonException chEx) {
@@ -233,18 +227,22 @@ public class SCIMProtocolCodec {
 
     public static void checkAcceptedFormat(String format)
         throws SchemaManagerException {
-        if (format == null)
+        if (format == null || format.equals("*/*"))
             return;
-        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+        if (!format.contains(SCIMConstants.APPLICATION_JSON)) {
+            logger.severe("Wrong accepted format: " + format);
             throw new SchemaManagerException("Unsupported accepted format " + format);
+        }
     }
 
     public static void checkContentFormat(String format)
         throws SchemaManagerException {
         if (format == null)
             throw new SchemaManagerException("Missing content type format");
-        if (!format.equals(SCIMConstants.APPLICATION_JSON))
+        if (!format.contains(SCIMConstants.APPLICATION_JSON)) {
+            logger.severe("Wrong content type format: " + format);
             throw new SchemaManagerException("Unsupported content type format " + format);
+        }
     }
 
 }

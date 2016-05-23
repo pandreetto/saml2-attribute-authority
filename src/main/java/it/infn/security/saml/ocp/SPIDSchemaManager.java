@@ -12,6 +12,7 @@ import it.infn.security.saml.utils.SAML2ObjectBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
@@ -108,10 +109,6 @@ public class SPIDSchemaManager
     public String encode(AttributeEntry attribute, String format)
         throws SchemaManagerException {
 
-        if (!SCIMConstants.APPLICATION_JSON.endsWith(format)) {
-            throw new SchemaManagerException("Unsupported format");
-        }
-
         try {
 
             JSONObject rootObject = new JSONObject();
@@ -133,16 +130,13 @@ public class SPIDSchemaManager
             return rootObject.toString();
 
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             throw new SchemaManagerException("Cannot encode attribute");
         }
     }
 
     public String encode(List<AttributeNameInterface> names, String format)
         throws SchemaManagerException {
-
-        if (!SCIMConstants.APPLICATION_JSON.endsWith(format)) {
-            throw new SchemaManagerException("Unsupported format");
-        }
 
         JSONObject rootObject = new JSONObject();
         try {
@@ -157,6 +151,7 @@ public class SPIDSchemaManager
             }
             rootObject.put(NAMES_ATTR_ID, arrayObject);
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             throw new SchemaManagerException("Cannot encode attribute");
         }
 
@@ -165,10 +160,6 @@ public class SPIDSchemaManager
 
     public AttributeEntry parse(String data, String format)
         throws SchemaManagerException {
-
-        if (!SCIMConstants.APPLICATION_JSON.endsWith(format)) {
-            throw new SchemaManagerException("Unsupported format");
-        }
 
         try {
 
@@ -196,6 +187,7 @@ public class SPIDSchemaManager
             return result;
 
         } catch (JSONException jEx) {
+            logger.log(Level.SEVERE, jEx.getMessage(), jEx);
             throw new SchemaManagerException(jEx.getMessage());
         }
 
@@ -244,6 +236,7 @@ public class SPIDSchemaManager
                 throw new SchemaManagerException("Destination mismatch");
             }
         } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
             throw new SchemaManagerException("Cannot retrieve Attribute Service URL");
         }
     }
