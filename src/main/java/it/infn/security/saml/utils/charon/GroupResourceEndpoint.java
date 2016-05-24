@@ -44,7 +44,7 @@ public class GroupResourceEndpoint {
         String encodedGroup = SCIMProtocolCodec.encodeGroup(createdGroup, false);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(createdGroup.getGroupId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(createdGroup.getResourceId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedGroup);
@@ -90,7 +90,7 @@ public class GroupResourceEndpoint {
         String encodedGroup = SCIMProtocolCodec.encodeGroup(updatedGroup, false);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(updatedGroup.getGroupId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getGroupEndpointURL(updatedGroup.getResourceId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outputFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);

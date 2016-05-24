@@ -60,7 +60,7 @@ public class UserResourceEndpoint {
         String encodedUser = SCIMProtocolCodec.encodeUser(createdUser, false, true);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(createdUser.getUserId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(createdUser.getResourceId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outputFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedUser);
@@ -100,7 +100,7 @@ public class UserResourceEndpoint {
         String encodedUser = SCIMProtocolCodec.encodeUser(updatedUser, false, true);
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(updatedUser.getUserId()));
+        httpHeaders.put(SCIMConstants.LOCATION_HEADER, getUserEndpointURL(updatedUser.getResourceId()));
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, outputFormat);
 
         return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);

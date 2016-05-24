@@ -106,7 +106,7 @@ public class UserResourceManager {
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
-                    + createdUser.getUserId();
+                    + createdUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
 
@@ -241,7 +241,7 @@ public class UserResourceManager {
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
-                    + updatedUser.getUserId();
+                    + updatedUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
 

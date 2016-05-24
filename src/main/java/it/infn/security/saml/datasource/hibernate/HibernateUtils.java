@@ -3,6 +3,8 @@ package it.infn.security.saml.datasource.hibernate;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
+import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.ExternalIdEntity;
 import it.infn.security.saml.datasource.jpa.GroupEntity;
@@ -10,6 +12,7 @@ import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.UserAddressEntity;
 import it.infn.security.saml.datasource.jpa.UserAttributeEntity;
 import it.infn.security.saml.datasource.jpa.UserEntity;
+import it.infn.security.scim.core.SCIMCoreConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,20 +131,20 @@ public class HibernateUtils {
         throws CharonException, NotFoundException {
 
         HashMap<String, String> attrTable = new HashMap<String, String>();
-        attrTable.put(SCIMConstants.UserSchemaConstants.GIVEN_NAME, user.getGivenName());
-        attrTable.put(SCIMConstants.UserSchemaConstants.FAMILY_NAME, user.getFamilyName());
-        attrTable.put(SCIMConstants.UserSchemaConstants.MIDDLE_NAME, user.getMiddleName());
-        attrTable.put(SCIMConstants.UserSchemaConstants.DISPLAY_NAME, user.getDisplayName());
-        attrTable.put(SCIMConstants.UserSchemaConstants.HONORIFIC_PREFIX, user.getHonorificPrefix());
-        attrTable.put(SCIMConstants.UserSchemaConstants.HONORIFIC_SUFFIX, user.getHonorificSuffix());
-        attrTable.put(SCIMConstants.UserSchemaConstants.NICK_NAME, user.getNickName());
-        attrTable.put(SCIMConstants.UserSchemaConstants.TITLE, user.getTitle());
-        attrTable.put(SCIMConstants.UserSchemaConstants.PROFILE_URL, user.getProfileURL());
-        attrTable.put(SCIMConstants.UserSchemaConstants.USER_TYPE, user.getUserType());
-        attrTable.put(SCIMConstants.UserSchemaConstants.PREFERRED_LANGUAGE, user.getPreferredLanguage());
-        attrTable.put(SCIMConstants.UserSchemaConstants.LOCALE, user.getLocale());
-        attrTable.put(SCIMConstants.UserSchemaConstants.TIME_ZONE, user.getTimeZone());
-        attrTable.put(SCIMConstants.UserSchemaConstants.PASSWORD, user.getPassword());
+        attrTable.put(SCIMCoreConstants.GIVEN_NAME, user.getGivenName());
+        attrTable.put(SCIMCoreConstants.FAMILY_NAME, user.getFamilyName());
+        attrTable.put(SCIMCoreConstants.MIDDLE_NAME, user.getMiddleName());
+        attrTable.put(SCIMCoreConstants.DISPLAY_NAME, user.getDisplayName());
+        attrTable.put(SCIMCoreConstants.HONORIFIC_PREFIX, user.getHonorificPrefix());
+        attrTable.put(SCIMCoreConstants.HONORIFIC_SUFFIX, user.getHonorificSuffix());
+        attrTable.put(SCIMCoreConstants.NICK_NAME, user.getNickName());
+        attrTable.put(SCIMCoreConstants.TITLE, user.getTitle());
+        attrTable.put(SCIMCoreConstants.PROFILE_URL, user.getProfileURL());
+        attrTable.put(SCIMCoreConstants.USER_TYPE, user.getUserType());
+        attrTable.put(SCIMCoreConstants.PREFERRED_LANGUAGE, user.getPreferredLanguage());
+        attrTable.put(SCIMCoreConstants.LOCALE, user.getLocale());
+        attrTable.put(SCIMCoreConstants.TIME_ZONE, user.getTimeZone());
+        attrTable.put(SCIMCoreConstants.PASSWORD, user.getPassword());
 
         for (String aKey : attrTable.keySet()) {
             String aValue = attrTable.get(aKey);
@@ -156,31 +159,31 @@ public class HibernateUtils {
         }
 
         List<UserAttributeEntity> emailList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.EMAILS, SCIMConstants.UserSchemaConstants.EMAIL);
+                SCIMConstants.UserSchemaConstants.EMAILS, SCIMCoreConstants.EMAIL);
         eUser.getUserAttributes().addAll(emailList);
 
         List<UserAttributeEntity> phoneList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.PHONE_NUMBERS, SCIMConstants.UserSchemaConstants.PHONE_NUMBER);
+                SCIMConstants.UserSchemaConstants.PHONE_NUMBERS, SCIMCoreConstants.PHONE_NUMBER);
         eUser.getUserAttributes().addAll(phoneList);
 
         List<UserAttributeEntity> imList = getTypedAttributeList(user, eUser, SCIMConstants.UserSchemaConstants.IMS,
-                SCIMConstants.UserSchemaConstants.IM);
+                SCIMCoreConstants.IM);
         eUser.getUserAttributes().addAll(imList);
 
         List<UserAttributeEntity> photoList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.PHOTOS, SCIMConstants.UserSchemaConstants.PHOTO);
+                SCIMConstants.UserSchemaConstants.PHOTOS, SCIMCoreConstants.PHOTO);
         eUser.getUserAttributes().addAll(photoList);
 
         List<UserAttributeEntity> roleList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.ROLES, SCIMConstants.UserSchemaConstants.ROLE);
+                SCIMConstants.UserSchemaConstants.ROLES, SCIMCoreConstants.ROLE);
         eUser.getUserAttributes().addAll(roleList);
 
         List<UserAttributeEntity> entitleList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.ENTITLEMENTS, SCIMConstants.UserSchemaConstants.ENTITLEMENT);
+                SCIMConstants.UserSchemaConstants.ENTITLEMENTS, SCIMCoreConstants.ENTITLEMENT);
         eUser.getUserAttributes().addAll(entitleList);
 
         List<UserAttributeEntity> x509CertList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.X509CERTIFICATES, SCIMConstants.UserSchemaConstants.X509CERTIFICATE);
+                SCIMConstants.UserSchemaConstants.X509CERTIFICATES, SCIMCoreConstants.X509CERTIFICATE);
         eUser.getUserAttributes().addAll(x509CertList);
 
         if (user.isAttributeExist(SCIMConstants.UserSchemaConstants.ADDRESSES)) {
@@ -255,138 +258,105 @@ public class HibernateUtils {
         return result;
     }
 
-    public static void copyAttributesInUser(UserEntity eUser, User user)
-        throws CharonException {
-
-        MultiValuedAttribute emails = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.EMAILS);
-        MultiValuedAttribute phones = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.PHONE_NUMBERS);
-        MultiValuedAttribute ims = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.IMS);
-        MultiValuedAttribute photos = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.PHOTOS);
-        MultiValuedAttribute roles = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.ROLES);
-        MultiValuedAttribute entitles = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.ENTITLEMENTS);
-        MultiValuedAttribute certs = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.X509CERTIFICATE);
+    public static void copyAttributesInUser(UserEntity eUser, UserResource userRes)
+        throws DataSourceException {
 
         for (UserAttributeEntity usrAttr : eUser.getUserAttributes()) {
             String key = usrAttr.getKey();
-            if (key.equals(SCIMConstants.UserSchemaConstants.GIVEN_NAME)) {
+            if (key.equals(SCIMCoreConstants.GIVEN_NAME)) {
 
-                user.setGivenName(usrAttr.getValue());
+                userRes.setUserGivenName(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.FAMILY_NAME)) {
+            } else if (key.equals(SCIMCoreConstants.FAMILY_NAME)) {
 
-                user.setFamilyName(usrAttr.getValue());
+                userRes.setUserFamilyName(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.MIDDLE_NAME)) {
+            } else if (key.equals(SCIMCoreConstants.MIDDLE_NAME)) {
 
-                user.setMiddleName(usrAttr.getValue());
+                userRes.setUserMiddleName(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.DISPLAY_NAME)) {
+            } else if (key.equals(SCIMCoreConstants.DISPLAY_NAME)) {
 
-                user.setDisplayName(usrAttr.getValue());
+                userRes.setUserDisplayName(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.HONORIFIC_PREFIX)) {
+            } else if (key.equals(SCIMCoreConstants.HONORIFIC_PREFIX)) {
 
-                user.setHonorificPrefix(usrAttr.getValue());
+                userRes.setUserHonorPrefix(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.HONORIFIC_SUFFIX)) {
+            } else if (key.equals(SCIMCoreConstants.HONORIFIC_SUFFIX)) {
 
-                user.setHonorificSuffix(usrAttr.getValue());
+                userRes.setUserHonorSuffix(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.NICK_NAME)) {
+            } else if (key.equals(SCIMCoreConstants.NICK_NAME)) {
 
-                user.setNickName(usrAttr.getValue());
+                userRes.setUserNickName(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.TITLE)) {
+            } else if (key.equals(SCIMCoreConstants.TITLE)) {
 
-                user.setTitle(usrAttr.getValue());
+                userRes.setUserTitle(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.PROFILE_URL)) {
+            } else if (key.equals(SCIMCoreConstants.PROFILE_URL)) {
 
-                user.setProfileURL(usrAttr.getValue());
+                userRes.setUserURL(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.USER_TYPE)) {
+            } else if (key.equals(SCIMCoreConstants.USER_TYPE)) {
 
-                user.setUserType(usrAttr.getValue());
+                userRes.setUserPosition(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.PREFERRED_LANGUAGE)) {
+            } else if (key.equals(SCIMCoreConstants.PREFERRED_LANGUAGE)) {
 
-                user.setPreferredLanguage(usrAttr.getValue());
+                userRes.setUserLang(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.LOCALE)) {
+            } else if (key.equals(SCIMCoreConstants.LOCALE)) {
 
-                user.setLocale(usrAttr.getValue());
+                userRes.setUserLocale(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.TIME_ZONE)) {
+            } else if (key.equals(SCIMCoreConstants.TIME_ZONE)) {
 
-                user.setTimeZone(usrAttr.getValue());
+                userRes.setUserTimezone(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.PASSWORD)) {
+            } else if (key.equals(SCIMCoreConstants.PASSWORD)) {
 
-                user.setPassword(usrAttr.getValue());
+                userRes.setUserPwd(usrAttr.getValue());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.EMAIL)) {
+            } else if (key.equals(SCIMCoreConstants.EMAIL)) {
 
-                emails.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserEmail(usrAttr.getValue(), usrAttr.getType());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.PHONE_NUMBER)) {
+            } else if (key.equals(SCIMCoreConstants.PHONE_NUMBER)) {
 
-                phones.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserPhone(usrAttr.getValue(), usrAttr.getType());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.IM)) {
+            } else if (key.equals(SCIMCoreConstants.IM)) {
 
-                ims.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserIM(usrAttr.getValue(), usrAttr.getType());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.PHOTO)) {
+            } else if (key.equals(SCIMCoreConstants.PHOTO)) {
 
-                photos.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserPhoto(usrAttr.getValue(), usrAttr.getType());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.ROLE)) {
+            } else if (key.equals(SCIMCoreConstants.ROLE)) {
 
-                roles.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserRole(usrAttr.getValue(), usrAttr.getType());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.ENTITLEMENT)) {
+            } else if (key.equals(SCIMCoreConstants.ENTITLEMENT)) {
 
-                entitles.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserEntitle(usrAttr.getValue(), usrAttr.getType());
 
-            } else if (key.equals(SCIMConstants.UserSchemaConstants.X509CERTIFICATE)) {
+            } else if (key.equals(SCIMCoreConstants.X509CERTIFICATE)) {
 
-                certs.getValuesAsSubAttributes().add(buildComplexAttr(usrAttr));
+                userRes.addUserCertificate(usrAttr.getValue(), usrAttr.getType());
 
             }
 
         }
 
-        user.setAttribute(emails);
-        user.setAttribute(phones);
-        user.setAttribute(ims);
-        user.setAttribute(photos);
-        user.setAttribute(roles);
-        user.setAttribute(entitles);
-        user.setAttribute(certs);
-
-        MultiValuedAttribute addresses = new MultiValuedAttribute(SCIMConstants.UserSchemaConstants.ADDRESSES);
         for (UserAddressEntity addEnt : eUser.getUserAddresses()) {
-            ComplexAttribute cplxAttr = new ComplexAttribute();
-            cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.UserSchemaConstants.STREET_ADDRESS, addEnt
-                    .getStreet()));
-            cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.UserSchemaConstants.LOCALITY, addEnt
-                    .getLocality()));
-            cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.UserSchemaConstants.REGION, addEnt.getRegion()));
-            cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.UserSchemaConstants.POSTAL_CODE, addEnt
-                    .getPostalCode()));
-            cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.UserSchemaConstants.COUNTRY, addEnt.getCountry()));
-            cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.CommonSchemaConstants.TYPE, addEnt.getType()));
-            addresses.getValuesAsSubAttributes().add(cplxAttr);
+
+            userRes.addUserAddress(addEnt.getStreet(), addEnt.getLocality(), addEnt.getRegion(),
+                    addEnt.getPostalCode(), addEnt.getCountry(), addEnt.getType());
         }
 
-    }
-
-    private static ComplexAttribute buildComplexAttr(UserAttributeEntity usrAttr)
-        throws CharonException {
-        ComplexAttribute cplxAttr = new ComplexAttribute();
-        cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.CommonSchemaConstants.VALUE, usrAttr.getValue()));
-        cplxAttr.setSubAttribute(new SimpleAttribute(SCIMConstants.CommonSchemaConstants.TYPE, usrAttr.getType()));
-        return cplxAttr;
     }
 
 }
