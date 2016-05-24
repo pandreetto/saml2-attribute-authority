@@ -10,10 +10,9 @@ import it.infn.security.saml.schema.AttributeNameInterface;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
-import it.infn.security.saml.utils.SCIMUtils;
 import it.infn.security.saml.utils.SignUtils;
-import it.infn.security.saml.utils.charon.JAXRSResponseBuilder;
 import it.infn.security.scim.protocol.SCIMConstants;
+import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
 import java.io.StringWriter;
 import java.security.cert.X509Certificate;
@@ -52,6 +51,8 @@ public class MetadataManager {
     @GET
     @Produces(SCIMConstants.TEXT_XML)
     public Response getAttributeNames() {
+
+        Response result = null;
 
         try {
 
@@ -134,14 +135,16 @@ public class MetadataManager {
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.TEXT_XML);
-            return JAXRSResponseBuilder.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
 
         } catch (Exception ex) {
             /*
              * TODO verify output format change error message in response
              */
             logger.log(Level.SEVERE, ex.getMessage(), ex);
-            return JAXRSResponseBuilder.buildResponse(SCIMUtils.responseFromException(ex, null));
+            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_INTERNAL_SERVER_ERROR, null, null);
         }
+
+        return result;
     }
 }
