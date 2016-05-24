@@ -2,6 +2,8 @@ package it.infn.security.saml.ocp.hibernate;
 
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.hibernate.HibernateDataSource;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
 import it.infn.security.saml.datasource.jpa.AttributeEntityId;
@@ -38,6 +40,7 @@ import org.opensaml.xml.schema.impl.XSStringBuilder;
 import org.wso2.charon.core.attributes.ComplexAttribute;
 import org.wso2.charon.core.attributes.MultiValuedAttribute;
 import org.wso2.charon.core.attributes.SimpleAttribute;
+import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.exceptions.CharonException;
 import org.wso2.charon.core.exceptions.NotFoundException;
 import org.wso2.charon.core.objects.AbstractSCIMObject;
@@ -419,14 +422,22 @@ public class SPIDDataSource
         return result;
     }
 
-    protected void fillinUserExtAttributes(Session session, AbstractSCIMObject resource, UserEntity uEnt)
-        throws CharonException, NotFoundException, DataSourceException {
-        uEnt.setAttributes(getExtendedAttributes(session, resource));
+    protected void fillinUserExtAttributes(Session session, UserResource userRes, UserEntity uEnt)
+        throws DataSourceException {
+        try {
+            uEnt.setAttributes(getExtendedAttributes(session, (AbstractSCIMObject) userRes));
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
     }
 
-    protected void fillinGroupExtAttributes(Session session, AbstractSCIMObject resource, GroupEntity gEnt)
-        throws CharonException, NotFoundException, DataSourceException {
-        gEnt.setAttributes(getExtendedAttributes(session, resource));
+    protected void fillinGroupExtAttributes(Session session, GroupResource groupRes, GroupEntity gEnt)
+        throws DataSourceException {
+        try {
+            gEnt.setAttributes(getExtendedAttributes(session, (AbstractSCIMObject) groupRes));
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
     }
 
     protected void cleanUserExtAttributes(Session session, UserEntity uEnt)

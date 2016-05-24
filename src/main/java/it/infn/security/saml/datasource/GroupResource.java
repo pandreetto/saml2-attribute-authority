@@ -17,4 +17,7 @@ public interface GroupResource
     public void setGroupMembers(List<String> idLists)
         throws DataSourceException;
 
+    public List<String> getAllMembers()
+        throws DataSourceException;
+
 }

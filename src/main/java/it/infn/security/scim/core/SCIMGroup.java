@@ -151,4 +151,13 @@ public class SCIMGroup
         }
     }
 
+    public List<String> getAllMembers()
+        throws DataSourceException {
+        try {
+            return super.getMembers();
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
+    }
+
 }

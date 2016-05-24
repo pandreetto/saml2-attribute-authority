@@ -24,11 +24,6 @@ import java.util.logging.Logger;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.wso2.charon.core.exceptions.CharonException;
-import org.wso2.charon.core.exceptions.NotFoundException;
-import org.wso2.charon.core.objects.AbstractSCIMObject;
-import org.wso2.charon.core.objects.Group;
-import org.wso2.charon.core.objects.User;
 
 public abstract class HibernateDataSource
     extends HibernateBaseDataSource {
@@ -56,10 +51,6 @@ public abstract class HibernateDataSource
             result = userFromEntity(session, usrEnt);
             session.getTransaction().commit();
             nocommit = false;
-
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
 
         } finally {
 
@@ -141,10 +132,6 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
-
         } finally {
 
             if (nocommit)
@@ -165,36 +152,26 @@ public abstract class HibernateDataSource
 
             session.beginTransaction();
 
-            User user = (User) userRes;
-
-            UserEntity eUser = (UserEntity) session.get(UserEntity.class, user.getId());
-            eUser.setModifyDate(user.getLastModified());
+            UserEntity eUser = (UserEntity) session.get(UserEntity.class, userRes.getResourceId());
+            eUser.setModifyDate(userRes.getResourceChangeDate());
             eUser.setVersion(HibernateUtils.generateNewVersion(eUser.getVersion()));
-            eUser.setUserName(user.getUserName());
+            eUser.setUserName(userRes.getName());
 
             cleanSCIMAttributes(session, eUser);
-            HibernateUtils.copyAttributesInEntity(user, eUser);
+            HibernateUtils.copyAttributesInEntity(userRes, eUser);
 
             cleanUserExtAttributes(session, eUser);
-            fillinUserExtAttributes(session, user, eUser);
+            fillinUserExtAttributes(session, userRes, eUser);
 
             session.save(eUser);
-            logger.info("Updated user " + user.getUserName() + " with id " + user.getId());
+            logger.info("Updated user " + userRes.getName() + " with id " + userRes.getResourceId());
 
-            updateExternalIds(session, eUser, user.getExternalId());
+            updateExternalIds(session, eUser, userRes.getResourceExtId());
 
             session.getTransaction().commit();
             nocommit = false;
 
             return userRes;
-
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
-
-        } catch (NotFoundException nfEx) {
-
-            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -217,17 +194,13 @@ public abstract class HibernateDataSource
             UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, userId);
             if (usrEnt == null) {
                 logger.info("Entity not found " + userId);
-                throw new NotFoundException();
+                throw new DataSourceException("User not found " + userId);
             }
 
             session.delete(usrEnt);
 
             session.getTransaction().commit();
             nocommit = false;
-
-        } catch (NotFoundException nfEx) {
-
-            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -258,37 +231,27 @@ public abstract class HibernateDataSource
              * ServerSideValidator#validateCreatedSCIMObject(AbstractSCIMObject, SCIMResourceSchema)
              */
 
-            User user = (User) userRes;
-
-            eUser.setId(user.getId());
+            eUser.setId(userRes.getResourceId());
             eUser.setType(ResourceType.USER);
             eUser.setStatus(ResourceStatus.ACTIVE);
-            eUser.setCreateDate(user.getCreatedDate());
-            eUser.setModifyDate(user.getLastModified());
+            eUser.setCreateDate(userRes.getResourceCreationDate());
+            eUser.setModifyDate(userRes.getResourceChangeDate());
             eUser.setVersion(HibernateUtils.generateNewVersion(null));
-            eUser.setUserName(user.getUserName());
+            eUser.setUserName(userRes.getName());
 
-            HibernateUtils.copyAttributesInEntity(user, eUser);
+            HibernateUtils.copyAttributesInEntity(userRes, eUser);
 
-            fillinUserExtAttributes(session, user, eUser);
+            fillinUserExtAttributes(session, userRes, eUser);
 
             session.save(eUser);
-            logger.info("Created user " + user.getUserName() + " with id " + user.getId());
+            logger.info("Created user " + userRes.getName() + " with id " + userRes.getResourceId());
 
-            linkExternalIds(session, eUser, user.getExternalId());
+            linkExternalIds(session, eUser, userRes.getResourceExtId());
 
             session.getTransaction().commit();
             nocommit = false;
 
             return userRes;
-
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
-
-        } catch (NotFoundException nfEx) {
-
-            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -316,10 +279,6 @@ public abstract class HibernateDataSource
             result = groupFromEntity(session, grpEnt);
             session.getTransaction().commit();
             nocommit = false;
-
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
 
         } finally {
 
@@ -400,10 +359,6 @@ public abstract class HibernateDataSource
             session.getTransaction().commit();
             nocommit = false;
 
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
-
         } finally {
 
             if (nocommit)
@@ -429,38 +384,28 @@ public abstract class HibernateDataSource
              * ServerSideValidator#validateCreatedSCIMObject(AbstractSCIMObject, SCIMResourceSchema)
              */
 
-            Group group = (Group) groupRes;
-
-            grpEnt.setId(group.getId());
+            grpEnt.setId(groupRes.getResourceId());
             grpEnt.setType(ResourceType.GROUP);
             grpEnt.setStatus(ResourceStatus.ACTIVE);
-            grpEnt.setCreateDate(group.getCreatedDate());
-            grpEnt.setModifyDate(group.getLastModified());
+            grpEnt.setCreateDate(groupRes.getResourceCreationDate());
+            grpEnt.setModifyDate(groupRes.getResourceChangeDate());
             grpEnt.setVersion(HibernateUtils.generateNewVersion(null));
-            grpEnt.setDisplayName(group.getDisplayName());
+            grpEnt.setDisplayName(groupRes.getName());
 
-            fillinGroupExtAttributes(session, group, grpEnt);
+            fillinGroupExtAttributes(session, groupRes, grpEnt);
 
             session.save(grpEnt);
-            logger.info("Created group " + grpEnt.getDisplayName() + " with id " + group.getId());
+            logger.info("Created group " + groupRes.getName() + " with id " + groupRes.getResourceId());
 
-            linkExternalIds(session, grpEnt, group.getExternalId());
+            linkExternalIds(session, grpEnt, groupRes.getResourceExtId());
 
             ResourceGraph rGraph = new ResourceGraph(session);
-            rGraph.addMembersToGroup(grpEnt, group.getMembers());
+            rGraph.addMembersToGroup(grpEnt, groupRes.getAllMembers());
 
             session.getTransaction().commit();
             nocommit = false;
 
             return groupRes;
-
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
-
-        } catch (NotFoundException nfEx) {
-
-            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -480,39 +425,29 @@ public abstract class HibernateDataSource
 
             session.beginTransaction();
 
-            Group group = (Group) groupRes;
-
-            GroupEntity eGroup = (GroupEntity) session.get(GroupEntity.class, group.getId());
-            eGroup.setModifyDate(group.getLastModified());
+            GroupEntity eGroup = (GroupEntity) session.get(GroupEntity.class, groupRes.getResourceId());
+            eGroup.setModifyDate(groupRes.getResourceChangeDate());
             eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
-            eGroup.setDisplayName(group.getDisplayName());
+            eGroup.setDisplayName(groupRes.getName());
 
             cleanGroupExtAttributes(session, eGroup);
-            fillinGroupExtAttributes(session, group, eGroup);
+            fillinGroupExtAttributes(session, groupRes, eGroup);
 
             ResourceGraph rGraph = new ResourceGraph(session);
             // rGraph.updateMembersForGroup(eGroup, group.getMembers());
             rGraph.removeMembersFromGroup(eGroup);
-            rGraph.addMembersToGroup(eGroup, group.getMembers());
+            rGraph.addMembersToGroup(eGroup, groupRes.getAllMembers());
             rGraph.checkForCycle(eGroup.getId());
 
-            updateExternalIds(session, eGroup, group.getExternalId());
+            updateExternalIds(session, eGroup, groupRes.getResourceExtId());
 
             session.save(eGroup);
-            logger.info("Updated user " + group.getDisplayName() + " with id " + group.getId());
+            logger.info("Updated user " + groupRes.getName() + " with id " + groupRes.getResourceId());
 
             session.getTransaction().commit();
             nocommit = false;
 
             return groupRes;
-
-        } catch (CharonException chEx) {
-
-            throw new DataSourceException(chEx.getMessage());
-
-        } catch (NotFoundException nfEx) {
-
-            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -538,7 +473,7 @@ public abstract class HibernateDataSource
             GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, groupId);
             if (grpEnt == null) {
                 logger.info("Entity not found " + groupId);
-                throw new NotFoundException();
+                throw new DataSourceException("Group not found " + groupId);
             }
 
             ResourceGraph rGraph = new ResourceGraph(session);
@@ -547,10 +482,6 @@ public abstract class HibernateDataSource
             session.delete(grpEnt);
             session.getTransaction().commit();
             nocommit = false;
-
-        } catch (NotFoundException nfEx) {
-
-            throw new DataSourceException(nfEx.getMessage());
 
         } finally {
 
@@ -581,8 +512,7 @@ public abstract class HibernateDataSource
 
     }
 
-    private String getExternalId(Session session, ResourceEntity resEnt)
-        throws CharonException {
+    private String getExternalId(Session session, ResourceEntity resEnt) {
 
         if (this.getTenant() == null)
             return null;
@@ -687,7 +617,7 @@ public abstract class HibernateDataSource
     }
 
     private UserResource userFromEntity(Session session, UserEntity usrEnt)
-        throws CharonException, DataSourceException {
+        throws DataSourceException {
 
         UserResource uResult = new SCIMUser();
         uResult.setResourceId(usrEnt.getId());
@@ -711,7 +641,7 @@ public abstract class HibernateDataSource
     }
 
     private GroupResource groupFromEntity(Session session, GroupEntity grpEnt)
-        throws CharonException, DataSourceException {
+        throws DataSourceException {
 
         GroupResource gResult = new SCIMGroup();
         gResult.setResourceId(grpEnt.getId());
@@ -738,11 +668,11 @@ public abstract class HibernateDataSource
         return gResult;
     }
 
-    protected abstract void fillinUserExtAttributes(Session session, AbstractSCIMObject resource, UserEntity uEnt)
-        throws CharonException, NotFoundException, DataSourceException;
+    protected abstract void fillinUserExtAttributes(Session session, UserResource userRes, UserEntity uEnt)
+        throws DataSourceException;
 
-    protected abstract void fillinGroupExtAttributes(Session session, AbstractSCIMObject resource, GroupEntity gEnt)
-        throws CharonException, NotFoundException, DataSourceException;
+    protected abstract void fillinGroupExtAttributes(Session session, GroupResource groupRes, GroupEntity gEnt)
+        throws DataSourceException;
 
     protected abstract void cleanUserExtAttributes(Session session, UserEntity uEnt)
         throws DataSourceException;

@@ -3,6 +3,8 @@ package it.infn.security.saml.datasource.hibernate;
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.configuration.ConfigurationException;
+import it.infn.security.saml.datasource.AddrValueTuple;
+import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
@@ -17,19 +19,10 @@ import it.infn.security.scim.core.SCIMCoreConstants;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.hibernate.cfg.Configuration;
-import org.wso2.charon.core.attributes.Attribute;
-import org.wso2.charon.core.attributes.ComplexAttribute;
-import org.wso2.charon.core.attributes.MultiValuedAttribute;
-import org.wso2.charon.core.attributes.SimpleAttribute;
-import org.wso2.charon.core.exceptions.CharonException;
-import org.wso2.charon.core.exceptions.NotFoundException;
-import org.wso2.charon.core.objects.User;
-import org.wso2.charon.core.schema.SCIMConstants;
 
 public class HibernateUtils {
 
@@ -127,24 +120,24 @@ public class HibernateUtils {
         return UUID.randomUUID().toString();
     }
 
-    public static void copyAttributesInEntity(User user, UserEntity eUser)
-        throws CharonException, NotFoundException {
+    public static void copyAttributesInEntity(UserResource userRes, UserEntity eUser)
+        throws DataSourceException {
 
         HashMap<String, String> attrTable = new HashMap<String, String>();
-        attrTable.put(SCIMCoreConstants.GIVEN_NAME, user.getGivenName());
-        attrTable.put(SCIMCoreConstants.FAMILY_NAME, user.getFamilyName());
-        attrTable.put(SCIMCoreConstants.MIDDLE_NAME, user.getMiddleName());
-        attrTable.put(SCIMCoreConstants.DISPLAY_NAME, user.getDisplayName());
-        attrTable.put(SCIMCoreConstants.HONORIFIC_PREFIX, user.getHonorificPrefix());
-        attrTable.put(SCIMCoreConstants.HONORIFIC_SUFFIX, user.getHonorificSuffix());
-        attrTable.put(SCIMCoreConstants.NICK_NAME, user.getNickName());
-        attrTable.put(SCIMCoreConstants.TITLE, user.getTitle());
-        attrTable.put(SCIMCoreConstants.PROFILE_URL, user.getProfileURL());
-        attrTable.put(SCIMCoreConstants.USER_TYPE, user.getUserType());
-        attrTable.put(SCIMCoreConstants.PREFERRED_LANGUAGE, user.getPreferredLanguage());
-        attrTable.put(SCIMCoreConstants.LOCALE, user.getLocale());
-        attrTable.put(SCIMCoreConstants.TIME_ZONE, user.getTimeZone());
-        attrTable.put(SCIMCoreConstants.PASSWORD, user.getPassword());
+        attrTable.put(SCIMCoreConstants.GIVEN_NAME, userRes.getUserGivenName());
+        attrTable.put(SCIMCoreConstants.FAMILY_NAME, userRes.getUserFamilyName());
+        attrTable.put(SCIMCoreConstants.MIDDLE_NAME, userRes.getUserMiddleName());
+        attrTable.put(SCIMCoreConstants.DISPLAY_NAME, userRes.getUserDisplayName());
+        attrTable.put(SCIMCoreConstants.HONORIFIC_PREFIX, userRes.getUserHonorPrefix());
+        attrTable.put(SCIMCoreConstants.HONORIFIC_SUFFIX, userRes.getUserHonorSuffix());
+        attrTable.put(SCIMCoreConstants.NICK_NAME, userRes.getUserNickName());
+        attrTable.put(SCIMCoreConstants.TITLE, userRes.getUserTitle());
+        attrTable.put(SCIMCoreConstants.PROFILE_URL, userRes.getUserURL());
+        attrTable.put(SCIMCoreConstants.USER_TYPE, userRes.getUserPosition());
+        attrTable.put(SCIMCoreConstants.PREFERRED_LANGUAGE, userRes.getUserLang());
+        attrTable.put(SCIMCoreConstants.LOCALE, userRes.getUserLocale());
+        attrTable.put(SCIMCoreConstants.TIME_ZONE, userRes.getUserTimezone());
+        attrTable.put(SCIMCoreConstants.PASSWORD, userRes.getUserPwd());
 
         for (String aKey : attrTable.keySet()) {
             String aValue = attrTable.get(aKey);
@@ -158,103 +151,56 @@ public class HibernateUtils {
             }
         }
 
-        List<UserAttributeEntity> emailList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.EMAILS, SCIMCoreConstants.EMAIL);
+        List<UserAttributeEntity> emailList = getAttributeList(eUser, SCIMCoreConstants.EMAIL, userRes.getUserEmails());
         eUser.getUserAttributes().addAll(emailList);
 
-        List<UserAttributeEntity> phoneList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.PHONE_NUMBERS, SCIMCoreConstants.PHONE_NUMBER);
+        List<UserAttributeEntity> phoneList = getAttributeList(eUser, SCIMCoreConstants.PHONE_NUMBER,
+                userRes.getUserPhones());
         eUser.getUserAttributes().addAll(phoneList);
 
-        List<UserAttributeEntity> imList = getTypedAttributeList(user, eUser, SCIMConstants.UserSchemaConstants.IMS,
-                SCIMCoreConstants.IM);
+        List<UserAttributeEntity> imList = getAttributeList(eUser, SCIMCoreConstants.IM, userRes.getUserIMs());
         eUser.getUserAttributes().addAll(imList);
 
-        List<UserAttributeEntity> photoList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.PHOTOS, SCIMCoreConstants.PHOTO);
+        List<UserAttributeEntity> photoList = getAttributeList(eUser, SCIMCoreConstants.PHOTO, userRes.getUserPhotos());
         eUser.getUserAttributes().addAll(photoList);
 
-        List<UserAttributeEntity> roleList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.ROLES, SCIMCoreConstants.ROLE);
+        List<UserAttributeEntity> roleList = getAttributeList(eUser, SCIMCoreConstants.ROLE, userRes.getUserRoles());
         eUser.getUserAttributes().addAll(roleList);
 
-        List<UserAttributeEntity> entitleList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.ENTITLEMENTS, SCIMCoreConstants.ENTITLEMENT);
+        List<UserAttributeEntity> entitleList = getAttributeList(eUser, SCIMCoreConstants.ENTITLEMENT,
+                userRes.getUserEntitles());
         eUser.getUserAttributes().addAll(entitleList);
 
-        List<UserAttributeEntity> x509CertList = getTypedAttributeList(user, eUser,
-                SCIMConstants.UserSchemaConstants.X509CERTIFICATES, SCIMCoreConstants.X509CERTIFICATE);
+        List<UserAttributeEntity> x509CertList = getAttributeList(eUser, SCIMCoreConstants.X509CERTIFICATE,
+                userRes.getUserCertificates());
         eUser.getUserAttributes().addAll(x509CertList);
 
-        if (user.isAttributeExist(SCIMConstants.UserSchemaConstants.ADDRESSES)) {
-            MultiValuedAttribute addresses = (MultiValuedAttribute) user.getAttributeList().get(
-                    SCIMConstants.UserSchemaConstants.ADDRESSES);
-            for (Map<String, Object> addrItem : addresses.getComplexValues()) {
-                UserAddressEntity addEnt = new UserAddressEntity();
-                addEnt.setUser(eUser);
-                addEnt.setStreet(addrItem.get(SCIMConstants.UserSchemaConstants.STREET_ADDRESS).toString());
-                addEnt.setLocality(addrItem.get(SCIMConstants.UserSchemaConstants.LOCALITY).toString());
-                addEnt.setReqion(addrItem.get(SCIMConstants.UserSchemaConstants.REGION).toString());
-                addEnt.setPostalCode(addrItem.get(SCIMConstants.UserSchemaConstants.POSTAL_CODE).toString());
-                addEnt.setCountry(addrItem.get(SCIMConstants.UserSchemaConstants.COUNTRY).toString());
-                addEnt.setType(addrItem.get(SCIMConstants.CommonSchemaConstants.TYPE).toString());
-                eUser.getUserAddresses().add(addEnt);
-            }
+        for (AddrValueTuple aTuple : userRes.getUserAddresses()) {
+            UserAddressEntity addEnt = new UserAddressEntity();
+            addEnt.setUser(eUser);
+            addEnt.setStreet(aTuple.getStreet());
+            addEnt.setLocality(aTuple.getLocality());
+            addEnt.setReqion(aTuple.getRegion());
+            addEnt.setPostalCode(aTuple.getCode());
+            addEnt.setCountry(aTuple.getCounty());
+            addEnt.setType(aTuple.getType());
+            eUser.getUserAddresses().add(addEnt);
         }
+
     }
 
-    private static List<UserAttributeEntity> getTypedAttributeList(User user, UserEntity eUser, String categName,
-            String itemName)
-        throws CharonException {
+    private static List<UserAttributeEntity> getAttributeList(UserEntity eUser, String itemName,
+            List<AttrValueTuple> values)
+        throws DataSourceException {
         List<UserAttributeEntity> result = new ArrayList<UserAttributeEntity>();
-
-        if (user.isAttributeExist(categName)) {
-
-            MultiValuedAttribute mAttr = (MultiValuedAttribute) user.getAttributeList().get(categName);
-            if (mAttr.getValuesAsStrings() != null && mAttr.getValuesAsStrings().size() != 0) {
-                for (String tmpValue : mAttr.getValuesAsStrings()) {
-                    UserAttributeEntity attEnt = new UserAttributeEntity();
-                    attEnt.setKey(itemName);
-                    attEnt.setValue(tmpValue);
-                    attEnt.setType(null);
-                    attEnt.setUser(eUser);
-                    result.add(attEnt);
-                }
-
-            } else {
-
-                List<Attribute> subAttributes = mAttr.getValuesAsSubAttributes();
-                if (subAttributes != null && subAttributes.size() != 0) {
-                    for (Attribute subAttribute : subAttributes) {
-
-                        UserAttributeEntity attEnt = new UserAttributeEntity();
-                        attEnt.setKey(itemName);
-                        attEnt.setUser(eUser);
-
-                        if (subAttribute instanceof SimpleAttribute) {
-                            SimpleAttribute valueAttribute = (SimpleAttribute) subAttribute;
-                            attEnt.setValue((String) valueAttribute.getValue());
-                            attEnt.setType(null);
-                        } else if (subAttribute instanceof ComplexAttribute) {
-                            ComplexAttribute cplxAttr = (ComplexAttribute) subAttribute;
-
-                            SimpleAttribute valueAttribute = (SimpleAttribute) (cplxAttr
-                                    .getSubAttribute(SCIMConstants.CommonSchemaConstants.VALUE));
-                            attEnt.setValue((String) valueAttribute.getValue());
-
-                            SimpleAttribute typeAttribute = (SimpleAttribute) (cplxAttr
-                                    .getSubAttribute(SCIMConstants.CommonSchemaConstants.TYPE));
-                            if (typeAttribute != null) {
-                                attEnt.setType((String) typeAttribute.getValue());
-                            }
-                        }
-
-                        result.add(attEnt);
-                    }
-                }
-            }
+        for (AttrValueTuple vTuple : values) {
+            UserAttributeEntity attEnt = new UserAttributeEntity();
+            attEnt.setKey(itemName);
+            attEnt.setValue(vTuple.getValue());
+            attEnt.setType(vTuple.getType());
+            attEnt.setUser(eUser);
+            result.add(attEnt);
         }
-
         return result;
     }
 
