@@ -1,5 +1,6 @@
 package it.infn.security.saml.datasource;
 
+import java.util.Collection;
 import java.util.Date;
 
 public interface Resource {
@@ -32,6 +33,12 @@ public interface Resource {
         throws DataSourceException;
 
     public void setResourceExtId(String id)
+        throws DataSourceException;
+
+    /*
+     * TODO move away
+     */
+    public Collection<String[]> getSPIDAttributes()
         throws DataSourceException;
 
 }

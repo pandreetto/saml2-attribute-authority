@@ -2,10 +2,17 @@ package it.infn.security.scim.core;
 
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.ocp.SPIDSchemaManager;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.wso2.charon.core.attributes.Attribute;
+import org.wso2.charon.core.attributes.ComplexAttribute;
+import org.wso2.charon.core.attributes.MultiValuedAttribute;
+import org.wso2.charon.core.attributes.SimpleAttribute;
 import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.objects.Group;
 
@@ -158,6 +165,44 @@ public class SCIMGroup
         } catch (AbstractCharonException chEx) {
             throw new DataSourceException(chEx.getMessage(), chEx);
         }
+    }
+
+    /*
+     * TODO move into an OCP package
+     */
+    public Collection<String[]> getSPIDAttributes()
+        throws DataSourceException {
+
+        ArrayList<String[]> result = new ArrayList<String[]>();
+        if (!super.isAttributeExist(SPIDSchemaManager.ROOT_ATTR_ID)) {
+            return result;
+        }
+
+        try {
+
+            Attribute extAttribute = super.getAttribute(SPIDSchemaManager.ROOT_ATTR_ID);
+            List<Attribute> allSubAttrs = ((MultiValuedAttribute) extAttribute).getValuesAsSubAttributes();
+            for (Attribute subAttr : allSubAttrs) {
+                ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
+
+                SimpleAttribute nameAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.NAME_ATTR_ID);
+                if (nameAttr == null) {
+                    throw new DataSourceException("Missing attribute " + SPIDSchemaManager.NAME_ATTR_ID);
+                }
+                SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.VALUE_ATTR_ID);
+                if (cntAttr == null) {
+                    throw new DataSourceException("Missing attribute " + SPIDSchemaManager.VALUE_ATTR_ID);
+                }
+
+                result.add(new String[] { nameAttr.getStringValue(), cntAttr.getStringValue() });
+
+            }
+
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
+
+        return result;
     }
 
 }

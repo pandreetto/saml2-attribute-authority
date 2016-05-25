@@ -11,7 +11,6 @@ import it.infn.security.saml.datasource.jpa.GroupEntity;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 import it.infn.security.saml.ocp.SPIDAttributeName;
 import it.infn.security.saml.ocp.SPIDAttributeValue;
-import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.saml.schema.AttributeNameInterface;
 import it.infn.security.saml.schema.AttributeValueInterface;
@@ -37,13 +36,6 @@ import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.schema.XSString;
 import org.opensaml.xml.schema.impl.XSStringBuilder;
-import org.wso2.charon.core.attributes.ComplexAttribute;
-import org.wso2.charon.core.attributes.MultiValuedAttribute;
-import org.wso2.charon.core.attributes.SimpleAttribute;
-import org.wso2.charon.core.exceptions.AbstractCharonException;
-import org.wso2.charon.core.exceptions.CharonException;
-import org.wso2.charon.core.exceptions.NotFoundException;
-import org.wso2.charon.core.objects.AbstractSCIMObject;
 
 public class SPIDDataSource
     extends HibernateDataSource {
@@ -372,72 +364,49 @@ public class SPIDDataSource
         return result;
     }
 
-    protected Set<AttributeEntity> getExtendedAttributes(Session session, AbstractSCIMObject resource)
-        throws CharonException, NotFoundException, DataSourceException {
+    protected void fillinUserExtAttributes(Session session, UserResource userRes, UserEntity uEnt)
+        throws DataSourceException {
 
-        Set<AttributeEntity> result = new HashSet<AttributeEntity>();
-
-        if (!resource.isAttributeExist(SPIDSchemaManager.ROOT_ATTR_ID)) {
-            return result;
-        }
-
-        /*
-         * TODO move schema validation in *ResourceEndpoint
-         */
-        org.wso2.charon.core.attributes.Attribute extAttribute = resource.getAttribute(SPIDSchemaManager.ROOT_ATTR_ID);
-        if (extAttribute == null) {
-            throw new CharonException("Missing attribute " + SPIDSchemaManager.ROOT_ATTR_ID);
-        }
-        List<org.wso2.charon.core.attributes.Attribute> allSubAttrs = ((MultiValuedAttribute) extAttribute)
-                .getValuesAsSubAttributes();
-
-        for (org.wso2.charon.core.attributes.Attribute subAttr : allSubAttrs) {
-
-            ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
-
-            SimpleAttribute nameAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.NAME_ATTR_ID);
-            if (nameAttr == null) {
-                throw new CharonException("Missing attribute " + SPIDSchemaManager.NAME_ATTR_ID);
-            }
-            SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.VALUE_ATTR_ID);
-            if (cntAttr == null) {
-                throw new CharonException("Missing attribute " + SPIDSchemaManager.VALUE_ATTR_ID);
-            }
+        Set<AttributeEntity> uSet = new HashSet<AttributeEntity>();
+        for (String[] item : userRes.getSPIDAttributes()) {
 
             AttributeEntityId attrEntId = new AttributeEntityId();
-            attrEntId.setKey(nameAttr.getStringValue());
-            attrEntId.setContent(cntAttr.getStringValue());
+            attrEntId.setKey(item[0]);
+            attrEntId.setContent(item[1]);
 
             AttributeEntity attrEnt = (AttributeEntity) session.get(AttributeEntity.class, attrEntId);
-
             if (attrEnt == null) {
                 throw new DataSourceException("Unknown " + attrEntId.getKey() + ": " + attrEntId.getContent());
             }
 
             logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
-            result.add(attrEnt);
+            uSet.add(attrEnt);
 
         }
 
-        return result;
-    }
-
-    protected void fillinUserExtAttributes(Session session, UserResource userRes, UserEntity uEnt)
-        throws DataSourceException {
-        try {
-            uEnt.setAttributes(getExtendedAttributes(session, (AbstractSCIMObject) userRes));
-        } catch (AbstractCharonException chEx) {
-            throw new DataSourceException(chEx.getMessage(), chEx);
-        }
+        uEnt.setAttributes(uSet);
     }
 
     protected void fillinGroupExtAttributes(Session session, GroupResource groupRes, GroupEntity gEnt)
         throws DataSourceException {
-        try {
-            gEnt.setAttributes(getExtendedAttributes(session, (AbstractSCIMObject) groupRes));
-        } catch (AbstractCharonException chEx) {
-            throw new DataSourceException(chEx.getMessage(), chEx);
+
+        Set<AttributeEntity> gSet = new HashSet<AttributeEntity>();
+        for (String[] item : groupRes.getSPIDAttributes()) {
+
+            AttributeEntityId attrEntId = new AttributeEntityId();
+            attrEntId.setKey(item[0]);
+            attrEntId.setContent(item[1]);
+
+            AttributeEntity attrEnt = (AttributeEntity) session.get(AttributeEntity.class, attrEntId);
+            if (attrEnt == null) {
+                throw new DataSourceException("Unknown " + attrEntId.getKey() + ": " + attrEntId.getContent());
+            }
+
+            logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
+            gSet.add(attrEnt);
         }
+
+        gEnt.setAttributes(gSet);
     }
 
     protected void cleanUserExtAttributes(Session session, UserEntity uEnt)

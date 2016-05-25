@@ -179,7 +179,7 @@ public class SCIMProtocolCodec {
     public static Response responseFromException(Exception ex) {
         AbstractCharonException chEx = null;
 
-        logger.log(Level.FINE, "Detected exception " + ex.getMessage(), ex);
+        logger.log(Level.INFO, "Detected exception " + ex.getMessage(), ex);
 
         if (ex instanceof AbstractCharonException) {
 

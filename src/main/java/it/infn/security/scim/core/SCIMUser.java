@@ -4,8 +4,10 @@ import it.infn.security.saml.datasource.AddrValueTuple;
 import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.UserResource;
+import it.infn.security.saml.ocp.SPIDSchemaManager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -595,7 +597,10 @@ public class SCIMUser
         if (addresses == null)
             addresses = getInnerAttr(SCIMConstants.UserSchemaConstants.ADDRESSES);
         List<AddrValueTuple> result = new ArrayList<AddrValueTuple>();
-        for (Map<String, Object> addrItem : addresses.getComplexValues()) {
+        List<Map<String, Object>> addressValues = addresses.getComplexValues();
+        if (addressValues == null)
+            return result;
+        for (Map<String, Object> addrItem : addressValues) {
             String st = addrItem.get(SCIMConstants.UserSchemaConstants.STREET_ADDRESS).toString();
             String loc = addrItem.get(SCIMConstants.UserSchemaConstants.LOCALITY).toString();
             String reg = addrItem.get(SCIMConstants.UserSchemaConstants.REGION).toString();
@@ -607,10 +612,49 @@ public class SCIMUser
         return result;
     }
 
+    /*
+     * TODO move into an OCP package
+     */
+    public Collection<String[]> getSPIDAttributes()
+        throws DataSourceException {
+
+        ArrayList<String[]> result = new ArrayList<String[]>();
+        if (!super.isAttributeExist(SPIDSchemaManager.ROOT_ATTR_ID)) {
+            return result;
+        }
+
+        try {
+
+            Attribute extAttribute = super.getAttribute(SPIDSchemaManager.ROOT_ATTR_ID);
+            List<Attribute> allSubAttrs = ((MultiValuedAttribute) extAttribute).getValuesAsSubAttributes();
+            for (Attribute subAttr : allSubAttrs) {
+                ComplexAttribute cplxAttr = (ComplexAttribute) subAttr;
+
+                SimpleAttribute nameAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.NAME_ATTR_ID);
+                if (nameAttr == null) {
+                    throw new DataSourceException("Missing attribute " + SPIDSchemaManager.NAME_ATTR_ID);
+                }
+                SimpleAttribute cntAttr = (SimpleAttribute) cplxAttr.getSubAttribute(SPIDSchemaManager.VALUE_ATTR_ID);
+                if (cntAttr == null) {
+                    throw new DataSourceException("Missing attribute " + SPIDSchemaManager.VALUE_ATTR_ID);
+                }
+
+                result.add(new String[] { nameAttr.getStringValue(), cntAttr.getStringValue() });
+
+            }
+
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
+
+        return result;
+    }
+
     private MultiValuedAttribute getInnerAttr(String attName) {
 
-        if (super.isAttributeExist(attName))
+        if (super.isAttributeExist(attName)) {
             return (MultiValuedAttribute) super.getAttributeList().get(attName);
+        }
 
         MultiValuedAttribute tmpAttr = new MultiValuedAttribute(attName);
         super.setAttribute(tmpAttr);
