@@ -2,11 +2,15 @@ package it.infn.security.scim.core;
 
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.ocp.SPIDAttributeName;
+import it.infn.security.saml.ocp.SPIDAttributeValue;
 import it.infn.security.saml.ocp.SPIDSchemaManager;
+import it.infn.security.saml.schema.AttributeEntry;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.wso2.charon.core.attributes.Attribute;
@@ -170,13 +174,14 @@ public class SCIMGroup
     /*
      * TODO move into an OCP package
      */
-    public Collection<String[]> getSPIDAttributes()
+    public Collection<AttributeEntry> getExtendedAttributes()
         throws DataSourceException {
 
-        ArrayList<String[]> result = new ArrayList<String[]>();
         if (!super.isAttributeExist(SPIDSchemaManager.ROOT_ATTR_ID)) {
-            return result;
+            return new ArrayList<AttributeEntry>();
         }
+
+        HashMap<String, AttributeEntry> attrTable = new HashMap<String, AttributeEntry>();
 
         try {
 
@@ -194,7 +199,16 @@ public class SCIMGroup
                     throw new DataSourceException("Missing attribute " + SPIDSchemaManager.VALUE_ATTR_ID);
                 }
 
-                result.add(new String[] { nameAttr.getStringValue(), cntAttr.getStringValue() });
+                String tmpName = nameAttr.getStringValue();
+                String tmpValue = cntAttr.getStringValue();
+                AttributeEntry tmpEntry = null;
+                if (attrTable.containsKey(tmpName)) {
+                    tmpEntry = attrTable.get(tmpName);
+                } else {
+                    tmpEntry = new AttributeEntry(new SPIDAttributeName(tmpName, ""));
+                    attrTable.put(tmpName, tmpEntry);
+                }
+                tmpEntry.add(new SPIDAttributeValue(tmpValue, ""));
 
             }
 
@@ -202,7 +216,7 @@ public class SCIMGroup
             throw new DataSourceException(chEx.getMessage(), chEx);
         }
 
-        return result;
+        return attrTable.values();
     }
 
 }

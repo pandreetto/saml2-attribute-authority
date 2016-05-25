@@ -3,6 +3,7 @@ package it.infn.security.saml.ocp.hibernate;
 import it.infn.security.saml.datasource.DataSource;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.Resource;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.hibernate.HibernateDataSource;
 import it.infn.security.saml.datasource.jpa.AttributeEntity;
@@ -364,49 +365,44 @@ public class SPIDDataSource
         return result;
     }
 
+    private Set<AttributeEntity> buildAttributeSet(Session session, Resource resource)
+        throws DataSourceException {
+        /*
+         * DON'T move AttributeEntity in HibernateDataSource; it's still SPID oriented
+         */
+        Set<AttributeEntity> result = new HashSet<AttributeEntity>();
+        for (AttributeEntry item : resource.getExtendedAttributes()) {
+
+            for (AttributeValueInterface tmpVal : item) {
+                AttributeEntityId attrEntId = new AttributeEntityId();
+                attrEntId.setKey(item.getName().getNameId());
+                attrEntId.setContent((String) tmpVal.getValue());
+
+                AttributeEntity attrEnt = (AttributeEntity) session.get(AttributeEntity.class, attrEntId);
+                if (attrEnt == null) {
+                    throw new DataSourceException("Unknown " + attrEntId.getKey() + ": " + attrEntId.getContent());
+                }
+
+                logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
+                result.add(attrEnt);
+            }
+
+        }
+        return result;
+    }
+
     protected void fillinUserExtAttributes(Session session, UserResource userRes, UserEntity uEnt)
         throws DataSourceException {
 
-        Set<AttributeEntity> uSet = new HashSet<AttributeEntity>();
-        for (String[] item : userRes.getSPIDAttributes()) {
+        uEnt.setAttributes(buildAttributeSet(session, userRes));
 
-            AttributeEntityId attrEntId = new AttributeEntityId();
-            attrEntId.setKey(item[0]);
-            attrEntId.setContent(item[1]);
-
-            AttributeEntity attrEnt = (AttributeEntity) session.get(AttributeEntity.class, attrEntId);
-            if (attrEnt == null) {
-                throw new DataSourceException("Unknown " + attrEntId.getKey() + ": " + attrEntId.getContent());
-            }
-
-            logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
-            uSet.add(attrEnt);
-
-        }
-
-        uEnt.setAttributes(uSet);
     }
 
     protected void fillinGroupExtAttributes(Session session, GroupResource groupRes, GroupEntity gEnt)
         throws DataSourceException {
 
-        Set<AttributeEntity> gSet = new HashSet<AttributeEntity>();
-        for (String[] item : groupRes.getSPIDAttributes()) {
+        gEnt.setAttributes(buildAttributeSet(session, groupRes));
 
-            AttributeEntityId attrEntId = new AttributeEntityId();
-            attrEntId.setKey(item[0]);
-            attrEntId.setContent(item[1]);
-
-            AttributeEntity attrEnt = (AttributeEntity) session.get(AttributeEntity.class, attrEntId);
-            if (attrEnt == null) {
-                throw new DataSourceException("Unknown " + attrEntId.getKey() + ": " + attrEntId.getContent());
-            }
-
-            logger.info("Saving attribute " + attrEnt.getAttributeId().getKey());
-            gSet.add(attrEnt);
-        }
-
-        gEnt.setAttributes(gSet);
     }
 
     protected void cleanUserExtAttributes(Session session, UserEntity uEnt)

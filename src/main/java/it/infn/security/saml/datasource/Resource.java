@@ -1,5 +1,7 @@
 package it.infn.security.saml.datasource;
 
+import it.infn.security.saml.schema.AttributeEntry;
+
 import java.util.Collection;
 import java.util.Date;
 
@@ -35,10 +37,7 @@ public interface Resource {
     public void setResourceExtId(String id)
         throws DataSourceException;
 
-    /*
-     * TODO move away
-     */
-    public Collection<String[]> getSPIDAttributes()
+    public Collection<AttributeEntry> getExtendedAttributes()
         throws DataSourceException;
 
 }
