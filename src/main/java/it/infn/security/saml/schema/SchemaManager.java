@@ -8,7 +8,6 @@ import javax.security.auth.Subject;
 import org.opensaml.saml2.core.Advice;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Audience;
-import org.wso2.charon.core.schema.SCIMResourceSchema;
 
 public interface SchemaManager {
 
@@ -18,10 +17,6 @@ public interface SchemaManager {
     /*
      * SCIM section
      */
-
-    public SCIMResourceSchema getGroupSchema();
-
-    public SCIMResourceSchema getUserSchema();
 
     public String encode(AttributeEntry attribute, String format)
         throws SchemaManagerException;

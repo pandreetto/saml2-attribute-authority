@@ -6,7 +6,6 @@ import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.iam.AccessManagerException;
 import it.infn.security.saml.schema.SchemaManagerException;
-import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.scim.core.SCIMGroup;
 import it.infn.security.scim.core.SCIMUser;
 
@@ -25,12 +24,72 @@ import org.wso2.charon.core.exceptions.AbstractCharonException;
 import org.wso2.charon.core.objects.Group;
 import org.wso2.charon.core.objects.ListedResource;
 import org.wso2.charon.core.objects.User;
+import org.wso2.charon.core.schema.SCIMAttributeSchema;
 import org.wso2.charon.core.schema.SCIMResourceSchema;
+import org.wso2.charon.core.schema.SCIMSchemaDefinitions;
+import org.wso2.charon.core.schema.SCIMSubAttributeSchema;
 import org.wso2.charon.core.schema.ServerSideValidator;
 
 public class SCIMProtocolCodec {
 
     private static Logger logger = Logger.getLogger(SCIMProtocolCodec.class.getName());
+
+    private static final String SPID_ATTR_URI = "urn:it:infn:security:saml2:attributes:1.0";
+
+    private static final String SPID_SCHEMA_URI = "urn:it:infn:security:saml2:attributes:1.0";
+
+    private static final String NAME_ATTR_ID = "name";
+
+    private static final String VALUE_ATTR_ID = "value";
+
+    private static final String ROOT_ATTR_ID = "SPIDAttributes";
+
+    private static SCIMResourceSchema groupSchema = null;
+
+    private static SCIMResourceSchema userSchema = null;
+
+    static {
+
+        SCIMSubAttributeSchema nameSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
+                NAME_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Name identifier", false, false, true);
+
+        SCIMSubAttributeSchema contentSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
+                VALUE_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Content identifier", false, false, true);
+
+        SCIMSubAttributeSchema[] subAttributes = new SCIMSubAttributeSchema[] { nameSchema, contentSchema };
+
+        /*
+         * TODO move schemaExtension into an OCP package
+         */
+        SCIMAttributeSchema schemaExtension = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI,
+                ROOT_ATTR_ID, null, true, null, "Short attribute description", SPID_SCHEMA_URI, false, false, false,
+                subAttributes);
+
+        if (schemaExtension != null) {
+
+            groupSchema = SCIMResourceSchema.createSCIMResourceSchema(org.wso2.charon.core.schema.SCIMConstants.GROUP,
+                    org.wso2.charon.core.schema.SCIMConstants.CORE_SCHEMA_URI,
+                    org.wso2.charon.core.schema.SCIMConstants.GROUP_DESC, SCIMConstants.GROUP_ENDPOINT,
+                    SCIMSchemaDefinitions.DISPLAY_NAME, SCIMSchemaDefinitions.MEMBERS, schemaExtension);
+
+            userSchema = SCIMResourceSchema.createSCIMResourceSchema(org.wso2.charon.core.schema.SCIMConstants.USER,
+                    org.wso2.charon.core.schema.SCIMConstants.CORE_SCHEMA_URI,
+                    org.wso2.charon.core.schema.SCIMConstants.USER_DESC, SCIMConstants.USER_ENDPOINT,
+                    SCIMSchemaDefinitions.USER_NAME, SCIMSchemaDefinitions.NAME, SCIMSchemaDefinitions.DISPLAY_NAME,
+                    SCIMSchemaDefinitions.NICK_NAME, SCIMSchemaDefinitions.PROFILE_URL, SCIMSchemaDefinitions.TITLE,
+                    SCIMSchemaDefinitions.USER_TYPE, SCIMSchemaDefinitions.PREFERRED_LANGUAGE,
+                    SCIMSchemaDefinitions.LOCALE, SCIMSchemaDefinitions.TIMEZONE, SCIMSchemaDefinitions.ACTIVE,
+                    SCIMSchemaDefinitions.PASSWORD, SCIMSchemaDefinitions.EMAILS, SCIMSchemaDefinitions.PHONE_NUMBERS,
+                    SCIMSchemaDefinitions.IMS, SCIMSchemaDefinitions.PHOTOS, SCIMSchemaDefinitions.ADDRESSES,
+                    SCIMSchemaDefinitions.GROUPS, SCIMSchemaDefinitions.ENTITLEMENTS, SCIMSchemaDefinitions.ROLES,
+                    SCIMSchemaDefinitions.X509CERTIFICATES, schemaExtension);
+        } else {
+
+            groupSchema = SCIMSchemaDefinitions.SCIM_GROUP_SCHEMA;
+            userSchema = SCIMSchemaDefinitions.SCIM_USER_SCHEMA;
+
+        }
+    }
 
     public static String encodeUser(UserResource userRes, boolean validate, boolean removePwd)
         throws SchemaManagerException {
@@ -40,8 +99,7 @@ public class SCIMProtocolCodec {
         try {
 
             if (validate) {
-                SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
-                ServerSideValidator.validateRetrievedSCIMObject(user, schema);
+                ServerSideValidator.validateRetrievedSCIMObject(user, userSchema);
             }
 
             if (removePwd) {
@@ -63,10 +121,9 @@ public class SCIMProtocolCodec {
         JSONDecoder decoder = new JSONDecoder();
         try {
 
-            SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
-            SCIMUser user = (SCIMUser) decoder.decodeResource(usrStr, schema, new SCIMUser());
+            SCIMUser user = (SCIMUser) decoder.decodeResource(usrStr, userSchema, new SCIMUser());
             if (validate) {
-                ServerSideValidator.validateCreatedSCIMObject(user, schema);
+                ServerSideValidator.validateCreatedSCIMObject(user, userSchema);
             }
             return user;
 
@@ -77,9 +134,9 @@ public class SCIMProtocolCodec {
 
     public static UserResource checkUserUpdate(UserResource oldUsr, UserResource newUsr)
         throws SchemaManagerException {
-        SCIMResourceSchema schema = SchemaManagerFactory.getManager().getUserSchema();
         try {
-            return (UserResource) ServerSideValidator.validateUpdatedSCIMObject((User) oldUsr, (User) newUsr, schema);
+            return (UserResource) ServerSideValidator.validateUpdatedSCIMObject((User) oldUsr, (User) newUsr,
+                    userSchema);
         } catch (AbstractCharonException chEx) {
             throw new SchemaManagerException(chEx.getMessage(), chEx);
         }
@@ -114,7 +171,6 @@ public class SCIMProtocolCodec {
         try {
 
             if (validate) {
-                SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
                 ServerSideValidator.validateRetrievedSCIMObject(group, groupSchema);
             }
             return encoder.encodeSCIMObject(group);
@@ -130,7 +186,6 @@ public class SCIMProtocolCodec {
         JSONDecoder decoder = new JSONDecoder();
         try {
 
-            SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
             SCIMGroup group = (SCIMGroup) decoder.decodeResource(grpStr, groupSchema, new SCIMGroup());
             if (validate) {
                 ServerSideValidator.validateCreatedSCIMObject(group, groupSchema);
@@ -144,7 +199,6 @@ public class SCIMProtocolCodec {
 
     public static GroupResource checkGroupUpdate(GroupResource oldGrp, GroupResource newGrp)
         throws SchemaManagerException {
-        SCIMResourceSchema groupSchema = SchemaManagerFactory.getManager().getGroupSchema();
         try {
             return (GroupResource) ServerSideValidator.validateUpdatedSCIMObject((Group) oldGrp, (Group) newGrp,
                     groupSchema);
