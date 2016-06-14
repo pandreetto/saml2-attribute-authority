@@ -1,171 +1,122 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import it.infn.security.scim.protocol.SearchFilterNode;
+import it.infn.security.scim.protocol.SearchFilterParser;
+
 import java.util.HashMap;
 
-import it.infn.security.saml.datasource.DataSourceException;
+public class QueryFilterParser {
 
-import org.parboiled.BaseParser;
-import org.parboiled.Parboiled;
-import org.parboiled.Rule;
-import org.parboiled.annotations.BuildParseTree;
-import org.parboiled.parserunners.ReportingParseRunner;
-import org.parboiled.support.ParsingResult;
-import org.parboiled.support.StringVar;
-import org.parboiled.support.Var;
+    private static final String labelFmt = "arg%05d";
 
-@BuildParseTree
-public class QueryFilterParser
-    extends BaseParser<QueryNode> {
+    private static void process(SearchFilterNode node, StringBuffer output, HashMap<String, Object> params,
+            String parentAttr) {
 
-    private char[] sepChars = new char[] { ' ', '\t' };
+        if (node.isAttributeExpr()) {
 
-    Rule start() {
-        return Sequence(filter(), EOI);
-    }
+            if (parentAttr != null)
+                output.append(parentAttr).append(".");
+            output.append(node.getAttribute()).append(" ");
 
-    Rule filter() {
-
-        StringVar oper = new StringVar();
-
-        return Sequence(
-                logicalExpression(),
-                ZeroOrMore(Sequence(sep(), FirstOf("and", "or"), oper.set(match()), sep(), logicalExpression()), swap()
-                        && push(new QueryNode(pop(), oper.get(), pop()))));
-    }
-
-    Rule logicalExpression() {
-
-        Var<Boolean> notExpr = new Var<Boolean>(Boolean.FALSE);
-
-        return FirstOf(
-                attributeExpression(),
-                valuePath(),
-                Sequence(Optional(Sequence("not", sep(), notExpr.set(Boolean.TRUE))), '(', filter(), ')',
-                        push(new QueryNode(pop(), notExpr.get().booleanValue()))));
-    }
-
-    Rule attributeExpression() {
-
-        StringVar attrPath = new StringVar();
-        StringVar oper = new StringVar("pr");
-        StringVar value = new StringVar("");
-
-        /*
-         * TODO missing check for co sw ew on string
-         */
-        return Sequence(attributePath(), attrPath.set(match()), sep(),
-                FirstOf("pr", Sequence(compOperator(), oper.set(match()), sep(), compValue(), value.set(match()))),
-                push(new QueryNode(attrPath.get(), oper.get(), value.get())));
-    }
-
-    Rule valuePath() {
-
-        StringVar attrPath = new StringVar();
-
-        return Sequence(attributePath(), attrPath.set(match()), '[', valueFilter(), ']',
-                push(new QueryNode(attrPath.get(), pop())));
-
-    }
-
-    Rule valueFilter() {
-
-        StringVar oper = new StringVar();
-
-        return Sequence(
-                logValExpression(),
-                ZeroOrMore(Sequence(sep(), FirstOf("and", "or"), oper.set(match()), sep(), logValExpression()), swap()
-                        && push(new QueryNode(pop(), oper.get(), pop()))));
-    }
-
-    Rule logValExpression() {
-
-        Var<Boolean> notExpr = new Var<Boolean>(Boolean.FALSE);
-
-        return FirstOf(
-                attributeExpression(),
-                Sequence(Optional(Sequence("not", sep(), notExpr.set(Boolean.TRUE))), '(', valueFilter(), ')',
-                        push(new QueryNode(pop(), notExpr.get().booleanValue()))));
-    }
-
-    Rule compValue() {
-        return FirstOf("false", "true", "null", number(), string());
-    }
-
-    Rule compOperator() {
-        return FirstOf("eq", "ne", "co", "sw", "ew", "gt", "lt", "ge", "le");
-    }
-
-    Rule attributePath() {
-        /*
-         * TODO missing uri
-         */
-        return Sequence(attributeName(), Optional(subAttribute()));
-    }
-
-    Rule attributeName() {
-        return Sequence(alpha(), ZeroOrMore(nameChar()));
-    }
-
-    Rule number() {
-        return OneOrMore(digit());
-    }
-
-    Rule string() {
-        return Sequence('"', OneOrMore(nameChar()), '"');
-    }
-
-    Rule nameChar() {
-        return FirstOf('-', '_', alpha(), digit());
-    }
-
-    Rule subAttribute() {
-        return Sequence(".", attributeName());
-    }
-
-    Rule alpha() {
-        return FirstOf(CharRange('a', 'z'), CharRange('A', 'Z'));
-    }
-
-    Rule digit() {
-        return CharRange('0', '9');
-    }
-
-    Rule sep() {
-        return AnyOf(sepChars);
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static QueryNode parse(String input)
-        throws DataSourceException {
-
-        QueryFilterParser parser = Parboiled.createParser(QueryFilterParser.class);
-        ParsingResult<QueryNode> result = new ReportingParseRunner(parser.start()).run(input);
-        if (result.matched) {
-
-            QueryNode rootNode = result.parseTreeRoot.getValue();
-            if (rootNode != null) {
-                return rootNode;
+            if (node.getOperator() == SearchFilterNode.OP_PR) {
+                output.append("is not null ");
+                return;
             }
 
-        }
+            String label = String.format(labelFmt, params.size());
+            params.put(label, node.getValue());
 
-        throw new DataSourceException("Cannot parse query filter");
+            switch (node.getOperator()) {
+            case SearchFilterNode.OP_EQ:
+                output.append("== :").append(label);
+                break;
+            case SearchFilterNode.OP_NE:
+                output.append("!= :").append(label);
+                break;
+            case SearchFilterNode.OP_GT:
+                output.append("> :").append(label);
+                break;
+            case SearchFilterNode.OP_GE:
+                output.append(">= :").append(label);
+                break;
+            case SearchFilterNode.OP_LT:
+                output.append("< :").append(label);
+                break;
+            case SearchFilterNode.OP_LE:
+                output.append("<= :").append(label);
+                break;
+            case SearchFilterNode.OP_CO:
+                output.append("like %:").append(label).append("%");
+                break;
+            case SearchFilterNode.OP_SW:
+                output.append("like %:").append(label);
+                break;
+            case SearchFilterNode.OP_EW:
+                output.append("like :").append(label).append("%");
+                break;
+            }
+
+            output.append(" ");
+
+        } else if (node.isLogicalExpr()) {
+
+            process(node.left(), output, params, parentAttr);
+            output.append(" ");
+
+            switch (node.getOperator()) {
+            case SearchFilterNode.OP_AND:
+                output.append("and");
+                break;
+            case SearchFilterNode.OP_OR:
+                output.append("or");
+                break;
+            default:
+                output.append(node.getOperator());
+            }
+
+            output.append(" ");
+            process(node.right(), output, params, parentAttr);
+            output.append(" ");
+
+        } else if (node.isGroupExpr()) {
+
+            if (node.getOperator() == SearchFilterNode.OP_NOT) {
+                output.append("not");
+            }
+            output.append(" (");
+            process(node.left(), output, params, parentAttr);
+            output.append(") ");
+
+        } else if (node.isValueExpr()) {
+
+            process(node.left(), output, params, node.getAttribute());
+
+        }
     }
 
     public static void main(String args[]) {
 
         try {
-            QueryNode rootNode = parse(args[0]);
-            System.out.println(rootNode.getFormatString());
 
-            HashMap<String, Object> params = new HashMap<String, Object>();
-            rootNode.fillinParameters(params);
-            for (String key : params.keySet()) {
-                System.out.println(key + " = " + params.get(key).toString());
+            SearchFilterNode rootNode = SearchFilterParser.parse(args[0]);
+            if (rootNode != null) {
+                HashMap<String, Object> params = new HashMap<String, Object>();
+                StringBuffer output = new StringBuffer();
+
+                process(rootNode, output, params, null);
+
+                System.out.println(output.toString());
+                for (String key : params.keySet()) {
+                    System.out.println(key + " = " + params.get(key).toString());
+                }
+            } else {
+                System.out.println("Error parsing " + args[0]);
             }
+
         } catch (Throwable th) {
             th.printStackTrace();
         }
 
     }
+
 }

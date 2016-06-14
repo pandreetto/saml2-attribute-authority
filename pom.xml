@@ -26,6 +26,7 @@
           <target>1.7</target>
           <excludes>
             <exclude>it/infn/security/saml/databinding/aegis/*.java</exclude>
+            <exclude>it/infn/security/saml/utils/charon/*.java</exclude>
           </excludes>
         </configuration>
       </plugin> 

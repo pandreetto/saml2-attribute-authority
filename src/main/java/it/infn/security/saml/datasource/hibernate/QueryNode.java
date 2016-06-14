@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import org.parboiled.trees.ImmutableBinaryTreeNode;
 
+@Deprecated
 public class QueryNode
     extends ImmutableBinaryTreeNode<QueryNode> {
 
