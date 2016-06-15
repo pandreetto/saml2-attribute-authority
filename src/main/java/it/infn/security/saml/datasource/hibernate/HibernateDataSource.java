@@ -36,6 +36,10 @@ public abstract class HibernateDataSource
     public UserResource getUser(String userId)
         throws DataSourceException {
 
+        /*
+         * TODO insert attributes
+         */
+
         UserResource result = null;
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
@@ -218,6 +222,10 @@ public abstract class HibernateDataSource
     public UserResource createUser(UserResource userRes, boolean isBulkUserAdd)
         throws DataSourceException {
 
+        /*
+         * TODO must throw exception with code 409 (Conflicts) if user is already present
+         */
+
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
 
@@ -263,6 +271,10 @@ public abstract class HibernateDataSource
 
     public GroupResource getGroup(String groupId)
         throws DataSourceException {
+
+        /*
+         * TODO insert attributes
+         */
 
         GroupResource result = null;
         Session session = sessionFactory.getCurrentSession();
@@ -371,6 +383,11 @@ public abstract class HibernateDataSource
 
     public GroupResource createGroup(GroupResource groupRes)
         throws DataSourceException {
+
+        /*
+         * TODO must throw exception with code 409 (Conflicts) if group is already present
+         */
+
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
 
