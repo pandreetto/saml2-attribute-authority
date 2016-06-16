@@ -8,6 +8,7 @@ import it.infn.security.saml.ocp.SPIDAttributeName;
 import it.infn.security.saml.ocp.SPIDAttributeValue;
 import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.AttributeValueInterface;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -662,6 +663,37 @@ public class SCIMUser
         }
 
         return attrTable.values();
+    }
+
+    public void setExtendedAttributes(Collection<AttributeEntry> xAttributes)
+        throws DataSourceException {
+
+        if (xAttributes == null || xAttributes.size() == 0)
+            return;
+
+        try {
+            MultiValuedAttribute rootAttr = new MultiValuedAttribute(SPIDSchemaManager.ROOT_ATTR_ID);
+            List<Attribute> allSubAttrs = new ArrayList<Attribute>();
+
+            for (AttributeEntry aEntry : xAttributes) {
+                for (AttributeValueInterface xValue : aEntry) {
+                    SimpleAttribute nameAttr = new SimpleAttribute(SPIDSchemaManager.NAME_ATTR_ID);
+                    nameAttr.setValue(aEntry.getName().getNameId());
+                    SimpleAttribute cntAttr = new SimpleAttribute(SPIDSchemaManager.VALUE_ATTR_ID);
+                    cntAttr.setValue(xValue.getValue());
+                    ComplexAttribute cplxAttr = new ComplexAttribute();
+                    cplxAttr.setSubAttribute(nameAttr);
+                    cplxAttr.setSubAttribute(cntAttr);
+                    allSubAttrs.add(cplxAttr);
+                }
+            }
+
+            rootAttr.setValuesAsSubAttributes(allSubAttrs);
+            super.setAttribute(rootAttr);
+
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
     }
 
     private MultiValuedAttribute getInnerAttr(String attName) {

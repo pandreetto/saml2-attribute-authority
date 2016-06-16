@@ -40,4 +40,7 @@ public interface Resource {
     public Collection<AttributeEntry> getExtendedAttributes()
         throws DataSourceException;
 
+    public void setExtendedAttributes(Collection<AttributeEntry> xAttributes)
+        throws DataSourceException;
+
 }

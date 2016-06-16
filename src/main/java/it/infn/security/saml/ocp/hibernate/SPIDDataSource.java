@@ -17,6 +17,7 @@ import it.infn.security.saml.schema.AttributeNameInterface;
 import it.infn.security.saml.schema.AttributeValueInterface;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -419,6 +420,26 @@ public class SPIDDataSource
         gEnt.getAttributes().clear();
         session.flush();
 
+    }
+
+    protected Collection<AttributeEntry> retrieveExtAttributes(Session session, String resId)
+        throws DataSourceException {
+
+        HashSet<AttributeEntry> result = new HashSet<AttributeEntry>();
+
+        HashSet<String> tmpHash = new HashSet<String>(1);
+        tmpHash.add(resId);
+
+        List<Attribute> attList = buildAttributeList(session, tmpHash, null);
+        for (Attribute attr : attList) {
+            AttributeEntry aEntry = new AttributeEntry(new SPIDAttributeName(attr.getName(), ""));
+            for (XMLObject xValue : attr.getAttributeValues()) {
+                aEntry.add(new SPIDAttributeValue(((XSString) xValue).getValue(), ""));
+            }
+            result.add(aEntry);
+        }
+
+        return result;
     }
 
 }

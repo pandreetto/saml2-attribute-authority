@@ -11,11 +11,13 @@ import it.infn.security.saml.datasource.jpa.ResourceEntity;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceStatus;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
+import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.scim.core.SCIMGroup;
 import it.infn.security.scim.core.SCIMUser;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -35,10 +37,6 @@ public abstract class HibernateDataSource
 
     public UserResource getUser(String userId)
         throws DataSourceException {
-
-        /*
-         * TODO insert attributes
-         */
 
         UserResource result = null;
         Session session = sessionFactory.getCurrentSession();
@@ -271,10 +269,6 @@ public abstract class HibernateDataSource
 
     public GroupResource getGroup(String groupId)
         throws DataSourceException {
-
-        /*
-         * TODO insert attributes
-         */
 
         GroupResource result = null;
         Session session = sessionFactory.getCurrentSession();
@@ -654,6 +648,8 @@ public abstract class HibernateDataSource
 
         HibernateUtils.copyAttributesInUser(usrEnt, uResult);
 
+        uResult.setExtendedAttributes(retrieveExtAttributes(session, usrEnt.getId()));
+
         return uResult;
     }
 
@@ -682,6 +678,8 @@ public abstract class HibernateDataSource
 
         gResult.setResourceExtId(getExternalId(session, grpEnt));
 
+        gResult.setExtendedAttributes(retrieveExtAttributes(session, grpEnt.getId()));
+
         return gResult;
     }
 
@@ -695,6 +693,9 @@ public abstract class HibernateDataSource
         throws DataSourceException;
 
     protected abstract void cleanGroupExtAttributes(Session session, GroupEntity gEnt)
+        throws DataSourceException;
+
+    protected abstract Collection<AttributeEntry> retrieveExtAttributes(Session session, String resId)
         throws DataSourceException;
 
 }
