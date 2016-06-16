@@ -7,11 +7,7 @@ public class MetadataSourceException
 
     public static final long serialVersionUID = 1461244964;
 
-    public MetadataSourceException(String msg, String code, String subcode) {
-        super(msg, code, subcode);
-    }
-
-    public MetadataSourceException(String msg, String code) {
+    public MetadataSourceException(String msg, int code) {
         super(msg, code);
     }
 
@@ -19,11 +15,7 @@ public class MetadataSourceException
         super(msg);
     }
 
-    public MetadataSourceException(String msg, String code, String subcode, Throwable th) {
-        super(msg, code, subcode, th);
-    }
-
-    public MetadataSourceException(String msg, String code, Throwable th) {
+    public MetadataSourceException(String msg, int code, Throwable th) {
         super(msg, code, th);
     }
 

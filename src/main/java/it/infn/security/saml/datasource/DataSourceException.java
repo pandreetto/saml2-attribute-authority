@@ -7,11 +7,7 @@ public class DataSourceException
 
     public static final long serialVersionUID = 1432129668;
 
-    public DataSourceException(String msg, String code, String subcode) {
-        super(msg, code, subcode);
-    }
-
-    public DataSourceException(String msg, String code) {
+    public DataSourceException(String msg, int code) {
         super(msg, code);
     }
 
@@ -19,11 +15,7 @@ public class DataSourceException
         super(msg);
     }
 
-    public DataSourceException(String msg, String code, String subcode, Throwable th) {
-        super(msg, code, subcode, th);
-    }
-
-    public DataSourceException(String msg, String code, Throwable th) {
+    public DataSourceException(String msg, int code, Throwable th) {
         super(msg, code, th);
     }
 

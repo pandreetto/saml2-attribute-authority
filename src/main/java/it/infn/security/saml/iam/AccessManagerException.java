@@ -11,23 +11,16 @@ public class AccessManagerException
         super(msg);
     }
 
-    public AccessManagerException(String msg, String code) {
+    public AccessManagerException(String msg, int code) {
         super(msg, code);
-    }
-
-    public AccessManagerException(String msg, String code, String subcode) {
-        super(msg, code, subcode);
     }
 
     public AccessManagerException(String msg, Throwable th) {
         super(msg, th);
     }
 
-    public AccessManagerException(String msg, String code, Throwable th) {
+    public AccessManagerException(String msg, int code, Throwable th) {
         super(msg, code, th);
     }
 
-    public AccessManagerException(String msg, String code, String subcode, Throwable th) {
-        super(msg, code, subcode, th);
-    }
 }

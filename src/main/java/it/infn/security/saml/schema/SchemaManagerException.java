@@ -7,11 +7,7 @@ public class SchemaManagerException
 
     public static final long serialVersionUID = 1440658374;
 
-    public SchemaManagerException(String msg, String code, String subcode) {
-        super(msg, code, subcode);
-    }
-
-    public SchemaManagerException(String msg, String code) {
+    public SchemaManagerException(String msg, int code) {
         super(msg, code);
     }
 
@@ -19,11 +15,7 @@ public class SchemaManagerException
         super(msg);
     }
 
-    public SchemaManagerException(String msg, String code, String subcode, Throwable th) {
-        super(msg, code, subcode, th);
-    }
-
-    public SchemaManagerException(String msg, String code, Throwable th) {
+    public SchemaManagerException(String msg, int code, Throwable th) {
         super(msg, code, th);
     }
 

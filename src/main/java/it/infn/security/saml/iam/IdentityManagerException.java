@@ -7,11 +7,7 @@ public class IdentityManagerException
 
     public static final long serialVersionUID = 1432299159;
 
-    public IdentityManagerException(String msg, String code, String subcode) {
-        super(msg, code, subcode);
-    }
-
-    public IdentityManagerException(String msg, String code) {
+    public IdentityManagerException(String msg, int code) {
         super(msg, code);
     }
 
@@ -19,11 +15,7 @@ public class IdentityManagerException
         super(msg);
     }
 
-    public IdentityManagerException(String msg, String code, String subcode, Throwable th) {
-        super(msg, code, subcode, th);
-    }
-
-    public IdentityManagerException(String msg, String code, Throwable th) {
+    public IdentityManagerException(String msg, int code, Throwable th) {
         super(msg, code, th);
     }
 

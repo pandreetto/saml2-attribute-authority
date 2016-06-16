@@ -1,10 +1,10 @@
 package it.infn.security.scim.protocol;
 
+import it.infn.security.saml.aa.CodedException;
 import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
-import it.infn.security.saml.iam.AccessManagerException;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.scim.core.SCIMGroup;
 import it.infn.security.scim.core.SCIMUser;
@@ -242,11 +242,13 @@ public class SCIMProtocolCodec {
                 chEx.setCode(SCIMConstants.CODE_INTERNAL_SERVER_ERROR);
             }
 
-        } else if (ex instanceof AccessManagerException) {
+        } else if (ex instanceof CodedException) {
 
-            int code = 401;
-            String msg = "Authorization failure";
-            chEx = new AbstractCharonException(code, msg);
+            int code = ((CodedException) ex).getCode();
+            if (code >= 600) {
+                code = 500;
+            }
+            chEx = new AbstractCharonException(code, ex.getMessage());
 
         } else {
 

@@ -81,7 +81,7 @@ public class SimpleAccessManager
 
             if (errStr == null)
                 errStr = "Authorization denied for query " + queryParams.getId();
-            throw new AccessManagerException(errStr);
+            throw new AccessManagerException(errStr, AccessManagerException.UNAUTHORIZED);
         }
 
         return result;

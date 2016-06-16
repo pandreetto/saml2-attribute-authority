@@ -72,7 +72,7 @@ public class AttributeAuthorityServiceImpl
             response.setIssuer(responseIssuer);
 
             if (query.getVersion() != SAMLVersion.VERSION_20) {
-                throw new CodedException("Unsupported version", StatusCode.VERSION_MISMATCH_URI);
+                throw new CodedException("Unsupported version", CodedException.BAD_VERSION);
             }
 
             Subject requester = identityManager.authenticate();
@@ -81,7 +81,7 @@ public class AttributeAuthorityServiceImpl
 
             Signature signature = query.getSignature();
             if (signature == null && schemaManager.requiredSignedQuery()) {
-                throw new CodedException("Missing signature in query", StatusCode.RESPONDER_URI);
+                throw new CodedException("Missing signature in query");
             }
             if (signature != null) {
                 SignUtils.verifySignature(signature, requester);
@@ -90,8 +90,7 @@ public class AttributeAuthorityServiceImpl
             String samlId = query.getSubject().getNameID().getValue();
             String userId = dataSource.samlId2UserId(samlId);
             if (userId == null) {
-                throw new DataSourceException("User not found", StatusCode.RESPONDER_URI,
-                        StatusCode.UNKNOWN_PRINCIPAL_URI);
+                throw new DataSourceException("User not found", CodedException.NOT_FOUND);
             }
 
             requester.getPrincipals().add(new EntityIdPrincipal(query.getIssuer()));
@@ -206,19 +205,19 @@ public class AttributeAuthorityServiceImpl
             if (response.getID() == null) {
                 response.setID("_" + UUID.randomUUID().toString());
             }
-            Status status = this.newStatus(cEx);
+            Status status = buildStatusFromError(cEx);
             response.setStatus(status);
 
         } catch (CodedException cEx) {
 
-            Status status = this.newStatus(cEx);
+            Status status = buildStatusFromError(cEx);
             response.setStatus(status);
 
         } catch (Throwable th) {
 
             logger.log(Level.SEVERE, th.getMessage(), th);
 
-            Status status = this.newStatus(th);
+            Status status = buildStatusFromError(th);
             response.setStatus(status);
 
         }
@@ -227,7 +226,7 @@ public class AttributeAuthorityServiceImpl
 
     }
 
-    private Status newStatus(Throwable th) {
+    private Status buildStatusFromError(Throwable th) {
 
         Status status = SAML2ObjectBuilder.buildStatus();
 
@@ -241,13 +240,19 @@ public class AttributeAuthorityServiceImpl
 
         if (th instanceof CodedException) {
             CodedException handlerEx = (CodedException) th;
-            statusCode.setValue(handlerEx.getStatusCode());
 
-            String subCode = handlerEx.getSubStatusCode();
-            if (subCode != null) {
+            switch (handlerEx.getCode()) {
+            case CodedException.BAD_VERSION:
+                statusCode.setValue(StatusCode.VERSION_MISMATCH_URI);
+                break;
+            case CodedException.NOT_FOUND:
+                statusCode.setValue(StatusCode.RESPONDER_URI);
                 StatusCode subStatusCode = SAML2ObjectBuilder.buildStatusCode();
-                subStatusCode.setValue(subCode);
+                subStatusCode.setValue(StatusCode.UNKNOWN_PRINCIPAL_URI);
                 statusCode.setStatusCode(subStatusCode);
+                break;
+            default:
+                statusCode.setValue(StatusCode.RESPONDER_URI);
             }
 
         } else {

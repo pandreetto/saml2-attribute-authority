@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.exception.ConstraintViolationException;
 
 public abstract class HibernateDataSource
     extends HibernateBaseDataSource {
@@ -47,7 +48,7 @@ public abstract class HibernateDataSource
             session.beginTransaction();
             UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, userId);
             if (usrEnt == null) {
-                throw new DataSourceException("Entity not found " + userId);
+                throw new DataSourceException(userId + " not found", DataSourceException.NOT_FOUND);
             }
 
             result = userFromEntity(session, usrEnt);
@@ -154,7 +155,11 @@ public abstract class HibernateDataSource
 
             session.beginTransaction();
 
-            UserEntity eUser = (UserEntity) session.get(UserEntity.class, userRes.getResourceId());
+            String userId = userRes.getResourceId();
+            UserEntity eUser = (UserEntity) session.get(UserEntity.class, userId);
+            if (eUser == null) {
+                throw new DataSourceException(userId + " not found", DataSourceException.NOT_FOUND);
+            }
             eUser.setModifyDate(userRes.getResourceChangeDate());
             eUser.setVersion(HibernateUtils.generateNewVersion(eUser.getVersion()));
             eUser.setUserName(userRes.getName());
@@ -195,8 +200,7 @@ public abstract class HibernateDataSource
 
             UserEntity usrEnt = (UserEntity) session.get(UserEntity.class, userId);
             if (usrEnt == null) {
-                logger.info("Entity not found " + userId);
-                throw new DataSourceException("User not found " + userId);
+                throw new DataSourceException(userId + " not found", DataSourceException.NOT_FOUND);
             }
 
             session.delete(usrEnt);
@@ -219,10 +223,6 @@ public abstract class HibernateDataSource
 
     public UserResource createUser(UserResource userRes, boolean isBulkUserAdd)
         throws DataSourceException {
-
-        /*
-         * TODO must throw exception with code 409 (Conflicts) if user is already present
-         */
 
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
@@ -259,6 +259,10 @@ public abstract class HibernateDataSource
 
             return userRes;
 
+        } catch (ConstraintViolationException cvEx) {
+
+            throw new DataSourceException(userRes.getName() + " already exists", DataSourceException.CONFLICT);
+
         } finally {
 
             if (nocommit)
@@ -279,7 +283,7 @@ public abstract class HibernateDataSource
             session.beginTransaction();
             GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, groupId);
             if (grpEnt == null) {
-                throw new DataSourceException("Entity not found " + groupId);
+                throw new DataSourceException(groupId + " not found", DataSourceException.NOT_FOUND);
             }
 
             result = groupFromEntity(session, grpEnt);
@@ -378,10 +382,6 @@ public abstract class HibernateDataSource
     public GroupResource createGroup(GroupResource groupRes)
         throws DataSourceException {
 
-        /*
-         * TODO must throw exception with code 409 (Conflicts) if group is already present
-         */
-
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
 
@@ -418,6 +418,10 @@ public abstract class HibernateDataSource
 
             return groupRes;
 
+        } catch (ConstraintViolationException cvEx) {
+
+            throw new DataSourceException(groupRes.getName() + " already exists", DataSourceException.CONFLICT);
+
         } finally {
 
             if (nocommit)
@@ -436,7 +440,11 @@ public abstract class HibernateDataSource
 
             session.beginTransaction();
 
-            GroupEntity eGroup = (GroupEntity) session.get(GroupEntity.class, groupRes.getResourceId());
+            String groupId = groupRes.getResourceId();
+            GroupEntity eGroup = (GroupEntity) session.get(GroupEntity.class, groupId);
+            if (eGroup == null) {
+                throw new DataSourceException(groupId + " not found", DataSourceException.NOT_FOUND);
+            }
             eGroup.setModifyDate(groupRes.getResourceChangeDate());
             eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
             eGroup.setDisplayName(groupRes.getName());
@@ -483,8 +491,7 @@ public abstract class HibernateDataSource
             session.beginTransaction();
             GroupEntity grpEnt = (GroupEntity) session.get(GroupEntity.class, groupId);
             if (grpEnt == null) {
-                logger.info("Entity not found " + groupId);
-                throw new DataSourceException("Group not found " + groupId);
+                throw new DataSourceException(groupId + " not found", DataSourceException.NOT_FOUND);
             }
 
             ResourceGraph rGraph = new ResourceGraph(session);

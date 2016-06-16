@@ -518,11 +518,14 @@ public class XACMLAccessManager
 
             switch (xacmlResult.getDecision().getDecision()) {
             case Deny:
-                throw new AccessManagerException("Authorization denied for request " + samlRequestID);
+                throw new AccessManagerException("Authorization denied for request " + samlRequestID,
+                        AccessManagerException.UNAUTHORIZED);
             case Indeterminate:
-                throw new AccessManagerException("Authorization indeterminated for request " + samlRequestID);
+                throw new AccessManagerException("Authorization indeterminated for request " + samlRequestID,
+                        AccessManagerException.UNAUTHORIZED);
             case NotApplicable:
-                throw new AccessManagerException("Authorization not applicable for request " + samlRequestID);
+                throw new AccessManagerException("Authorization not applicable for request " + samlRequestID,
+                        AccessManagerException.UNAUTHORIZED);
             case Permit:
                 logger.info("Authorized request " + samlRequestID);
             }
@@ -530,7 +533,8 @@ public class XACMLAccessManager
             return xacmlResult.getObligations();
         }
 
-        throw new AccessManagerException("Authorization failed: no response from PDPs");
+        throw new AccessManagerException("Authorization failed: no response from PDPs",
+                AccessManagerException.NOT_ACCEPTABLE);
 
     }
 
