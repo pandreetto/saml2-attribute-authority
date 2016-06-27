@@ -12,6 +12,16 @@ public class SCIMCoreConstants {
 
     public static final String META = "meta";
 
+    public static final String CREATED = "created";
+
+    public static final String MODIFIED = "lastModified";
+
+    public static final String VERSION = "version";
+
+    public static final String LOCATION = "location";
+
+    public static final String RESOURCE_TYPE = "resourceType";
+
     public static final String NAME = "name";
 
     public static final String USER_NAME = "userName";

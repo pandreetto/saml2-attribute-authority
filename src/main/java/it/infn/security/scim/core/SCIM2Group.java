@@ -24,9 +24,19 @@ public class SCIM2Group
 
     }
 
+    public List<String> getUMembers()
+        throws DataSourceException {
+        return null;
+    }
+
     public void setGroupMembers(List<String> idLists)
         throws DataSourceException {
 
+    }
+
+    public List<String> getGMembers()
+        throws DataSourceException {
+        return null;
     }
 
     public List<String> getAllMembers()

@@ -14,7 +14,13 @@ public interface GroupResource
     public void setUserMembers(List<String> idLists)
         throws DataSourceException;
 
+    public List<String> getUMembers()
+        throws DataSourceException;
+
     public void setGroupMembers(List<String> idLists)
+        throws DataSourceException;
+
+    public List<String> getGMembers()
         throws DataSourceException;
 
     public List<String> getAllMembers()

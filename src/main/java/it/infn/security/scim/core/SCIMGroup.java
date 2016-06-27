@@ -152,12 +152,30 @@ public class SCIMGroup
         }
     }
 
+    public List<String> getUMembers()
+        throws DataSourceException {
+        try {
+            return super.getUserMembers();
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
+    }
+
     public void setGroupMembers(List<String> idLists)
         throws DataSourceException {
         try {
             for (String id : idLists) {
                 super.setGroupMember(id);
             }
+        } catch (AbstractCharonException chEx) {
+            throw new DataSourceException(chEx.getMessage(), chEx);
+        }
+    }
+
+    public List<String> getGMembers()
+        throws DataSourceException {
+        try {
+            return super.getGroupMembers();
         } catch (AbstractCharonException chEx) {
             throw new DataSourceException(chEx.getMessage(), chEx);
         }
