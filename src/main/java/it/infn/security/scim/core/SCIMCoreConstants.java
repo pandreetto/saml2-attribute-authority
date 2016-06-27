@@ -98,4 +98,14 @@ public class SCIMCoreConstants {
 
     public static final String DISPLAY = "display";
 
+    public static final String STREET = "streetAddress";
+
+    public static final String LOCALITY = "locality";
+
+    public static final String REGION = "region";
+
+    public static final String ZIPCODE = "postalCode";
+
+    public static final String COUNTRY = "country";
+
 }

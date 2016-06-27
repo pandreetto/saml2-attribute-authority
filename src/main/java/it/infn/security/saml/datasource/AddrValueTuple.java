@@ -39,7 +39,7 @@ public class AddrValueTuple {
         return code;
     }
 
-    public String getCounty() {
+    public String getCountry() {
         return country;
     }
 

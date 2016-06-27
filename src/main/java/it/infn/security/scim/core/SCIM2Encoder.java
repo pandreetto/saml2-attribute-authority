@@ -1,5 +1,7 @@
 package it.infn.security.scim.core;
 
+import it.infn.security.saml.datasource.AddrValueTuple;
+import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
 
 import java.io.StringWriter;
@@ -22,6 +24,23 @@ public class SCIM2Encoder {
         jGenerator.write(SCIMCoreConstants.CREATED, DFORMATTER.format(resource.getResourceCreationDate()));
         jGenerator.write(SCIMCoreConstants.MODIFIED, DFORMATTER.format(resource.getResourceChangeDate()));
         jGenerator.write(SCIMCoreConstants.VERSION, resource.getResourceVersion());
+        jGenerator.writeEnd();
+
+    }
+
+    private static void encodeMultiValue(String name, List<AttrValueTuple> attrList, JsonGenerator jGenerator)
+        throws DataSourceException {
+
+        if (attrList == null || attrList.size() == 0)
+            return;
+
+        jGenerator.writeStartArray(name);
+        for (AttrValueTuple tuple : attrList) {
+            jGenerator.writeStartObject();
+            jGenerator.write(SCIMCoreConstants.VALUE, tuple.getValue());
+            jGenerator.write(SCIMCoreConstants.TYPE, tuple.getType());
+            jGenerator.writeEnd();
+        }
         jGenerator.writeEnd();
 
     }
@@ -96,6 +115,39 @@ public class SCIM2Encoder {
         String pwd = user.getUserPwd();
         if (pwd != null)
             jGenerator.write(SCIMCoreConstants.PASSWORD, pwd);
+
+        encodeMultiValue(SCIMCoreConstants.EMAILS, user.getUserEmails(), jGenerator);
+
+        encodeMultiValue(SCIMCoreConstants.PHONE_NUMBERS, user.getUserPhones(), jGenerator);
+
+        encodeMultiValue(SCIMCoreConstants.IMS, user.getUserIMs(), jGenerator);
+
+        encodeMultiValue(SCIMCoreConstants.PHOTOS, user.getUserPhotos(), jGenerator);
+
+        encodeMultiValue(SCIMCoreConstants.ENTITLEMENTS, user.getUserEntitles(), jGenerator);
+
+        encodeMultiValue(SCIMCoreConstants.ROLES, user.getUserRoles(), jGenerator);
+
+        encodeMultiValue(SCIMCoreConstants.X509CERTIFICATES, user.getUserCertificates(), jGenerator);
+
+        /*
+         * TODO missing group
+         */
+
+        List<AddrValueTuple> addresses = user.getUserAddresses();
+        if (addresses != null && addresses.size() > 0) {
+            jGenerator.writeStartArray(SCIMCoreConstants.ADDRESSES);
+            for (AddrValueTuple addr : addresses) {
+                jGenerator.writeStartObject();
+                jGenerator.write(SCIMCoreConstants.STREET, addr.getStreet());
+                jGenerator.write(SCIMCoreConstants.LOCALITY, addr.getLocality());
+                jGenerator.write(SCIMCoreConstants.REGION, addr.getRegion());
+                jGenerator.write(SCIMCoreConstants.ZIPCODE, addr.getCode());
+                jGenerator.write(SCIMCoreConstants.COUNTRY, addr.getCountry());
+                jGenerator.writeEnd();
+            }
+            jGenerator.writeEnd();
+        }
 
         jGenerator.writeEnd().close();
 

@@ -182,7 +182,7 @@ public class HibernateUtils {
             addEnt.setLocality(aTuple.getLocality());
             addEnt.setReqion(aTuple.getRegion());
             addEnt.setPostalCode(aTuple.getCode());
-            addEnt.setCountry(aTuple.getCounty());
+            addEnt.setCountry(aTuple.getCountry());
             addEnt.setType(aTuple.getType());
             eUser.getUserAddresses().add(addEnt);
         }
