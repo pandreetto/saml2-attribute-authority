@@ -3,6 +3,7 @@ package it.infn.security.scim.core;
 import it.infn.security.saml.datasource.DataSourceException;
 
 import java.io.StringReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,12 +48,29 @@ public class SCIM2Decoder {
 
     private static void checkMeta(SCIM2Resource resource, JsonParser jParser)
         throws DataSourceException {
+
+        SimpleDateFormat dParser = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
+        String keyName = null;
+
         for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_OBJECT; evn = jParser.next()) {
-            /*
-             * TODO can be ignored??
-             */
-            if (evn != JsonParser.Event.KEY_NAME && evn != JsonParser.Event.VALUE_STRING) {
+
+            if (evn == JsonParser.Event.KEY_NAME) {
+                keyName = getKeyName(jParser);
+                continue;
+            }
+
+            if (evn != JsonParser.Event.VALUE_STRING) {
                 throw new JsonParsingException("Wrong meta attribute", jParser.getLocation());
+            }
+
+            try {
+                if (SCIMCoreConstants.CREATED.equals(keyName)) {
+                    resource.setResourceCreationDate(dParser.parse(jParser.getString()));
+                } else if (SCIMCoreConstants.MODIFIED.equals(keyName)) {
+                    resource.setResourceChangeDate(dParser.parse(jParser.getString()));
+                }
+            } catch (Exception ex) {
+                throw new JsonParsingException(ex.getMessage(), jParser.getLocation());
             }
         }
     }
@@ -100,12 +118,12 @@ public class SCIM2Decoder {
     private static void checkSubAttribute(JsonParser jParser, List<String[]> attrList) {
 
         String[] aTuple = new String[] { null, null };
+        String kName = null;
 
         for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_OBJECT; evn = jParser.next()) {
-            String kName = null;
 
             if (evn == JsonParser.Event.KEY_NAME) {
-                kName = jParser.getString();
+                kName = getKeyName(jParser);
             } else if (evn == JsonParser.Event.VALUE_STRING) {
                 if (SCIMCoreConstants.VALUE.equals(kName)) {
                     aTuple[0] = jParser.getString();
@@ -177,29 +195,16 @@ public class SCIM2Decoder {
         }
     }
 
-    private static void checkBegin(JsonParser jParser) {
-        if (!jParser.hasNext() || jParser.next() != JsonParser.Event.START_OBJECT) {
-            throw new JsonParsingException("Wrong json format", jParser.getLocation());
-        }
-    }
-
-    private static void checkEnd(JsonParser jParser) {
-        if (!jParser.hasNext() || jParser.next() != JsonParser.Event.END_OBJECT) {
-            throw new JsonParsingException("Wrong json format", jParser.getLocation());
-        }
-    }
-
     public static SCIM2User decodeUser(String inStr)
         throws DataSourceException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
         SCIM2User result = new SCIM2User();
         Set<String> schemas = new HashSet<String>();
+        String keyName = null;
+        int oLevel = 0;
 
         try {
-            checkBegin(jParser);
-
-            String keyName = null;
 
             while (jParser.hasNext()) {
                 JsonParser.Event event = jParser.next();
@@ -218,10 +223,21 @@ public class SCIM2Decoder {
                     if (SCIMCoreConstants.META.equals(keyName)) {
                         checkMeta(result, jParser);
                     } else if (SCIMCoreConstants.NAME.equals(keyName)) {
-
-                    } else {
-                        throw new JsonParsingException("Attribute not recognized " + keyName, jParser.getLocation());
+                        /*
+                         * TODO implement
+                         */
+                    } else if (oLevel > 0 && keyName != null) {
+                        throw new JsonParsingException("Unrecognized attribute:  " + keyName, jParser.getLocation());
+                    } else if (oLevel > 0 && keyName == null) {
+                        throw new JsonParsingException("Unrecognized object", jParser.getLocation());
                     }
+
+                    oLevel++;
+                    keyName = null;
+
+                } else if (event == JsonParser.Event.END_OBJECT) {
+
+                    oLevel--;
 
                 } else if (event == JsonParser.Event.START_ARRAY) {
 
@@ -234,11 +250,10 @@ public class SCIM2Decoder {
                     } else {
                         checkStdMultiValue(jParser, result, keyName);
                     }
+                    keyName = null;
 
                 }
             }
-
-            checkEnd(jParser);
 
             if (!schemas.contains(SCIMCoreConstants.SCIM2_USER_SCHEMA)) {
                 throw new DataSourceException("User schema not defined");
@@ -257,11 +272,10 @@ public class SCIM2Decoder {
         JsonParser jParser = Json.createParser(new StringReader(inStr));
         SCIM2Group result = new SCIM2Group();
         Set<String> schemas = new HashSet<String>();
+        String keyName = null;
+        int oLevel = 0;
 
         try {
-            checkBegin(jParser);
-
-            String keyName = null;
 
             while (jParser.hasNext()) {
                 JsonParser.Event event = jParser.next();
@@ -278,9 +292,14 @@ public class SCIM2Decoder {
 
                     if (SCIMCoreConstants.META.equals(keyName)) {
                         checkMeta(result, jParser);
-                    } else {
-                        throw new JsonParsingException("Attribute not recognized " + keyName, jParser.getLocation());
+                    } else if (oLevel > 0 && keyName != null) {
+                        throw new JsonParsingException("Unrecognized attribute:  " + keyName, jParser.getLocation());
+                    } else if (oLevel > 0 && keyName == null) {
+                        throw new JsonParsingException("Unrecognized object", jParser.getLocation());
                     }
+
+                    oLevel++;
+                    keyName = null;
 
                 } else if (event == JsonParser.Event.START_ARRAY) {
 
@@ -291,11 +310,10 @@ public class SCIM2Decoder {
                     } else {
                         throw new JsonParsingException("Attribute not recognized " + keyName, jParser.getLocation());
                     }
+                    keyName = null;
 
                 }
             }
-
-            checkEnd(jParser);
 
             if (!schemas.contains(SCIMCoreConstants.SCIM2_GROUP_SCHEMA)) {
                 throw new DataSourceException("Group schema not defined");

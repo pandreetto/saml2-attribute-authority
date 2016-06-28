@@ -13,16 +13,16 @@ import javax.json.stream.JsonGenerator;
 
 public class SCIM2Encoder {
 
-    private static final SimpleDateFormat DFORMATTER = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-
     private static void encodeResource(SCIM2Resource resource, JsonGenerator jGenerator)
         throws DataSourceException {
+        
+        SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
 
         jGenerator.write(SCIMCoreConstants.ID, resource.getResourceId());
         jGenerator.write(SCIMCoreConstants.EXTERNAL_ID, resource.getResourceExtId());
         jGenerator.writeStartObject(SCIMCoreConstants.META);
-        jGenerator.write(SCIMCoreConstants.CREATED, DFORMATTER.format(resource.getResourceCreationDate()));
-        jGenerator.write(SCIMCoreConstants.MODIFIED, DFORMATTER.format(resource.getResourceChangeDate()));
+        jGenerator.write(SCIMCoreConstants.CREATED, dFormatter.format(resource.getResourceCreationDate()));
+        jGenerator.write(SCIMCoreConstants.MODIFIED, dFormatter.format(resource.getResourceChangeDate()));
         jGenerator.write(SCIMCoreConstants.VERSION, resource.getResourceVersion());
         jGenerator.writeEnd();
 

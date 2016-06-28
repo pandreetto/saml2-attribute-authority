@@ -6,6 +6,8 @@ public class SCIMCoreConstants {
 
     public static final String SCIM2_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group";
 
+    public static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
     public static final String ID = "id";
 
     public static final String EXTERNAL_ID = "externalId";
