@@ -14,7 +14,13 @@ public interface UserResource
     public void setLinkedResources(List<String> listIds)
         throws DataSourceException;
 
+    public List<String> getLinkedResources()
+        throws DataSourceException;
+
     public void setAncestorResources(List<String> listIds)
+        throws DataSourceException;
+
+    public List<String> getAncestorResources()
         throws DataSourceException;
 
     public void setUserGivenName(String gName)

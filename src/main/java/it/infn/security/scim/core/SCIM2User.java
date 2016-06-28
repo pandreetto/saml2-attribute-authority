@@ -11,14 +11,18 @@ public class SCIM2User
     extends SCIM2Resource
     implements UserResource {
 
+    protected String uName = null;
+
+    protected String gName = null;
+
     public void setName(String name)
         throws DataSourceException {
-
+        uName = name;
     }
 
     public String getName()
         throws DataSourceException {
-        return null;
+        return uName;
     }
 
     public void setLinkedResources(List<String> listIds)
@@ -26,9 +30,19 @@ public class SCIM2User
 
     }
 
+    public List<String> getLinkedResources()
+        throws DataSourceException {
+        return null;
+    }
+
     public void setAncestorResources(List<String> listIds)
         throws DataSourceException {
 
+    }
+
+    public List<String> getAncestorResources()
+        throws DataSourceException {
+        return null;
     }
 
     public void setUserGivenName(String gName)

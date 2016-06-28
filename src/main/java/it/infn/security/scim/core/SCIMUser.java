@@ -171,6 +171,11 @@ public class SCIMUser
         }
     }
 
+    public List<String> getLinkedResources()
+        throws DataSourceException {
+        return null;
+    }
+
     public void setAncestorResources(List<String> listIds)
         throws DataSourceException {
         try {
@@ -178,6 +183,11 @@ public class SCIMUser
         } catch (AbstractCharonException chEx) {
             throw new DataSourceException(chEx.getMessage(), chEx);
         }
+    }
+
+    public List<String> getAncestorResources()
+        throws DataSourceException {
+        return null;
     }
 
     public void setUserGivenName(String gName)
