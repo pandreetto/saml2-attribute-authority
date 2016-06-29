@@ -1,5 +1,7 @@
 package it.infn.security.scim.core;
 
+import it.infn.security.saml.datasource.AddrValueTuple;
+import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
 
 import java.io.StringReader;
@@ -68,6 +70,8 @@ public class SCIM2Decoder {
                     resource.setResourceCreationDate(dParser.parse(jParser.getString()));
                 } else if (SCIMCoreConstants.MODIFIED.equals(keyName)) {
                     resource.setResourceChangeDate(dParser.parse(jParser.getString()));
+                } else if (SCIMCoreConstants.VERSION.equals(keyName)) {
+                    resource.setResourceVersion(jParser.getString());
                 }
             } catch (Exception ex) {
                 throw new JsonParsingException(ex.getMessage(), jParser.getLocation());
@@ -81,21 +85,23 @@ public class SCIM2Decoder {
         if (SCIMCoreConstants.USER_NAME.equals(kName)) {
             user.setName(value);
         } else if (SCIMCoreConstants.DISPLAY_NAME.equals(kName)) {
-
+            user.setUserDisplayName(value);
+        } else if (SCIMCoreConstants.NICK_NAME.equals(kName)) {
+            user.setUserNickName(value);
         } else if (SCIMCoreConstants.PROFILE_URL.equals(kName)) {
-
+            user.setUserURL(value);
         } else if (SCIMCoreConstants.TITLE.equals(kName)) {
-
+            user.setUserTitle(value);
         } else if (SCIMCoreConstants.USER_TYPE.equals(kName)) {
-
+            user.setUserPosition(value);
         } else if (SCIMCoreConstants.PREFERRED_LANGUAGE.equals(kName)) {
-
+            user.setUserLang(value);
         } else if (SCIMCoreConstants.LOCALE.equals(kName)) {
-
+            user.setUserLocale(value);
         } else if (SCIMCoreConstants.TIME_ZONE.equals(kName)) {
-
+            user.setUserTimezone(value);
         } else if (SCIMCoreConstants.PASSWORD.equals(kName)) {
-
+            user.setUserPwd(value);
         } else {
 
             checkResAttribute(jParser, user, kName, value);
@@ -115,10 +121,11 @@ public class SCIM2Decoder {
 
     }
 
-    private static void checkSubAttribute(JsonParser jParser, List<String[]> attrList) {
+    private static void checkSubAttribute(JsonParser jParser, List<AttrValueTuple> attrList) {
 
-        String[] aTuple = new String[] { null, null };
         String kName = null;
+        String aValue = null;
+        String aType = null;
 
         for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_OBJECT; evn = jParser.next()) {
 
@@ -126,13 +133,13 @@ public class SCIM2Decoder {
                 kName = getKeyName(jParser);
             } else if (evn == JsonParser.Event.VALUE_STRING) {
                 if (SCIMCoreConstants.VALUE.equals(kName)) {
-                    aTuple[0] = jParser.getString();
+                    aValue = jParser.getString();
                 } else if (SCIMCoreConstants.PRIMARY.equals(kName)) {
-                    // TODO ignored
+                    // ignored
                 } else if (SCIMCoreConstants.TYPE.equals(kName)) {
-                    aTuple[1] = jParser.getString();
+                    aType = jParser.getString();
                 } else if (SCIMCoreConstants.DISPLAY.equals(kName)) {
-                    // TODO ignored
+                    // ignored
                 } else {
                     throw new JsonParsingException("Wrong subattribute format", jParser.getLocation());
                 }
@@ -141,19 +148,19 @@ public class SCIM2Decoder {
             }
         }
 
-        attrList.add(aTuple);
+        attrList.add(new AttrValueTuple(aValue, aType));
     }
 
     private static void checkStdMultiValue(JsonParser jParser, SCIM2User user, String kName)
         throws DataSourceException {
 
-        List<String[]> attrList = new ArrayList<String[]>();
+        List<AttrValueTuple> attrList = new ArrayList<AttrValueTuple>();
 
         for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
 
             if (evn == JsonParser.Event.VALUE_STRING) {
                 // primitive value
-                attrList.add(new String[] { jParser.getString(), "undefined" });
+                attrList.add(new AttrValueTuple(jParser.getString(), "undefined"));
             } else if (evn == JsonParser.Event.START_OBJECT) {
                 // complex value
                 checkSubAttribute(jParser, attrList);
@@ -163,35 +170,115 @@ public class SCIM2Decoder {
         }
 
         if (SCIMCoreConstants.EMAILS.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserEmail(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserEmail(aTuple.getValue(), aTuple.getType());
             }
         } else if (SCIMCoreConstants.PHONE_NUMBERS.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserPhone(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserPhone(aTuple.getValue(), aTuple.getType());
             }
         } else if (SCIMCoreConstants.IMS.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserIM(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserIM(aTuple.getValue(), aTuple.getType());
             }
         } else if (SCIMCoreConstants.PHOTOS.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserPhoto(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserPhoto(aTuple.getValue(), aTuple.getType());
             }
         } else if (SCIMCoreConstants.ENTITLEMENTS.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserEntitle(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserEntitle(aTuple.getValue(), aTuple.getType());
             }
         } else if (SCIMCoreConstants.ROLES.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserRole(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserRole(aTuple.getValue(), aTuple.getType());
             }
         } else if (SCIMCoreConstants.X509CERTIFICATES.equals(kName)) {
-            for (String[] aTuple : attrList) {
-                user.addUserCertificate(aTuple[0], aTuple[1]);
+            for (AttrValueTuple aTuple : attrList) {
+                user.addUserCertificate(aTuple.getValue(), aTuple.getType());
             }
         } else {
             throw new JsonParsingException("Attribute not recognized " + kName, jParser.getLocation());
+        }
+    }
+
+    private static void checkAddresses(JsonParser jParser, SCIM2User user)
+        throws DataSourceException {
+
+        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
+
+            if (evn != JsonParser.Event.START_OBJECT) {
+                throw new JsonParsingException("Wrong json format", jParser.getLocation());
+            }
+
+            String kName = null;
+            AddrValueTuple addrTuple = new AddrValueTuple();
+            for (JsonParser.Event evn2 = jParser.next(); evn2 != JsonParser.Event.END_OBJECT; evn2 = jParser.next()) {
+
+                if (evn2 == JsonParser.Event.KEY_NAME) {
+                    kName = getKeyName(jParser);
+                } else if (evn2 == JsonParser.Event.VALUE_STRING) {
+
+                    if (SCIMCoreConstants.STREET.equals(kName)) {
+                        addrTuple.setStreet(jParser.getString());
+                    } else if (SCIMCoreConstants.LOCALITY.equals(kName)) {
+                        addrTuple.setLocality(jParser.getString());
+                    } else if (SCIMCoreConstants.REGION.equals(kName)) {
+                        addrTuple.setRegion(jParser.getString());
+                    } else if (SCIMCoreConstants.ZIPCODE.equals(kName)) {
+                        addrTuple.setCode(jParser.getString());
+                    } else if (SCIMCoreConstants.COUNTRY.equals(kName)) {
+                        addrTuple.setCountry(jParser.getString());
+                    } else if (SCIMCoreConstants.TYPE.equals(kName)) {
+                        addrTuple.setType(jParser.getString());
+                    } else {
+                        throw new JsonParsingException("Wrong address format", jParser.getLocation());
+                    }
+                    kName = null;
+
+                } else {
+                    throw new JsonParsingException("Wrong address format", jParser.getLocation());
+                }
+
+            }
+
+            user.addUserAddress(addrTuple);
+            addrTuple = new AddrValueTuple();
+
+        }
+    }
+
+    private static void checkName(JsonParser jParser, SCIM2User user)
+        throws DataSourceException {
+
+        String keyName = null;
+        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_OBJECT; evn = jParser.next()) {
+
+            if (evn == JsonParser.Event.KEY_NAME) {
+                keyName = getKeyName(jParser);
+                continue;
+            }
+
+            if (evn != JsonParser.Event.VALUE_STRING) {
+                throw new JsonParsingException("Wrong meta attribute", jParser.getLocation());
+            }
+
+            try {
+                if (SCIMCoreConstants.GIVEN_NAME.equals(keyName)) {
+                    user.setUserGivenName(jParser.getString());
+                } else if (SCIMCoreConstants.FAMILY_NAME.equals(keyName)) {
+                    user.setUserFamilyName(jParser.getString());
+                } else if (SCIMCoreConstants.MIDDLE_NAME.equals(keyName)) {
+                    user.setUserMiddleName(jParser.getString());
+                } else if (SCIMCoreConstants.HONORIFIC_PREFIX.equals(keyName)) {
+                    user.setUserHonorPrefix(jParser.getString());
+                } else if (SCIMCoreConstants.HONORIFIC_SUFFIX.equals(keyName)) {
+                    user.setUserHonorSuffix(jParser.getString());
+                }
+            } catch (Exception ex) {
+                throw new JsonParsingException(ex.getMessage(), jParser.getLocation());
+            }
+
         }
     }
 
@@ -223,9 +310,7 @@ public class SCIM2Decoder {
                     if (SCIMCoreConstants.META.equals(keyName)) {
                         checkMeta(result, jParser);
                     } else if (SCIMCoreConstants.NAME.equals(keyName)) {
-                        /*
-                         * TODO implement
-                         */
+                        checkName(jParser, result);
                     } else if (oLevel > 0 && keyName != null) {
                         throw new JsonParsingException("Unrecognized attribute:  " + keyName, jParser.getLocation());
                     } else if (oLevel > 0 && keyName == null) {
@@ -244,7 +329,7 @@ public class SCIM2Decoder {
                     if (SCIMCoreConstants.SCHEMAS.equals(keyName)) {
                         checkSchemas(jParser, schemas);
                     } else if (SCIMCoreConstants.ADDRESSES.equals(keyName)) {
-
+                        checkAddresses(jParser, result);
                     } else if (SCIMCoreConstants.GROUPS.equals(keyName)) {
 
                     } else {

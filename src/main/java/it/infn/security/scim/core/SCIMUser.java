@@ -607,6 +607,11 @@ public class SCIMUser
         }
     }
 
+    public void addUserAddress(AddrValueTuple tuple)
+        throws DataSourceException {
+
+    }
+
     public List<AddrValueTuple> getUserAddresses()
         throws DataSourceException {
         if (addresses == null)

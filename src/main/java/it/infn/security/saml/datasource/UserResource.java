@@ -152,6 +152,9 @@ public interface UserResource
     public void addUserAddress(String street, String locality, String region, String code, String country, String type)
         throws DataSourceException;
 
+    public void addUserAddress(AddrValueTuple tuple)
+        throws DataSourceException;
+
     public List<AddrValueTuple> getUserAddresses()
         throws DataSourceException;
 
