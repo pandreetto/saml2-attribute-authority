@@ -9,6 +9,7 @@ import java.util.UUID;
 import it.infn.security.saml.datasource.AddrValueTuple;
 import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.scim.core.SCIM2Decoder;
+import it.infn.security.scim.core.SCIM2Group;
 import it.infn.security.scim.core.SCIM2User;
 import it.infn.security.scim.core.SCIMCoreConstants;
 
@@ -91,7 +92,9 @@ public class SCIM2DecoderTest {
             }
             jUser.append("\"").append(phone).append("\"");
         }
-        jUser.append("]");
+        jUser.append("], ");
+
+        jUser.append("\"groups\" : [ { \"value\" : \"54252...\", \"display\" : \"Test group\" } ]");
 
         jUser.append("}");
 
@@ -137,6 +140,70 @@ public class SCIM2DecoderTest {
             Assert.assertEquals("Region", region, uAddr.getRegion());
             Assert.assertEquals("Code", code, uAddr.getCode());
             Assert.assertEquals("Country", country, uAddr.getCountry());
+
+        } catch (Exception ex) {
+
+            ex.printStackTrace();
+            Assert.fail(ex.getMessage());
+
+        }
+    }
+
+    @Test
+    public void decodeGroup() {
+
+        SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
+
+        String id = UUID.randomUUID().toString();
+        String extId = "external:id:00001";
+        String dName = "Test group";
+
+        Date cDate = new Date((System.currentTimeMillis() / 1000) * 1000 - 60000);
+        Date mDate = new Date((System.currentTimeMillis() / 1000) * 1000);
+
+        String uMember = "2819c223-7f76-453a-919d-413861904646";
+        String gMember = "902c246b-6245-4190-8e05-00816be7344a";
+
+        StringBuffer jGroup = new StringBuffer("{");
+
+        jGroup.append("\"schemas\" : [ \"urn:ietf:params:scim:schemas:core:2.0:Group\" ], ");
+        jGroup.append("\"id\" : \"").append(id).append("\", ");
+
+        jGroup.append("\"meta\" : {");
+        jGroup.append("\"created\" : \"").append(dFormatter.format(cDate)).append("\", ");
+        jGroup.append("\"lastModified\" : \"").append(dFormatter.format(mDate)).append("\"");
+        jGroup.append("}, ");
+
+        jGroup.append("\"externalId\" : \"").append(extId).append("\",");
+
+        jGroup.append("\"displayName\" : \"").append(dName).append("\",");
+
+        jGroup.append("\"members\" : [");
+
+        jGroup.append("{ \"value\" : \"").append(uMember).append("\", ");
+        jGroup.append("\"$ref\" : \"https://example.com/v2/Users/");
+        jGroup.append(uMember).append("\"}, ");
+
+        jGroup.append("{ \"value\" : \"").append(gMember).append("\", ");
+        jGroup.append("\"$ref\" : \"https://example.com/v2/Groups/");
+        jGroup.append(gMember).append("\"}");
+
+        jGroup.append("]}");
+
+        try {
+
+            SCIM2Group group = SCIM2Decoder.decodeGroup(jGroup.toString());
+
+            Assert.assertEquals("User ID", id, group.getResourceId());
+            Assert.assertEquals("External ID", extId, group.getResourceExtId());
+            Assert.assertEquals("Creation date", cDate, group.getResourceCreationDate());
+            Assert.assertEquals("Modification date", mDate, group.getResourceChangeDate());
+            Assert.assertEquals("Display name", dName, group.getName());
+
+            List<String> uMembers = group.getUMembers();
+            Assert.assertTrue("User member", uMembers.get(0).endsWith(uMember));
+            List<String> gMembers = group.getGMembers();
+            Assert.assertTrue("Group member", gMembers.get(0).endsWith(gMember));
 
         } catch (Exception ex) {
 

@@ -113,6 +113,7 @@ public class SCIM2Decoder {
     private static void checkAttribute(JsonParser jParser, SCIM2Group group, String kName, String value)
         throws DataSourceException {
         if (SCIMCoreConstants.DISPLAY_NAME.equals(kName)) {
+            group.setName(value);
         } else {
 
             checkResAttribute(jParser, group, kName, value);
@@ -282,6 +283,64 @@ public class SCIM2Decoder {
         }
     }
 
+    private static void checkGroup(JsonParser jParser, SCIM2User user)
+        throws DataSourceException {
+        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
+            if (evn == JsonParser.Event.START_ARRAY) {
+                throw new JsonParsingException("Error parsing group", jParser.getLocation());
+            }
+            // group attribute ignored
+        }
+    }
+
+    private static void checkMembers(JsonParser jParser, SCIM2Group group)
+        throws DataSourceException {
+
+        List<String> userMembers = new ArrayList<String>();
+        List<String> groupMembers = new ArrayList<String>();
+
+        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
+
+            if (evn != JsonParser.Event.START_OBJECT) {
+                throw new JsonParsingException("Wrong json format", jParser.getLocation());
+            }
+
+            String kName = null;
+            String rId = null;
+            boolean isUser = true;
+            for (JsonParser.Event evn2 = jParser.next(); evn2 != JsonParser.Event.END_OBJECT; evn2 = jParser.next()) {
+
+                if (evn2 == JsonParser.Event.KEY_NAME) {
+                    kName = getKeyName(jParser);
+                } else if (evn2 == JsonParser.Event.VALUE_STRING) {
+
+                    if (SCIMCoreConstants.VALUE.equals(kName)) {
+                        rId = jParser.getString();
+                    } else if (SCIMCoreConstants.REF.equals(kName)) {
+                        isUser = jParser.getString().toLowerCase().contains("users");
+                    } else {
+                        throw new JsonParsingException("Wrong member format", jParser.getLocation());
+                    }
+                    kName = null;
+
+                } else {
+                    throw new JsonParsingException("Wrong member format", jParser.getLocation());
+                }
+
+            }
+
+            if (isUser) {
+                userMembers.add(rId);
+            } else {
+                groupMembers.add(rId);
+            }
+        }
+
+        group.setUserMembers(userMembers);
+        group.setGroupMembers(groupMembers);
+
+    }
+
     public static SCIM2User decodeUser(String inStr)
         throws DataSourceException {
 
@@ -331,7 +390,7 @@ public class SCIM2Decoder {
                     } else if (SCIMCoreConstants.ADDRESSES.equals(keyName)) {
                         checkAddresses(jParser, result);
                     } else if (SCIMCoreConstants.GROUPS.equals(keyName)) {
-
+                        checkGroup(jParser, result);
                     } else {
                         checkStdMultiValue(jParser, result, keyName);
                     }
@@ -391,7 +450,7 @@ public class SCIM2Decoder {
                     if (SCIMCoreConstants.SCHEMAS.equals(keyName)) {
                         checkSchemas(jParser, schemas);
                     } else if (SCIMCoreConstants.MEMBERS.equals(keyName)) {
-
+                        checkMembers(jParser, result);
                     } else {
                         throw new JsonParsingException("Attribute not recognized " + keyName, jParser.getLocation());
                     }

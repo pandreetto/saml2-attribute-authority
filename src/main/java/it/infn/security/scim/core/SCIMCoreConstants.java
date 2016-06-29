@@ -22,6 +22,8 @@ public class SCIMCoreConstants {
 
     public static final String LOCATION = "location";
 
+    public static final String REF = "$ref";
+
     public static final String RESOURCE_TYPE = "resourceType";
 
     public static final String NAME = "name";
