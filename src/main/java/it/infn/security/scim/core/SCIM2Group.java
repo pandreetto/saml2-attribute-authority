@@ -10,14 +10,26 @@ public class SCIM2Group
     extends SCIM2Resource
     implements GroupResource {
 
-    private String dName = null;
+    private String dName;
 
-    private List<String> uMembers = null;
+    private List<String> uMembers;
 
-    private List<String> gMembers = null;
+    private List<String> gMembers;
+
+    public SCIM2Group() {
+        super();
+
+        dName = null;
+        uMembers = null;
+        gMembers = null;
+
+    }
 
     public void setName(String name)
         throws DataSourceException {
+        if (dName != null) {
+            throw new DataSourceException("Cannot change group name");
+        }
         dName = name;
     }
 
@@ -28,27 +40,40 @@ public class SCIM2Group
 
     public void setUserMembers(List<String> idLists)
         throws DataSourceException {
+        if (uMembers != null) {
+            resourceUpdated();
+        }
         uMembers = idLists;
     }
 
     public List<String> getUMembers()
         throws DataSourceException {
+        if (uMembers == null) {
+            uMembers = new ArrayList<String>();
+        }
         return uMembers;
     }
 
     public void setGroupMembers(List<String> idLists)
         throws DataSourceException {
+        if (gMembers != null) {
+            resourceUpdated();
+        }
         gMembers = idLists;
     }
 
     public List<String> getGMembers()
         throws DataSourceException {
+        if (gMembers == null) {
+            gMembers = new ArrayList<String>();
+        }
         return gMembers;
     }
 
     public List<String> getAllMembers()
         throws DataSourceException {
-        List<String> result = new ArrayList<String>(uMembers.size() + gMembers.size());
+
+        List<String> result = new ArrayList<String>(getUMembers().size() + getGMembers().size());
         result.addAll(uMembers);
         result.addAll(gMembers);
         return result;

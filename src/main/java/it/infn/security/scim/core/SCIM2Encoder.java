@@ -15,15 +15,22 @@ public class SCIM2Encoder {
 
     private static void encodeResource(SCIM2Resource resource, JsonGenerator jGenerator)
         throws DataSourceException {
-        
+
         SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
 
         jGenerator.write(SCIMCoreConstants.ID, resource.getResourceId());
-        jGenerator.write(SCIMCoreConstants.EXTERNAL_ID, resource.getResourceExtId());
+
+        String extId = resource.getResourceExtId();
+        if (extId != null)
+            jGenerator.write(SCIMCoreConstants.EXTERNAL_ID, extId);
         jGenerator.writeStartObject(SCIMCoreConstants.META);
+
         jGenerator.write(SCIMCoreConstants.CREATED, dFormatter.format(resource.getResourceCreationDate()));
         jGenerator.write(SCIMCoreConstants.MODIFIED, dFormatter.format(resource.getResourceChangeDate()));
-        jGenerator.write(SCIMCoreConstants.VERSION, resource.getResourceVersion());
+
+        String version = resource.getResourceVersion();
+        if (version != null)
+            jGenerator.write(SCIMCoreConstants.VERSION, version);
         jGenerator.writeEnd();
 
     }

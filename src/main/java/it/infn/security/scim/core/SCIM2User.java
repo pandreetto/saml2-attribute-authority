@@ -12,54 +12,86 @@ public class SCIM2User
     extends SCIM2Resource
     implements UserResource {
 
-    private String uName = null;
+    private String uName;
 
-    private String gName = null;
+    private String gName;
 
-    private String fName = null;
+    private String fName;
 
-    private String mName = null;
+    private String mName;
 
-    private String nName = null;
+    private String nName;
 
-    private String dName = null;
+    private String dName;
 
-    private String hPrefix = null;
+    private String hPrefix;
 
-    private String hSuffix = null;
+    private String hSuffix;
 
-    private String title = null;
+    private String title;
 
-    private String position = null;
+    private String position;
 
-    private String url = null;
+    private String url;
 
-    private String lang = null;
+    private String lang;
 
-    private String locale = null;
+    private String locale;
 
-    private String timezone = null;
+    private String timezone;
 
-    private String pwd = null;
+    private String pwd;
 
-    private List<AttrValueTuple> emails = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> emails;
 
-    private List<AttrValueTuple> phones = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> phones;
 
-    private List<AttrValueTuple> ims = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> ims;
 
-    private List<AttrValueTuple> photos = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> photos;
 
-    private List<AttrValueTuple> roles = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> roles;
 
-    private List<AttrValueTuple> entitles = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> entitles;
 
-    private List<AttrValueTuple> certificates = new ArrayList<AttrValueTuple>();
+    private List<AttrValueTuple> certificates;
 
-    private List<AddrValueTuple> addresses = new ArrayList<AddrValueTuple>();
+    private List<AddrValueTuple> addresses;
+
+    public SCIM2User() {
+        super();
+
+        uName = null;
+        gName = null;
+        fName = null;
+        mName = null;
+        nName = null;
+        dName = null;
+        hPrefix = null;
+        hSuffix = null;
+        title = null;
+        position = null;
+        url = null;
+        lang = null;
+        locale = null;
+        timezone = null;
+        pwd = null;
+        emails = new ArrayList<AttrValueTuple>();
+        phones = new ArrayList<AttrValueTuple>();
+        ims = new ArrayList<AttrValueTuple>();
+        photos = new ArrayList<AttrValueTuple>();
+        roles = new ArrayList<AttrValueTuple>();
+        entitles = new ArrayList<AttrValueTuple>();
+        certificates = new ArrayList<AttrValueTuple>();
+        addresses = new ArrayList<AddrValueTuple>();
+
+    }
 
     public void setName(String name)
         throws DataSourceException {
+        if (uName != null) {
+            throw new DataSourceException("Cannot change user name");
+        }
         uName = name;
     }
 
@@ -90,6 +122,9 @@ public class SCIM2User
 
     public void setUserGivenName(String gName)
         throws DataSourceException {
+        if (this.gName != null) {
+            resourceUpdated();
+        }
         this.gName = gName;
     }
 
@@ -100,6 +135,9 @@ public class SCIM2User
 
     public void setUserFamilyName(String fName)
         throws DataSourceException {
+        if (this.fName != null) {
+            resourceUpdated();
+        }
         this.fName = fName;
     }
 
@@ -110,6 +148,9 @@ public class SCIM2User
 
     public void setUserMiddleName(String mName)
         throws DataSourceException {
+        if (this.mName != null) {
+            resourceUpdated();
+        }
         this.mName = mName;
     }
 
@@ -120,6 +161,9 @@ public class SCIM2User
 
     public void setUserDisplayName(String dName)
         throws DataSourceException {
+        if (this.dName != null) {
+            resourceUpdated();
+        }
         this.dName = dName;
     }
 
@@ -130,6 +174,9 @@ public class SCIM2User
 
     public void setUserHonorPrefix(String prefix)
         throws DataSourceException {
+        if (hPrefix != null) {
+            resourceUpdated();
+        }
         hPrefix = prefix;
     }
 
@@ -140,6 +187,9 @@ public class SCIM2User
 
     public void setUserHonorSuffix(String suffix)
         throws DataSourceException {
+        if (hSuffix != null) {
+            resourceUpdated();
+        }
         hSuffix = suffix;
     }
 
@@ -150,6 +200,9 @@ public class SCIM2User
 
     public void setUserNickName(String nName)
         throws DataSourceException {
+        if (this.nName != null) {
+            resourceUpdated();
+        }
         this.nName = nName;
     }
 
@@ -160,6 +213,9 @@ public class SCIM2User
 
     public void setUserTitle(String title)
         throws DataSourceException {
+        if (this.title != null) {
+            resourceUpdated();
+        }
         this.title = title;
     }
 
@@ -170,6 +226,9 @@ public class SCIM2User
 
     public void setUserURL(String url)
         throws DataSourceException {
+        if (this.url != null) {
+            resourceUpdated();
+        }
         this.url = url;
     }
 
@@ -180,6 +239,9 @@ public class SCIM2User
 
     public void setUserPosition(String pos)
         throws DataSourceException {
+        if (position != null) {
+            resourceUpdated();
+        }
         position = pos;
     }
 
@@ -190,6 +252,9 @@ public class SCIM2User
 
     public void setUserLang(String lang)
         throws DataSourceException {
+        if (this.lang != null) {
+            resourceUpdated();
+        }
         this.lang = lang;
     }
 
@@ -200,6 +265,9 @@ public class SCIM2User
 
     public void setUserLocale(String locale)
         throws DataSourceException {
+        if (this.locale != null) {
+            resourceUpdated();
+        }
         this.locale = locale;
     }
 
@@ -210,6 +278,9 @@ public class SCIM2User
 
     public void setUserTimezone(String zone)
         throws DataSourceException {
+        if (timezone != null) {
+            resourceUpdated();
+        }
         timezone = zone;
     }
 
@@ -220,6 +291,9 @@ public class SCIM2User
 
     public void setUserPwd(String pwd)
         throws DataSourceException {
+        if (this.pwd != null) {
+            resourceUpdated();
+        }
         this.pwd = pwd;
     }
 

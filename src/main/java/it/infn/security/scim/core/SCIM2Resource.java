@@ -8,20 +8,32 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
 
-public class SCIM2Resource
+public abstract class SCIM2Resource
     implements Resource {
 
-    protected String id = null;
+    private String id;
 
-    protected String extId = null;
+    private String extId;
 
-    protected Date cDate = null;
+    private Date cDate;
 
-    protected Date mDate = null;
+    private Date mDate;
 
-    protected String version = null;
+    private String version;
 
-    protected Collection<AttributeEntry> attributes;
+    private Collection<AttributeEntry> attributes;
+
+    private Date initDate;
+
+    public SCIM2Resource() {
+        id = null;
+        extId = null;
+        cDate = null;
+        mDate = null;
+        version = null;
+
+        initDate = new Date();
+    }
 
     public String getResourceId()
         throws DataSourceException {
@@ -40,6 +52,9 @@ public class SCIM2Resource
 
     public Date getResourceCreationDate()
         throws DataSourceException {
+        if (cDate == null) {
+            cDate = initDate;
+        }
         return cDate;
     }
 
@@ -52,6 +67,9 @@ public class SCIM2Resource
 
     public Date getResourceChangeDate()
         throws DataSourceException {
+        if (mDate == null) {
+            mDate = getResourceCreationDate();
+        }
         return mDate;
     }
 
@@ -67,6 +85,9 @@ public class SCIM2Resource
 
     public void setResourceVersion(String version)
         throws DataSourceException {
+        if (this.version != null) {
+            resourceUpdated();
+        }
         this.version = version;
     }
 
@@ -77,6 +98,9 @@ public class SCIM2Resource
 
     public void setResourceExtId(String id)
         throws DataSourceException {
+        if (extId != null) {
+            resourceUpdated();
+        }
         extId = id;
     }
 
@@ -87,7 +111,14 @@ public class SCIM2Resource
 
     public void setExtendedAttributes(Collection<AttributeEntry> xAttributes)
         throws DataSourceException {
+        if (attributes != null) {
+            resourceUpdated();
+        }
         attributes = xAttributes;
+    }
+
+    protected void resourceUpdated() {
+        mDate = new Date();
     }
 
 }
