@@ -19,10 +19,7 @@ public class SCIM2Decoder {
 
     private static String getKeyName(JsonParser jParser)
         throws JsonParsingException {
-        /*
-         * TODO implement check for SCIM 2.0
-         */
-        return jParser.getString();
+        return jParser.getString().toLowerCase();
     }
 
     private static void checkSchemas(JsonParser jParser, Set<String> schemas) {

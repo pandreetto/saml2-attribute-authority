@@ -10,13 +10,13 @@ public class SCIMCoreConstants {
 
     public static final String ID = "id";
 
-    public static final String EXTERNAL_ID = "externalId";
+    public static final String EXTERNAL_ID = "externalid";
 
     public static final String META = "meta";
 
     public static final String CREATED = "created";
 
-    public static final String MODIFIED = "lastModified";
+    public static final String MODIFIED = "lastmodified";
 
     public static final String VERSION = "version";
 
@@ -24,33 +24,33 @@ public class SCIMCoreConstants {
 
     public static final String REF = "$ref";
 
-    public static final String RESOURCE_TYPE = "resourceType";
+    public static final String RESOURCE_TYPE = "resourcetype";
 
     public static final String NAME = "name";
 
-    public static final String USER_NAME = "userName";
+    public static final String USER_NAME = "username";
 
-    public static final String GIVEN_NAME = "givenName";
+    public static final String GIVEN_NAME = "givenname";
 
-    public static final String FAMILY_NAME = "familyName";
+    public static final String FAMILY_NAME = "familyname";
 
-    public static final String MIDDLE_NAME = "middleName";
+    public static final String MIDDLE_NAME = "middlename";
 
-    public static final String DISPLAY_NAME = "displayName";
+    public static final String DISPLAY_NAME = "displayname";
 
-    public static final String HONORIFIC_PREFIX = "honorificPrefix";
+    public static final String HONORIFIC_PREFIX = "honorificprefix";
 
-    public static final String HONORIFIC_SUFFIX = "honorificSuffix";
+    public static final String HONORIFIC_SUFFIX = "honorificsuffix";
 
-    public static final String NICK_NAME = "nickName";
+    public static final String NICK_NAME = "nickname";
 
     public static final String TITLE = "title";
 
-    public static final String PROFILE_URL = "profileUrl";
+    public static final String PROFILE_URL = "profileurl";
 
-    public static final String USER_TYPE = "userType";
+    public static final String USER_TYPE = "usertype";
 
-    public static final String PREFERRED_LANGUAGE = "preferredLanguage";
+    public static final String PREFERRED_LANGUAGE = "preferredlanguage";
 
     public static final String LOCALE = "locale";
 
@@ -62,9 +62,9 @@ public class SCIMCoreConstants {
 
     public static final String EMAILS = "emails";
 
-    public static final String PHONE_NUMBER = "phoneNumber";
+    public static final String PHONE_NUMBER = "phonenumber";
 
-    public static final String PHONE_NUMBERS = "phoneNumbers";
+    public static final String PHONE_NUMBERS = "phonenumbers";
 
     public static final String IM = "im";
 
@@ -82,9 +82,9 @@ public class SCIMCoreConstants {
 
     public static final String ENTITLEMENTS = "entitlements";
 
-    public static final String X509CERTIFICATE = "x509Certificate";
+    public static final String X509CERTIFICATE = "x509certificate";
 
-    public static final String X509CERTIFICATES = "x509Certificates";
+    public static final String X509CERTIFICATES = "x509certificates";
 
     public static final String ADDRESSES = "addresses";
 
@@ -102,13 +102,13 @@ public class SCIMCoreConstants {
 
     public static final String DISPLAY = "display";
 
-    public static final String STREET = "streetAddress";
+    public static final String STREET = "streetaddress";
 
     public static final String LOCALITY = "locality";
 
     public static final String REGION = "region";
 
-    public static final String ZIPCODE = "postalCode";
+    public static final String ZIPCODE = "postalcode";
 
     public static final String COUNTRY = "country";
 
