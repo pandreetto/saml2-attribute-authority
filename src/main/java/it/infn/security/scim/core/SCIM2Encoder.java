@@ -52,7 +52,7 @@ public class SCIM2Encoder {
 
     }
 
-    public static String encodeUser(SCIM2User user)
+    public static String encodeUser(SCIM2User user, String sitePrefix)
         throws DataSourceException {
 
         StringWriter result = new StringWriter();
@@ -137,9 +137,29 @@ public class SCIM2Encoder {
 
         encodeMultiValue(SCIMCoreConstants.X509CERTIFICATES, user.getUserCertificates(), jGenerator);
 
-        /*
-         * TODO missing group
-         */
+        List<String> dGroup = user.getLinkedResources();
+        List<String> uGroup = user.getAncestorResources();
+        boolean showGroup = dGroup != null && uGroup != null && (dGroup.size() + uGroup.size()) > 0;
+        if (showGroup) {
+            jGenerator.writeStartArray(SCIMCoreConstants.GROUPS);
+        }
+        if (dGroup != null && dGroup.size() > 0) {
+            for (String gId : dGroup) {
+                jGenerator.writeStartObject().write(SCIMCoreConstants.VALUE, gId);
+                jGenerator.write(SCIMCoreConstants.TYPE, "direct");
+                jGenerator.write(SCIMCoreConstants.REF, sitePrefix + "/Groups/" + gId).writeEnd();
+            }
+        }
+        if (uGroup != null && uGroup.size() > 0) {
+            for (String gId : uGroup) {
+                jGenerator.writeStartObject().write(SCIMCoreConstants.VALUE, gId);
+                jGenerator.write(SCIMCoreConstants.TYPE, "indirect");
+                jGenerator.write(SCIMCoreConstants.REF, sitePrefix + "/Groups/" + gId).writeEnd();
+            }
+        }
+        if (showGroup) {
+            jGenerator.writeEnd();
+        }
 
         List<AddrValueTuple> addresses = user.getUserAddresses();
         if (addresses != null && addresses.size() > 0) {
@@ -161,7 +181,7 @@ public class SCIM2Encoder {
         return result.toString();
     }
 
-    public static String encodeGroup(SCIM2Group group)
+    public static String encodeGroup(SCIM2Group group, String sitePrefix)
         throws DataSourceException {
 
         StringWriter result = new StringWriter();

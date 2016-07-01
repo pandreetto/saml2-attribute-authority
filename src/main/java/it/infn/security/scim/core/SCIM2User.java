@@ -58,6 +58,10 @@ public class SCIM2User
 
     private List<AddrValueTuple> addresses;
 
+    private List<String> dGroups;
+
+    private List<String> uGroups;
+
     public SCIM2User() {
         super();
 
@@ -85,6 +89,9 @@ public class SCIM2User
         certificates = new ArrayList<AttrValueTuple>();
         addresses = new ArrayList<AddrValueTuple>();
 
+        dGroups = null;
+        uGroups = null;
+
     }
 
     public void setName(String name)
@@ -102,22 +109,22 @@ public class SCIM2User
 
     public void setLinkedResources(List<String> listIds)
         throws DataSourceException {
-
+        dGroups = listIds;
     }
 
     public List<String> getLinkedResources()
         throws DataSourceException {
-        return null;
+        return dGroups;
     }
 
     public void setAncestorResources(List<String> listIds)
         throws DataSourceException {
-
+        uGroups = listIds;
     }
 
     public List<String> getAncestorResources()
         throws DataSourceException {
-        return null;
+        return uGroups;
     }
 
     public void setUserGivenName(String gName)
