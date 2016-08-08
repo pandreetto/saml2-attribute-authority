@@ -3,6 +3,10 @@ package it.infn.security.scim.core;
 import it.infn.security.saml.datasource.AddrValueTuple;
 import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.datasource.UserResource;
+import it.infn.security.saml.datasource.UserSearchResult;
 
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -59,9 +63,19 @@ public class SCIM2Encoder {
         JsonGenerator jGenerator = Json.createGenerator(result);
 
         jGenerator.writeStartObject();
-        jGenerator.writeStartArray("schemas");
+        jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
         jGenerator.write(SCIMCoreConstants.SCIM2_USER_SCHEMA);
         jGenerator.writeEnd();
+
+        streamUser(user, sitePrefix, jGenerator);
+
+        jGenerator.writeEnd().close();
+
+        return result.toString();
+    }
+
+    private static void streamUser(SCIM2User user, String sitePrefix, JsonGenerator jGenerator)
+        throws DataSourceException {
 
         encodeResource(user, jGenerator);
 
@@ -176,9 +190,38 @@ public class SCIM2Encoder {
             jGenerator.writeEnd();
         }
 
-        jGenerator.writeEnd().close();
+    }
 
+    public static String encodeUserList(UserSearchResult searchResult, String sitePrefix)
+        throws DataSourceException {
+
+        StringWriter result = new StringWriter();
+        JsonGenerator jGenerator = Json.createGenerator(result);
+        jGenerator.writeStartObject();
+
+        jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
+        jGenerator.write(SCIMCoreConstants.SCIM2_LIST_SCHEMA);
+        jGenerator.writeEnd();
+
+        if (searchResult == null || searchResult.isEmpty()) {
+            jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, 0);
+        } else {
+            /*
+             * TODO missing START_INDEX and ITEM_PER_PAGE
+             */
+            jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, searchResult.getTotalResults());
+            jGenerator.writeStartArray(SCIMCoreConstants.RESOURCES);
+            for (UserResource user : searchResult.getUserList()) {
+                jGenerator.writeStartObject();
+                streamUser((SCIM2User) user, sitePrefix, jGenerator);
+                jGenerator.writeEnd();
+            }
+            jGenerator.writeEnd();
+        }
+
+        jGenerator.writeEnd().close();
         return result.toString();
+
     }
 
     public static String encodeGroup(SCIM2Group group, String sitePrefix)
@@ -188,9 +231,20 @@ public class SCIM2Encoder {
         JsonGenerator jGenerator = Json.createGenerator(result);
 
         jGenerator.writeStartObject();
-        jGenerator.writeStartArray("schemas");
+        jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
         jGenerator.write(SCIMCoreConstants.SCIM2_GROUP_SCHEMA);
         jGenerator.writeEnd();
+
+        streamGroup(group, sitePrefix, jGenerator);
+
+        jGenerator.writeEnd().close();
+
+        return result.toString();
+
+    }
+
+    private static void streamGroup(SCIM2Group group, String sitePrefix, JsonGenerator jGenerator)
+        throws DataSourceException {
 
         encodeResource(group, jGenerator);
 
@@ -218,8 +272,38 @@ public class SCIM2Encoder {
             jGenerator.writeEnd();
         }
 
-        jGenerator.writeEnd().close();
-
-        return result.toString();
     }
+
+    public static String encodeGroupList(GroupSearchResult searchResult, String sitePrefix)
+        throws DataSourceException {
+
+        StringWriter result = new StringWriter();
+        JsonGenerator jGenerator = Json.createGenerator(result);
+        jGenerator.writeStartObject();
+
+        jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
+        jGenerator.write(SCIMCoreConstants.SCIM2_LIST_SCHEMA);
+        jGenerator.writeEnd();
+
+        if (searchResult == null || searchResult.isEmpty()) {
+            jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, 0);
+        } else {
+            /*
+             * TODO missing START_INDEX and ITEM_PER_PAGE
+             */
+            jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, searchResult.getTotalResults());
+            jGenerator.writeStartArray(SCIMCoreConstants.RESOURCES);
+            for (GroupResource user : searchResult.getGroupList()) {
+                jGenerator.writeStartObject();
+                streamGroup((SCIM2Group) user, sitePrefix, jGenerator);
+                jGenerator.writeEnd();
+            }
+            jGenerator.writeEnd();
+        }
+
+        jGenerator.writeEnd().close();
+        return result.toString();
+
+    }
+
 }

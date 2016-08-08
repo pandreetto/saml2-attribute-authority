@@ -100,12 +100,10 @@ public class SCIM2DecoderTest {
 
         try {
 
-            SCIM2User user = SCIM2Decoder.decodeUser(jUser.toString());
+            SCIM2User user = SCIM2Decoder.decodeUser(jUser.toString(), false);
 
             Assert.assertEquals("User ID", id, user.getResourceId());
             Assert.assertEquals("External ID", extId, user.getResourceExtId());
-            Assert.assertEquals("Creation date", cDate, user.getResourceCreationDate());
-            Assert.assertEquals("Modification date", mDate, user.getResourceChangeDate());
 
             Assert.assertEquals("Given name", gName, user.getUserGivenName());
             Assert.assertEquals("Family name", fName, user.getUserFamilyName());
@@ -192,12 +190,10 @@ public class SCIM2DecoderTest {
 
         try {
 
-            SCIM2Group group = SCIM2Decoder.decodeGroup(jGroup.toString());
+            SCIM2Group group = SCIM2Decoder.decodeGroup(jGroup.toString(), false);
 
             Assert.assertEquals("User ID", id, group.getResourceId());
             Assert.assertEquals("External ID", extId, group.getResourceExtId());
-            Assert.assertEquals("Creation date", cDate, group.getResourceCreationDate());
-            Assert.assertEquals("Modification date", mDate, group.getResourceChangeDate());
             Assert.assertEquals("Display name", dName, group.getName());
 
             List<String> uMembers = group.getUMembers();

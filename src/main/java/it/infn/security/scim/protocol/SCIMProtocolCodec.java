@@ -1,13 +1,18 @@
 package it.infn.security.scim.protocol;
 
 import it.infn.security.saml.aa.CodedException;
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
+import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.schema.SchemaManagerException;
-import it.infn.security.scim.core.SCIMGroup;
-import it.infn.security.scim.core.SCIMUser;
+import it.infn.security.scim.core.SCIM2Decoder;
+import it.infn.security.scim.core.SCIM2Encoder;
+import it.infn.security.scim.core.SCIM2Group;
+import it.infn.security.scim.core.SCIM2User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,218 +21,134 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.attributes.Attribute;
 import org.wso2.charon.core.encoder.Encoder;
-import org.wso2.charon.core.encoder.json.JSONDecoder;
 import org.wso2.charon.core.encoder.json.JSONEncoder;
 import org.wso2.charon.core.exceptions.AbstractCharonException;
-import org.wso2.charon.core.objects.Group;
-import org.wso2.charon.core.objects.ListedResource;
-import org.wso2.charon.core.objects.User;
-import org.wso2.charon.core.schema.SCIMAttributeSchema;
-import org.wso2.charon.core.schema.SCIMResourceSchema;
-import org.wso2.charon.core.schema.SCIMSchemaDefinitions;
-import org.wso2.charon.core.schema.SCIMSubAttributeSchema;
-import org.wso2.charon.core.schema.ServerSideValidator;
 
 public class SCIMProtocolCodec {
 
     private static Logger logger = Logger.getLogger(SCIMProtocolCodec.class.getName());
 
-    private static final String SPID_ATTR_URI = "urn:it:infn:security:saml2:attributes:1.0";
+    private static String servicePrefix = null;
 
-    private static final String SPID_SCHEMA_URI = "urn:it:infn:security:saml2:attributes:1.0";
+    private static String getServicePrefix() {
 
-    private static final String NAME_ATTR_ID = "name";
-
-    private static final String VALUE_ATTR_ID = "value";
-
-    private static final String ROOT_ATTR_ID = "SPIDAttributes";
-
-    private static SCIMResourceSchema groupSchema = null;
-
-    private static SCIMResourceSchema userSchema = null;
-
-    static {
-
-        SCIMSubAttributeSchema nameSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
-                NAME_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Name identifier", false, false, true);
-
-        SCIMSubAttributeSchema contentSchema = SCIMSubAttributeSchema.createSCIMSubAttributeSchema(SPID_ATTR_URI,
-                VALUE_ATTR_ID, SCIMSchemaDefinitions.DataType.STRING, "Content identifier", false, false, true);
-
-        SCIMSubAttributeSchema[] subAttributes = new SCIMSubAttributeSchema[] { nameSchema, contentSchema };
-
-        /*
-         * TODO move schemaExtension into an OCP package
-         */
-        SCIMAttributeSchema schemaExtension = SCIMAttributeSchema.createSCIMAttributeSchema(SPID_ATTR_URI,
-                ROOT_ATTR_ID, null, true, null, "Short attribute description", SPID_SCHEMA_URI, false, false, false,
-                subAttributes);
-
-        if (schemaExtension != null) {
-
-            groupSchema = SCIMResourceSchema.createSCIMResourceSchema(org.wso2.charon.core.schema.SCIMConstants.GROUP,
-                    org.wso2.charon.core.schema.SCIMConstants.CORE_SCHEMA_URI,
-                    org.wso2.charon.core.schema.SCIMConstants.GROUP_DESC, SCIMConstants.GROUP_ENDPOINT,
-                    SCIMSchemaDefinitions.DISPLAY_NAME, SCIMSchemaDefinitions.MEMBERS, schemaExtension);
-
-            userSchema = SCIMResourceSchema.createSCIMResourceSchema(org.wso2.charon.core.schema.SCIMConstants.USER,
-                    org.wso2.charon.core.schema.SCIMConstants.CORE_SCHEMA_URI,
-                    org.wso2.charon.core.schema.SCIMConstants.USER_DESC, SCIMConstants.USER_ENDPOINT,
-                    SCIMSchemaDefinitions.USER_NAME, SCIMSchemaDefinitions.NAME, SCIMSchemaDefinitions.DISPLAY_NAME,
-                    SCIMSchemaDefinitions.NICK_NAME, SCIMSchemaDefinitions.PROFILE_URL, SCIMSchemaDefinitions.TITLE,
-                    SCIMSchemaDefinitions.USER_TYPE, SCIMSchemaDefinitions.PREFERRED_LANGUAGE,
-                    SCIMSchemaDefinitions.LOCALE, SCIMSchemaDefinitions.TIMEZONE, SCIMSchemaDefinitions.ACTIVE,
-                    SCIMSchemaDefinitions.PASSWORD, SCIMSchemaDefinitions.EMAILS, SCIMSchemaDefinitions.PHONE_NUMBERS,
-                    SCIMSchemaDefinitions.IMS, SCIMSchemaDefinitions.PHOTOS, SCIMSchemaDefinitions.ADDRESSES,
-                    SCIMSchemaDefinitions.GROUPS, SCIMSchemaDefinitions.ENTITLEMENTS, SCIMSchemaDefinitions.ROLES,
-                    SCIMSchemaDefinitions.X509CERTIFICATES, schemaExtension);
-        } else {
-
-            groupSchema = SCIMSchemaDefinitions.SCIM_GROUP_SCHEMA;
-            userSchema = SCIMSchemaDefinitions.SCIM_USER_SCHEMA;
-
+        if (servicePrefix == null) {
+            synchronized (SCIMProtocolCodec.class) {
+                if (servicePrefix == null) {
+                    try {
+                        AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+                        servicePrefix = configuration.getAuthorityURL() + "/manager";
+                    } catch (Exception ex) {
+                        logger.log(Level.SEVERE, ex.getMessage(), ex);
+                    }
+                }
+            }
         }
+        return servicePrefix;
     }
 
     public static String encodeUser(UserResource userRes, boolean validate, boolean removePwd)
         throws SchemaManagerException {
 
-        JSONEncoder encoder = new JSONEncoder();
-        User user = (User) userRes;
         try {
 
-            if (validate) {
-                ServerSideValidator.validateRetrievedSCIMObject(user, userSchema);
-            }
+            SCIM2User result = (SCIM2User) userRes;
+            result.setUserPwd(null);
+            return SCIM2Encoder.encodeUser(result, getServicePrefix());
 
-            if (removePwd) {
-                /*
-                 * TODO check missing deep copy
-                 */
-                ServerSideValidator.removePasswordOnReturn(user);
-            }
-
-            return encoder.encodeSCIMObject(user);
-
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
+
     }
 
-    public static UserResource decodeUser(String usrStr, boolean validate)
+    public static UserResource decodeUser(String usrStr, boolean createUser)
         throws SchemaManagerException {
-        JSONDecoder decoder = new JSONDecoder();
+
         try {
-
-            SCIMUser user = (SCIMUser) decoder.decodeResource(usrStr, userSchema, new SCIMUser());
-            if (validate) {
-                ServerSideValidator.validateCreatedSCIMObject(user, userSchema);
-            }
-            return user;
-
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+            return SCIM2Decoder.decodeUser(usrStr, createUser);
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
+
     }
 
     public static UserResource checkUserUpdate(UserResource oldUsr, UserResource newUsr)
         throws SchemaManagerException {
+
         try {
-            return (UserResource) ServerSideValidator.validateUpdatedSCIMObject((User) oldUsr, (User) newUsr,
-                    userSchema);
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+
+            if (!oldUsr.getResourceId().equals(newUsr.getResourceId())) {
+                throw new SchemaManagerException("User id mismatch");
+            }
+
+            newUsr.setResourceCreationDate(oldUsr.getResourceCreationDate());
+            newUsr.setResourceVersion(oldUsr.getResourceVersion());
+            return newUsr;
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
     }
 
     public static final String encodeUserSearchResult(UserSearchResult searchResult)
         throws SchemaManagerException {
 
-        JSONEncoder encoder = new JSONEncoder();
         try {
-            ListedResource listedResource = new ListedResource();
-            if (searchResult == null || searchResult.isEmpty()) {
-                listedResource.setTotalResults(0);
-            } else {
-                listedResource.setTotalResults(searchResult.getTotalResults());
-                for (UserResource user : searchResult.getUserList()) {
-                    Map<String, Attribute> userAttributes = ((User) user).getAttributeList();
-                    listedResource.setResources(userAttributes);
-                }
-            }
-            return encoder.encodeSCIMObject(listedResource);
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+            return SCIM2Encoder.encodeUserList(searchResult, getServicePrefix());
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
+
     }
 
     public static String encodeGroup(GroupResource groupRes, boolean validate)
         throws SchemaManagerException {
 
-        JSONEncoder encoder = new JSONEncoder();
-        Group group = (Group) groupRes;
         try {
-
-            if (validate) {
-                ServerSideValidator.validateRetrievedSCIMObject(group, groupSchema);
-            }
-            return encoder.encodeSCIMObject(group);
-
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+            return SCIM2Encoder.encodeGroup((SCIM2Group) groupRes, getServicePrefix());
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
+
     }
 
-    public static GroupResource decodeGroup(String grpStr, boolean validate)
+    public static GroupResource decodeGroup(String grpStr, boolean createGroup)
         throws SchemaManagerException {
 
-        JSONDecoder decoder = new JSONDecoder();
         try {
-
-            SCIMGroup group = (SCIMGroup) decoder.decodeResource(grpStr, groupSchema, new SCIMGroup());
-            if (validate) {
-                ServerSideValidator.validateCreatedSCIMObject(group, groupSchema);
-            }
-            return group;
-
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+            return SCIM2Decoder.decodeGroup(grpStr, createGroup);
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
     }
 
     public static GroupResource checkGroupUpdate(GroupResource oldGrp, GroupResource newGrp)
         throws SchemaManagerException {
+
         try {
-            return (GroupResource) ServerSideValidator.validateUpdatedSCIMObject((Group) oldGrp, (Group) newGrp,
-                    groupSchema);
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+
+            if (!oldGrp.getResourceId().equals(newGrp.getResourceId())) {
+                throw new SchemaManagerException("Group id mismatch");
+            }
+
+            newGrp.setResourceCreationDate(oldGrp.getResourceCreationDate());
+            newGrp.setResourceVersion(oldGrp.getResourceVersion());
+            return newGrp;
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
     }
 
     public static String encodeGroupSearchResult(GroupSearchResult searchResult)
         throws SchemaManagerException {
 
-        JSONEncoder encoder = new JSONEncoder();
         try {
-            ListedResource listedResource = new ListedResource();
-            if (searchResult == null || searchResult.isEmpty()) {
-                listedResource.setTotalResults(0);
-            } else {
-                listedResource.setTotalResults(searchResult.getTotalResults());
-                for (GroupResource group : searchResult.getGroupList()) {
-                    if (group != null) {
-                        Map<String, Attribute> attributesOfGroupResource = ((Group) group).getAttributeList();
-                        listedResource.setResources(attributesOfGroupResource);
-                    }
-                }
-            }
-            return encoder.encodeSCIMObject(listedResource);
-        } catch (AbstractCharonException chEx) {
-            throw new SchemaManagerException(chEx.getMessage(), chEx);
+            return SCIM2Encoder.encodeGroupList(searchResult, getServicePrefix());
+        } catch (DataSourceException dsEx) {
+            throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
+
     }
 
     public static Response responseFromException(Exception ex) {

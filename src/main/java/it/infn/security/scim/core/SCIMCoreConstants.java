@@ -6,6 +6,8 @@ public class SCIMCoreConstants {
 
     public static final String SCIM2_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group";
 
+    public static final String SCIM2_LIST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:ListResponse";
+
     public static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     public static final String ID = "id";
@@ -111,5 +113,13 @@ public class SCIMCoreConstants {
     public static final String ZIPCODE = "postalcode";
 
     public static final String COUNTRY = "country";
+
+    public static final String TOTAL_RESULTS = "totalresults";
+
+    public static final String RESOURCES = "resources";
+
+    public static final String START_INDEX = "startindex";
+
+    public static final String ITEM_PER_PAGE = "itemperpage";
 
 }

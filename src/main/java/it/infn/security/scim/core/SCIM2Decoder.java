@@ -5,7 +5,6 @@ import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
 
 import java.io.StringReader;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +47,6 @@ public class SCIM2Decoder {
     private static void checkMeta(SCIM2Resource resource, JsonParser jParser)
         throws DataSourceException {
 
-        SimpleDateFormat dParser = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
         String keyName = null;
 
         for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_OBJECT; evn = jParser.next()) {
@@ -59,20 +57,9 @@ public class SCIM2Decoder {
             }
 
             if (evn != JsonParser.Event.VALUE_STRING) {
-                throw new JsonParsingException("Wrong meta attribute", jParser.getLocation());
+                throw new JsonParsingException("Wrong meta attribute " + keyName, jParser.getLocation());
             }
 
-            try {
-                if (SCIMCoreConstants.CREATED.equals(keyName)) {
-                    resource.setResourceCreationDate(dParser.parse(jParser.getString()));
-                } else if (SCIMCoreConstants.MODIFIED.equals(keyName)) {
-                    resource.setResourceChangeDate(dParser.parse(jParser.getString()));
-                } else if (SCIMCoreConstants.VERSION.equals(keyName)) {
-                    resource.setResourceVersion(jParser.getString());
-                }
-            } catch (Exception ex) {
-                throw new JsonParsingException(ex.getMessage(), jParser.getLocation());
-            }
         }
     }
 
@@ -338,7 +325,7 @@ public class SCIM2Decoder {
 
     }
 
-    public static SCIM2User decodeUser(String inStr)
+    public static SCIM2User decodeUser(String inStr, boolean ignoreId)
         throws DataSourceException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
@@ -358,7 +345,9 @@ public class SCIM2Decoder {
 
                 } else if (event == JsonParser.Event.VALUE_STRING) {
 
-                    checkAttribute(jParser, result, keyName, jParser.getString());
+                    if (!(keyName.equals(SCIMCoreConstants.ID) && ignoreId)) {
+                        checkAttribute(jParser, result, keyName, jParser.getString());
+                    }
                     keyName = null;
 
                 } else if (event == JsonParser.Event.START_OBJECT) {
@@ -407,7 +396,7 @@ public class SCIM2Decoder {
         return result;
     }
 
-    public static SCIM2Group decodeGroup(String inStr)
+    public static SCIM2Group decodeGroup(String inStr, boolean ignoreId)
         throws DataSourceException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
@@ -427,7 +416,10 @@ public class SCIM2Decoder {
 
                 } else if (event == JsonParser.Event.VALUE_STRING) {
 
-                    checkAttribute(jParser, result, keyName, jParser.getString());
+                    if (!(keyName.equals(SCIMCoreConstants.ID) && ignoreId)) {
+                        checkAttribute(jParser, result, keyName, jParser.getString());
+                    }
+                    keyName = null;
 
                 } else if (event == JsonParser.Event.START_OBJECT) {
 
