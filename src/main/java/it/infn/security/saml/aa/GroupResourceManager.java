@@ -41,10 +41,9 @@ public class GroupResourceManager {
     @GET
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getGroup(@PathParam(SCIMConstants.ID)
-    String id, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization) {
+    public Response getGroup(@PathParam(SCIMConstants.ID) String id,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
         Response result = null;
         try {
@@ -60,7 +59,7 @@ public class GroupResourceManager {
 
             GroupResource group = dataSource.getGroup(id);
 
-            String encodedGroup = SCIMProtocolCodec.encodeGroup(group, true);
+            String encodedGroup = SCIMProtocolCodec.encodeGroup(group);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
@@ -78,10 +77,9 @@ public class GroupResourceManager {
 
     @POST
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response createGroup(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
-    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization, String resourceString) {
+    public Response createGroup(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
 
         Response result = null;
         try {
@@ -98,11 +96,11 @@ public class GroupResourceManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
-            GroupResource group = SCIMProtocolCodec.decodeGroup(resourceString, true);
+            GroupResource group = SCIMProtocolCodec.decodeGroup(resourceString);
 
             GroupResource createdGroup = dataSource.createGroup(group);
 
-            String encodedGroup = SCIMProtocolCodec.encodeGroup(createdGroup, false);
+            String encodedGroup = SCIMProtocolCodec.encodeGroup(createdGroup);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.GROUP_ENDPOINT + "/"
@@ -125,10 +123,9 @@ public class GroupResourceManager {
     @DELETE
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteGroup(@PathParam(SCIMConstants.ID)
-    String id, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization) {
+    public Response deleteGroup(@PathParam(SCIMConstants.ID) String id,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
         Response result = null;
         try {
@@ -158,15 +155,11 @@ public class GroupResourceManager {
 
     @GET
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getGroup(@HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String format, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization, @QueryParam("attributes")
-    String searchAttribute, @QueryParam("filter")
-    String filter, @QueryParam("startIndex")
-    String startIndex, @QueryParam("count")
-    String count, @QueryParam("sortBy")
-    String sortBy, @QueryParam("sortOrder")
-    String sortOrder) {
+    public Response getGroup(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
+            @QueryParam("attributes") String searchAttribute, @QueryParam("filter") String filter,
+            @QueryParam("startIndex") String startIndex, @QueryParam("count") String count,
+            @QueryParam("sortBy") String sortBy, @QueryParam("sortOrder") String sortOrder) {
 
         Response result = null;
         try {
@@ -209,11 +202,10 @@ public class GroupResourceManager {
     @PUT
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response updateGroup(@PathParam(SCIMConstants.ID)
-    String id, @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
-    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization, String resourceString) {
+    public Response updateGroup(@PathParam(SCIMConstants.ID) String id,
+            @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
 
         Response result = null;
         try {
@@ -231,12 +223,12 @@ public class GroupResourceManager {
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
             GroupResource oldGroup = dataSource.getGroup(id);
-            GroupResource newGroup = SCIMProtocolCodec.decodeGroup(resourceString, false);
+            GroupResource newGroup = SCIMProtocolCodec.decodeGroup(resourceString);
             GroupResource validatedGroup = SCIMProtocolCodec.checkGroupUpdate(oldGroup, newGroup);
 
             GroupResource updatedGroup = dataSource.updateGroup(oldGroup, validatedGroup);
 
-            String encodedGroup = SCIMProtocolCodec.encodeGroup(updatedGroup, false);
+            String encodedGroup = SCIMProtocolCodec.encodeGroup(updatedGroup);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.GROUP_ENDPOINT + "/"

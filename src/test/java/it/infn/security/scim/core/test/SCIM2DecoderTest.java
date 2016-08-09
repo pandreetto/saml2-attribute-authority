@@ -100,9 +100,8 @@ public class SCIM2DecoderTest {
 
         try {
 
-            SCIM2User user = SCIM2Decoder.decodeUser(jUser.toString(), false);
+            SCIM2User user = SCIM2Decoder.decodeUser(jUser.toString());
 
-            Assert.assertEquals("User ID", id, user.getResourceId());
             Assert.assertEquals("External ID", extId, user.getResourceExtId());
 
             Assert.assertEquals("Given name", gName, user.getUserGivenName());
@@ -190,9 +189,8 @@ public class SCIM2DecoderTest {
 
         try {
 
-            SCIM2Group group = SCIM2Decoder.decodeGroup(jGroup.toString(), false);
+            SCIM2Group group = SCIM2Decoder.decodeGroup(jGroup.toString());
 
-            Assert.assertEquals("User ID", id, group.getResourceId());
             Assert.assertEquals("External ID", extId, group.getResourceExtId());
             Assert.assertEquals("Display name", dName, group.getName());
 

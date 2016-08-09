@@ -14,6 +14,7 @@ import it.infn.security.scim.core.SCIM2Encoder;
 import it.infn.security.scim.core.SCIM2Group;
 import it.infn.security.scim.core.SCIM2User;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -44,7 +45,7 @@ public class SCIMProtocolCodec {
         return servicePrefix;
     }
 
-    public static String encodeUser(UserResource userRes, boolean validate, boolean removePwd)
+    public static String encodeUser(UserResource userRes)
         throws SchemaManagerException {
 
         try {
@@ -59,11 +60,11 @@ public class SCIMProtocolCodec {
 
     }
 
-    public static UserResource decodeUser(String usrStr, boolean createUser)
+    public static UserResource decodeUser(String usrStr)
         throws SchemaManagerException {
 
         try {
-            return SCIM2Decoder.decodeUser(usrStr, createUser);
+            return SCIM2Decoder.decodeUser(usrStr);
         } catch (DataSourceException dsEx) {
             throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
@@ -75,11 +76,9 @@ public class SCIMProtocolCodec {
 
         try {
 
-            if (!oldUsr.getResourceId().equals(newUsr.getResourceId())) {
-                throw new SchemaManagerException("User id mismatch");
-            }
-
+            newUsr.setResourceId(oldUsr.getResourceId());
             newUsr.setResourceCreationDate(oldUsr.getResourceCreationDate());
+            newUsr.setResourceChangeDate(new Date());
             newUsr.setResourceVersion(oldUsr.getResourceVersion());
             return newUsr;
         } catch (DataSourceException dsEx) {
@@ -98,7 +97,7 @@ public class SCIMProtocolCodec {
 
     }
 
-    public static String encodeGroup(GroupResource groupRes, boolean validate)
+    public static String encodeGroup(GroupResource groupRes)
         throws SchemaManagerException {
 
         try {
@@ -109,11 +108,11 @@ public class SCIMProtocolCodec {
 
     }
 
-    public static GroupResource decodeGroup(String grpStr, boolean createGroup)
+    public static GroupResource decodeGroup(String grpStr)
         throws SchemaManagerException {
 
         try {
-            return SCIM2Decoder.decodeGroup(grpStr, createGroup);
+            return SCIM2Decoder.decodeGroup(grpStr);
         } catch (DataSourceException dsEx) {
             throw new SchemaManagerException(dsEx.getMessage(), dsEx);
         }
@@ -124,11 +123,9 @@ public class SCIMProtocolCodec {
 
         try {
 
-            if (!oldGrp.getResourceId().equals(newGrp.getResourceId())) {
-                throw new SchemaManagerException("Group id mismatch");
-            }
-
+            newGrp.setResourceId(oldGrp.getResourceId());
             newGrp.setResourceCreationDate(oldGrp.getResourceCreationDate());
+            newGrp.setResourceChangeDate(new Date());
             newGrp.setResourceVersion(oldGrp.getResourceVersion());
             return newGrp;
         } catch (DataSourceException dsEx) {

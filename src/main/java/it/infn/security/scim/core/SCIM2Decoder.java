@@ -40,7 +40,7 @@ public class SCIM2Decoder {
         throws DataSourceException {
 
         if (SCIMCoreConstants.ID.equals(kName)) {
-            resource.setResourceId(value);
+            // ignore id in input
         } else if (SCIMCoreConstants.EXTERNAL_ID.equals(kName)) {
             resource.setResourceExtId(value);
         } else {
@@ -386,7 +386,7 @@ public class SCIM2Decoder {
         resource.setExtendedAttributes(extMap.values());
     }
 
-    public static SCIM2User decodeUser(String inStr, boolean ignoreId)
+    public static SCIM2User decodeUser(String inStr)
         throws DataSourceException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
@@ -406,9 +406,7 @@ public class SCIM2Decoder {
 
                 } else if (event == JsonParser.Event.VALUE_STRING) {
 
-                    if (!(keyName.equals(SCIMCoreConstants.ID) && ignoreId)) {
-                        checkAttribute(jParser, result, keyName, jParser.getString());
-                    }
+                    checkAttribute(jParser, result, keyName, jParser.getString());
                     keyName = null;
 
                 } else if (event == JsonParser.Event.START_OBJECT) {
@@ -459,7 +457,7 @@ public class SCIM2Decoder {
         return result;
     }
 
-    public static SCIM2Group decodeGroup(String inStr, boolean ignoreId)
+    public static SCIM2Group decodeGroup(String inStr)
         throws DataSourceException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
@@ -479,9 +477,7 @@ public class SCIM2Decoder {
 
                 } else if (event == JsonParser.Event.VALUE_STRING) {
 
-                    if (!(keyName.equals(SCIMCoreConstants.ID) && ignoreId)) {
-                        checkAttribute(jParser, result, keyName, jParser.getString());
-                    }
+                    checkAttribute(jParser, result, keyName, jParser.getString());
                     keyName = null;
 
                 } else if (event == JsonParser.Event.START_OBJECT) {
