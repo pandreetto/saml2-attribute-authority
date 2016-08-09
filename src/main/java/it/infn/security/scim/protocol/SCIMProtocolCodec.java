@@ -21,10 +21,6 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.core.Response;
 
-import org.wso2.charon.core.encoder.Encoder;
-import org.wso2.charon.core.encoder.json.JSONEncoder;
-import org.wso2.charon.core.exceptions.AbstractCharonException;
-
 public class SCIMProtocolCodec {
 
     private static Logger logger = Logger.getLogger(SCIMProtocolCodec.class.getName());
@@ -152,37 +148,26 @@ public class SCIMProtocolCodec {
     }
 
     public static Response responseFromException(Exception ex) {
-        AbstractCharonException chEx = null;
 
         logger.log(Level.INFO, "Detected exception " + ex.getMessage(), ex);
 
-        if (ex instanceof AbstractCharonException) {
+        int code = SCIMConstants.CODE_INTERNAL_SERVER_ERROR;
+        String message = null;
 
-            chEx = (AbstractCharonException) ex;
-            if (chEx.getCode() == -1) {
-                chEx.setCode(SCIMConstants.CODE_INTERNAL_SERVER_ERROR);
-            }
-
-        } else if (ex instanceof CodedException) {
-
-            int code = ((CodedException) ex).getCode();
+        if (ex instanceof CodedException) {
+            CodedException cEx = (CodedException) ex;
+            code = cEx.getCode();
             if (code >= 600) {
-                code = 500;
+                code = SCIMConstants.CODE_INTERNAL_SERVER_ERROR;
             }
-            chEx = new AbstractCharonException(code, ex.getMessage());
-
+            message = cEx.getMessage();
         } else {
-
-            int code = 500;
-            String msg = "Internal server error: " + ex.getMessage();
-            chEx = new AbstractCharonException(code, msg);
-
+            message = "Internal server error: " + ex.getMessage();
         }
 
-        Encoder encoder = new JSONEncoder();
         Map<String, String> httpHeaders = new HashMap<String, String>();
         httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
-        return buildResponse(chEx.getCode(), httpHeaders, encoder.encodeSCIMException(chEx));
+        return buildResponse(code, httpHeaders, SCIM2Encoder.encodeException(code, message));
     }
 
     public static Response buildResponse(int code, Map<String, String> httpHeaders, String message) {

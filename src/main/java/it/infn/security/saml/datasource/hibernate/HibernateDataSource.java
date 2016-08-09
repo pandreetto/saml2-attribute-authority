@@ -12,8 +12,8 @@ import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceStatus;
 import it.infn.security.saml.datasource.jpa.ResourceEntity.ResourceType;
 import it.infn.security.saml.datasource.jpa.UserEntity;
 import it.infn.security.saml.schema.AttributeEntry;
-import it.infn.security.scim.core.SCIMGroup;
-import it.infn.security.scim.core.SCIMUser;
+import it.infn.security.scim.core.SCIM2Group;
+import it.infn.security.scim.core.SCIM2User;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -637,7 +637,7 @@ public abstract class HibernateDataSource
     private UserResource userFromEntity(Session session, UserEntity usrEnt)
         throws DataSourceException {
 
-        UserResource uResult = new SCIMUser();
+        UserResource uResult = new SCIM2User();
         uResult.setResourceId(usrEnt.getId());
         uResult.setResourceCreationDate(usrEnt.getCreateDate());
         uResult.setResourceChangeDate(usrEnt.getModifyDate());
@@ -663,7 +663,7 @@ public abstract class HibernateDataSource
     private GroupResource groupFromEntity(Session session, GroupEntity grpEnt)
         throws DataSourceException {
 
-        GroupResource gResult = new SCIMGroup();
+        GroupResource gResult = new SCIM2Group();
         gResult.setResourceId(grpEnt.getId());
         gResult.setResourceCreationDate(grpEnt.getCreateDate());
         gResult.setResourceChangeDate(grpEnt.getModifyDate());

@@ -33,9 +33,9 @@ public class SPIDSchemaManager
 
     private static final Logger logger = Logger.getLogger(SPIDSchemaManager.class.getName());
 
-    public static final String SPID_ATTR_URI = "urn:it:infn:security:saml2:attributes:1.0";
+    public static final String SPID_ATTR_URI = "urn:it:infn:security:spid:attributes:1.0";
 
-    public static final String SPID_SCHEMA_URI = "urn:it:infn:security:saml2:attributes:1.0";
+    public static final String SPID_SCHEMA_URI = "urn:it:infn:security:spid:attributes:1.0";
 
     public static final String NAME_ATTR_ID = "name";
 

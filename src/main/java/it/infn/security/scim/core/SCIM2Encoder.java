@@ -7,9 +7,13 @@ import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
+import it.infn.security.saml.ocp.SPIDSchemaManager;
+import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.AttributeValueInterface;
 
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.List;
 
 import javax.json.Json;
@@ -37,6 +41,8 @@ public class SCIM2Encoder {
             jGenerator.write(SCIMCoreConstants.VERSION, version);
         jGenerator.writeEnd();
 
+        encodeExtensions(resource, jGenerator);
+
     }
 
     private static void encodeMultiValue(String name, List<AttrValueTuple> attrList, JsonGenerator jGenerator)
@@ -56,6 +62,29 @@ public class SCIM2Encoder {
 
     }
 
+    /*
+     * TODO move into SPID package
+     */
+    private static void encodeExtensions(SCIM2Resource resource, JsonGenerator jGenerator)
+        throws DataSourceException {
+        Collection<AttributeEntry> extAttrs = resource.getExtendedAttributes();
+
+        if (extAttrs == null || extAttrs.size() == 0)
+            return;
+
+        jGenerator.writeStartArray(SCIMCoreConstants.SPID_SCHEMA);
+        for (AttributeEntry attr : extAttrs) {
+            for (AttributeValueInterface attrVal : attr) {
+                jGenerator.writeStartObject();
+                jGenerator.write(SPIDSchemaManager.NAME_ATTR_ID, attr.getName().getNameId());
+                jGenerator.write(SPIDSchemaManager.VALUE_ATTR_ID, attrVal.getValue().toString());
+                jGenerator.writeEnd();
+            }
+        }
+        jGenerator.writeEnd();
+
+    }
+
     public static String encodeUser(SCIM2User user, String sitePrefix)
         throws DataSourceException {
 
@@ -65,6 +94,12 @@ public class SCIM2Encoder {
         jGenerator.writeStartObject();
         jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
         jGenerator.write(SCIMCoreConstants.SCIM2_USER_SCHEMA);
+
+        Collection<AttributeEntry> extAttrs = user.getExtendedAttributes();
+        if (extAttrs != null && extAttrs.size() > 0) {
+            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+        }
+
         jGenerator.writeEnd();
 
         streamUser(user, sitePrefix, jGenerator);
@@ -233,6 +268,12 @@ public class SCIM2Encoder {
         jGenerator.writeStartObject();
         jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
         jGenerator.write(SCIMCoreConstants.SCIM2_GROUP_SCHEMA);
+
+        Collection<AttributeEntry> extAttrs = group.getExtendedAttributes();
+        if (extAttrs != null && extAttrs.size() > 0) {
+            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+        }
+
         jGenerator.writeEnd();
 
         streamGroup(group, sitePrefix, jGenerator);
@@ -300,6 +341,27 @@ public class SCIM2Encoder {
             }
             jGenerator.writeEnd();
         }
+
+        jGenerator.writeEnd().close();
+        return result.toString();
+
+    }
+
+    public static String encodeException(int code, String message) {
+
+        StringWriter result = new StringWriter();
+        JsonGenerator jGenerator = Json.createGenerator(result);
+        jGenerator.writeStartObject();
+
+        jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
+        jGenerator.write(SCIMCoreConstants.SCIM2_ERR_SCHEMA);
+        jGenerator.writeEnd();
+
+        jGenerator.write(SCIMCoreConstants.STATUS, code);
+        /*
+         * TODO improve detail, see RFC7644 (3.12)
+         */
+        jGenerator.write(SCIMCoreConstants.DETAIL, message);
 
         jGenerator.writeEnd().close();
         return result.toString();

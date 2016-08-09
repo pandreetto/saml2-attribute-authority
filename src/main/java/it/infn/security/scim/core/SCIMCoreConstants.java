@@ -8,6 +8,10 @@ public class SCIMCoreConstants {
 
     public static final String SCIM2_LIST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:ListResponse";
 
+    public static final String SCIM2_ERR_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:Error";
+
+    public static final String SPID_SCHEMA = "urn:it:infn:security:spid:attributes:1.0";
+
     public static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     public static final String ID = "id";
@@ -121,5 +125,9 @@ public class SCIMCoreConstants {
     public static final String START_INDEX = "startindex";
 
     public static final String ITEM_PER_PAGE = "itemperpage";
+
+    public static final String DETAIL = "detail";
+
+    public static final String STATUS = "status";
 
 }
