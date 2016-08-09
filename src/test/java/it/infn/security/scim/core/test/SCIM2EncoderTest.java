@@ -50,8 +50,8 @@ public class SCIM2EncoderTest {
 
             String nowStr = dFormatter.format(now);
             String tPattern = "'{'\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],"
-                    + "\"id\":\"{0}\",\"meta\":'{'\"created\":\"{1}\",\"lastmodified\":\"{2}\"'}',"
-                    + "\"username\":\"{3}\",{4}'}'";
+                    + "\"id\":\"{0}\",\"meta\":'{'\"created\":\"{1}\",\"lastmodified\":\"{2}\","
+                    + "\"location\":\"http://www.mysite.org/scim/Users/{0}\"'}',\"username\":\"{3}\",{4}'}'";
             String tStr = MessageFormat.format(tPattern, userId, nowStr, nowStr, userLogin, groupStr);
 
             String out = SCIM2Encoder.encodeUser(user, "http://www.mysite.org/scim");
@@ -84,8 +84,8 @@ public class SCIM2EncoderTest {
 
             String nowStr = dFormatter.format(now);
             String tPattern = "'{'\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:Group\"],"
-                    + "\"id\":\"{0}\",\"meta\":'{'\"created\":\"{1}\",\"lastmodified\":\"{2}\"'}',"
-                    + "\"displayname\":\"{3}\"'}'";
+                    + "\"id\":\"{0}\",\"meta\":'{'\"created\":\"{1}\",\"lastmodified\":\"{2}\","
+                    + "\"location\":\"http://www.mysite.org/scim/Groups/{0}\"'}',\"displayname\":\"{3}\"'}'";
             String tStr = MessageFormat.format(tPattern, groupId, nowStr, nowStr, groupName);
 
             String out = SCIM2Encoder.encodeGroup(group, "http://www.mysite.org/scim");

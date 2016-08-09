@@ -21,7 +21,7 @@ import javax.json.stream.JsonGenerator;
 
 public class SCIM2Encoder {
 
-    private static void encodeResource(SCIM2Resource resource, JsonGenerator jGenerator)
+    private static void encodeResource(SCIM2Resource resource, String resUrl, JsonGenerator jGenerator)
         throws DataSourceException {
 
         SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
@@ -39,6 +39,9 @@ public class SCIM2Encoder {
         String version = resource.getResourceVersion();
         if (version != null)
             jGenerator.write(SCIMCoreConstants.VERSION, version);
+        if (resUrl != null)
+            jGenerator.write(SCIMCoreConstants.LOCATION, resUrl);
+
         jGenerator.writeEnd();
 
         encodeExtensions(resource, jGenerator);
@@ -112,7 +115,8 @@ public class SCIM2Encoder {
     private static void streamUser(SCIM2User user, String sitePrefix, JsonGenerator jGenerator)
         throws DataSourceException {
 
-        encodeResource(user, jGenerator);
+        String resUrl = sitePrefix + "/Users/" + user.getResourceId();
+        encodeResource(user, resUrl, jGenerator);
 
         jGenerator.write(SCIMCoreConstants.USER_NAME, user.getName());
 
@@ -287,7 +291,8 @@ public class SCIM2Encoder {
     private static void streamGroup(SCIM2Group group, String sitePrefix, JsonGenerator jGenerator)
         throws DataSourceException {
 
-        encodeResource(group, jGenerator);
+        String resUrl = sitePrefix + "/Groups/" + group.getResourceId();
+        encodeResource(group, resUrl, jGenerator);
 
         jGenerator.write(SCIMCoreConstants.DISPLAY_NAME, group.getName());
 
@@ -298,7 +303,7 @@ public class SCIM2Encoder {
             for (String memberId : members) {
                 jGenerator.writeStartObject();
                 jGenerator.write(SCIMCoreConstants.VALUE, memberId);
-                jGenerator.write(SCIMCoreConstants.TYPE, "User");
+                jGenerator.write(SCIMCoreConstants.REF, sitePrefix + "/Users/" + memberId);
                 jGenerator.writeEnd();
             }
 
@@ -306,7 +311,7 @@ public class SCIM2Encoder {
             for (String memberId : members) {
                 jGenerator.writeStartObject();
                 jGenerator.write(SCIMCoreConstants.VALUE, memberId);
-                jGenerator.write(SCIMCoreConstants.TYPE, "Group");
+                jGenerator.write(SCIMCoreConstants.REF, sitePrefix + "/Groups/" + memberId);
                 jGenerator.writeEnd();
             }
 
