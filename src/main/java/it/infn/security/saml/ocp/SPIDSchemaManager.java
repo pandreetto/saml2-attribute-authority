@@ -8,21 +8,24 @@ import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
+import it.infn.security.scim.core.SCIMCoreConstants;
 
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParsingException;
 import javax.security.auth.Subject;
 
 import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
 import org.apache.xml.security.signature.XMLSignature;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.opensaml.saml2.core.Advice;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Audience;
@@ -53,8 +56,6 @@ public class SPIDSchemaManager
 
     public static final String NAMES_ATTR_ID = "names";
 
-    public static final String ROOT_ATTR_ID = "SPIDAttributes";
-
     public void init()
         throws SchemaManagerException {
     }
@@ -68,23 +69,32 @@ public class SPIDSchemaManager
 
         try {
 
-            JSONObject rootObject = new JSONObject();
-            rootObject.put("schemas", SPID_SCHEMA_URI);
-            rootObject.put(NAME_ATTR_ID, attribute.getName().getNameId());
-            rootObject.put(NAME_FORMAT_ID, attribute.getName().getNameFormat());
-            rootObject.put(NAME_FRIEND_ID, attribute.getName().getFriendlyName());
+            StringWriter result = new StringWriter();
+            JsonGenerator jGenerator = Json.createGenerator(result);
 
-            JSONArray arrayObject = new JSONArray();
+            jGenerator.writeStartObject();
+
+            jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
+            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+            jGenerator.writeEnd();
+
+            jGenerator.write(NAME_ATTR_ID, attribute.getName().getNameId());
+            jGenerator.write(NAME_FORMAT_ID, attribute.getName().getNameFormat());
+            jGenerator.write(NAME_FRIEND_ID, attribute.getName().getFriendlyName());
+
+            jGenerator.writeStartArray(VALUES_ATTR_ID);
             for (AttributeValueInterface value : attribute) {
-                JSONObject attrObject = new JSONObject();
-                attrObject.put(VALUE_ATTR_ID, value.encode(format));
-                attrObject.put(VALUE_TYPE_ID, value.getType());
-                attrObject.put(DESCR_ATTR_ID, value.getDescription());
-                arrayObject.put(attrObject);
+                jGenerator.writeStartObject();
+                jGenerator.write(VALUE_ATTR_ID, value.encode(format));
+                jGenerator.write(VALUE_TYPE_ID, value.getType());
+                jGenerator.write(DESCR_ATTR_ID, value.getDescription());
+                jGenerator.writeEnd();
             }
-            rootObject.put(VALUES_ATTR_ID, arrayObject);
+            jGenerator.writeEnd();
 
-            return rootObject.toString();
+            jGenerator.writeEnd().close();
+
+            return result.toString();
 
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
@@ -95,24 +105,35 @@ public class SPIDSchemaManager
     public String encode(List<AttributeNameInterface> names, String format)
         throws SchemaManagerException {
 
-        JSONObject rootObject = new JSONObject();
         try {
-            rootObject.put("schemas", SPID_SCHEMA_URI);
-            JSONArray arrayObject = new JSONArray();
+            StringWriter result = new StringWriter();
+            JsonGenerator jGenerator = Json.createGenerator(result);
+
+            jGenerator.writeStartObject();
+
+            jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
+            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+            jGenerator.writeEnd();
+
+            jGenerator.writeStartArray(NAMES_ATTR_ID);
             for (AttributeNameInterface name : names) {
-                JSONObject nameObj = new JSONObject();
-                nameObj.put(NAME_ATTR_ID, name.getNameId());
-                nameObj.put(NAME_FORMAT_ID, name.getNameFormat());
-                nameObj.put(NAME_FRIEND_ID, name.getFriendlyName());
-                arrayObject.put(nameObj);
+                jGenerator.writeStartObject();
+                jGenerator.write(NAME_ATTR_ID, name.getNameId());
+                jGenerator.write(NAME_FORMAT_ID, name.getNameFormat());
+                jGenerator.write(NAME_FRIEND_ID, name.getFriendlyName());
+                jGenerator.writeEnd();
             }
-            rootObject.put(NAMES_ATTR_ID, arrayObject);
+            jGenerator.writeEnd();
+
+            jGenerator.writeEnd().close();
+
+            return result.toString();
+
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
             throw new SchemaManagerException("Cannot encode attribute");
         }
 
-        return rootObject.toString();
     }
 
     public AttributeEntry parse(String data, String format)
@@ -120,34 +141,75 @@ public class SPIDSchemaManager
 
         try {
 
-            JSONObject jsonObj = new JSONObject(new JSONTokener(data));
-            String nameId = jsonObj.optString(NAME_ATTR_ID);
-            if (nameId == null)
-                throw new SchemaManagerException("Missing " + NAME_ATTR_ID);
-            String fName = jsonObj.optString(NAME_FRIEND_ID);
+            AttributeEntry result = null;
 
-            AttributeEntry result = new AttributeEntry(new SPIDAttributeName(nameId, fName));
+            JsonParser jParser = Json.createParser(new StringReader(data));
 
-            JSONArray values = jsonObj.optJSONArray(VALUES_ATTR_ID);
-            for (int k = 0; k < values.length(); k++) {
-                JSONObject vObj = values.getJSONObject(k);
-                String value = vObj.optString(VALUE_ATTR_ID);
-                if (value == null)
-                    throw new SchemaManagerException("Missing " + VALUE_ATTR_ID);
-                String vType = vObj.optString(VALUE_TYPE_ID);
-                if (vType == null)
-                    throw new SchemaManagerException("Missing " + VALUE_TYPE_ID);
-                String vDescr = vObj.optString(DESCR_ATTR_ID);
-                logger.fine("Found " + value + " of type " + vType);
-                result.add(new SPIDAttributeValue(value, vType, vDescr));
+            String keyName = null;
+            boolean foundArray = false;
+            String attrName = null;
+            String friendName = null;
+            String value = null;
+            String type = null;
+            String descr = null;
+
+            while (jParser.hasNext()) {
+                JsonParser.Event evn = jParser.next();
+
+                if (evn == JsonParser.Event.KEY_NAME) {
+
+                    keyName = jParser.getString().toLowerCase();
+
+                } else if (evn == JsonParser.Event.VALUE_STRING) {
+
+                    if (NAME_ATTR_ID.equals(keyName) && !foundArray)
+                        attrName = jParser.getString();
+                    else if (NAME_FRIEND_ID.equals(keyName) && !foundArray)
+                        friendName = jParser.getString();
+                    else if (VALUE_ATTR_ID.equals(keyName) && foundArray)
+                        value = jParser.getString();
+                    else if (VALUE_TYPE_ID.equals(keyName) && foundArray)
+                        type = jParser.getString();
+                    else if (DESCR_ATTR_ID.equals(keyName) && foundArray)
+                        descr = jParser.getString();
+
+                } else if (evn == JsonParser.Event.START_OBJECT) {
+
+                    value = null;
+                    type = null;
+                    descr = null;
+
+                } else if (evn == JsonParser.Event.END_OBJECT) {
+
+                    if (foundArray) {
+                        if (value == null)
+                            throw new JsonParsingException("Missing " + VALUE_ATTR_ID, jParser.getLocation());
+                        if (type == null)
+                            throw new JsonParsingException("Missing " + VALUE_TYPE_ID, jParser.getLocation());
+                        result.add(new SPIDAttributeValue(value, type, descr));
+                    } else {
+                        if (attrName == null)
+                            throw new JsonParsingException("Missing " + NAME_ATTR_ID, jParser.getLocation());
+                        result = new AttributeEntry(new SPIDAttributeName(attrName, friendName));
+                    }
+
+                } else if (evn == JsonParser.Event.START_ARRAY) {
+                    if (foundArray)
+                        throw new JsonParsingException("Illegal nested arrays", jParser.getLocation());
+                    if (!VALUES_ATTR_ID.equals(keyName))
+                        throw new JsonParsingException("Illegal array name " + keyName, jParser.getLocation());
+                    foundArray = true;
+                } else if (evn == JsonParser.Event.END_ARRAY) {
+                    foundArray = false;
+                }
             }
+
             return result;
 
-        } catch (JSONException jEx) {
-            logger.log(Level.SEVERE, jEx.getMessage(), jEx);
-            throw new SchemaManagerException(jEx.getMessage());
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, ex.getMessage(), ex);
+            throw new SchemaManagerException(ex.getMessage());
         }
-
     }
 
     /*
