@@ -3,16 +3,12 @@ package it.infn.security.scim.core;
 import it.infn.security.saml.datasource.AddrValueTuple;
 import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
-import it.infn.security.saml.ocp.SPIDAttributeName;
-import it.infn.security.saml.ocp.SPIDAttributeValue;
-import it.infn.security.saml.ocp.SPIDSchemaManager;
-import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +19,7 @@ import javax.json.stream.JsonParsingException;
 
 public class SCIM2Decoder {
 
-    private static String getKeyName(JsonParser jParser)
+    public static String getKeyName(JsonParser jParser)
         throws JsonParsingException {
         return jParser.getString().toLowerCase();
     }
@@ -332,62 +328,6 @@ public class SCIM2Decoder {
 
     }
 
-    /*
-     * TODO move into SPID package
-     */
-    private static void checkExtensions(JsonParser jParser, SCIM2Resource resource)
-        throws DataSourceException, JsonParsingException {
-
-        String kName = null;
-        String attrName = null;
-        String attrValue = null;
-        boolean inObj = false;
-        HashMap<String, AttributeEntry> extMap = new HashMap<String, AttributeEntry>();
-
-        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
-
-            if (evn == JsonParser.Event.START_OBJECT) {
-
-                attrName = null;
-                attrValue = null;
-                inObj = true;
-
-            } else if (evn == JsonParser.Event.END_OBJECT) {
-
-                if (attrName == null)
-                    throw new JsonParsingException("Missing attribute name", jParser.getLocation());
-                if (attrValue == null)
-                    throw new JsonParsingException("Missing attribute value", jParser.getLocation());
-                if (!extMap.containsKey(attrName)) {
-                    extMap.put(attrName, new AttributeEntry(new SPIDAttributeName(attrName, null)));
-                }
-                extMap.get(attrName).add(new SPIDAttributeValue(attrValue, ""));
-                inObj = false;
-
-            } else if (evn == JsonParser.Event.KEY_NAME) {
-
-                if (!inObj)
-                    throw new JsonParsingException("Unrelated property", jParser.getLocation());
-                kName = getKeyName(jParser);
-
-            } else if (evn == JsonParser.Event.VALUE_STRING) {
-
-                if (SPIDSchemaManager.NAME_ATTR_ID.equals(kName)) {
-                    attrName = jParser.getString();
-                } else if (SPIDSchemaManager.VALUE_ATTR_ID.equals(kName)) {
-                    attrValue = jParser.getString();
-                }
-
-                kName = null;
-
-            } else {
-                throw new JsonParsingException("Wrong SPID definitions", jParser.getLocation());
-            }
-        }
-
-        resource.setExtendedAttributes(extMap.values());
-    }
-
     public static SCIM2User decodeUser(String inStr)
         throws DataSourceException, SchemaManagerException {
 
@@ -397,6 +337,8 @@ public class SCIM2Decoder {
         String keyName = null;
         int oLevel = 0;
 
+        SchemaManager schemaManager = SchemaManagerFactory.getManager();
+
         try {
 
             while (jParser.hasNext()) {
@@ -405,6 +347,11 @@ public class SCIM2Decoder {
                 if (event == JsonParser.Event.KEY_NAME) {
 
                     keyName = getKeyName(jParser);
+
+                    if (schemaManager.getSCIMSchema().equals(keyName)) {
+                        result.setExtendedAttributes(schemaManager.parse(jParser));
+                        keyName = null;
+                    }
 
                 } else if (event == JsonParser.Event.VALUE_STRING) {
 
@@ -438,8 +385,6 @@ public class SCIM2Decoder {
                         checkAddresses(jParser, result);
                     } else if (SCIMCoreConstants.GROUPS.equals(keyName)) {
                         checkGroup(jParser, result);
-                    } else if (SchemaManagerFactory.getManager().getSCIMSchema().equals(keyName)) {
-                        checkExtensions(jParser, result);
                     } else {
                         checkStdMultiValue(jParser, result, keyName);
                     }
@@ -468,6 +413,8 @@ public class SCIM2Decoder {
         String keyName = null;
         int oLevel = 0;
 
+        SchemaManager schemaManager = SchemaManagerFactory.getManager();
+
         try {
 
             while (jParser.hasNext()) {
@@ -476,6 +423,11 @@ public class SCIM2Decoder {
                 if (event == JsonParser.Event.KEY_NAME) {
 
                     keyName = getKeyName(jParser);
+
+                    if (schemaManager.getSCIMSchema().equals(keyName)) {
+                        result.setExtendedAttributes(schemaManager.parse(jParser));
+                        keyName = null;
+                    }
 
                 } else if (event == JsonParser.Event.VALUE_STRING) {
 
@@ -501,8 +453,6 @@ public class SCIM2Decoder {
                         checkSchemas(jParser, schemas);
                     } else if (SCIMCoreConstants.MEMBERS.equals(keyName)) {
                         checkMembers(jParser, result);
-                    } else if (SchemaManagerFactory.getManager().getSCIMSchema().equals(keyName)) {
-                        checkExtensions(jParser, result);
                     } else {
                         throw new JsonParsingException("Attribute not recognized " + keyName, jParser.getLocation());
                     }

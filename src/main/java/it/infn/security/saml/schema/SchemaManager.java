@@ -1,8 +1,11 @@
 package it.infn.security.saml.schema;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
 import javax.security.auth.Subject;
 
 import org.opensaml.saml2.core.Advice;
@@ -28,7 +31,13 @@ public interface SchemaManager {
     public String encode(List<AttributeNameInterface> names)
         throws SchemaManagerException;
 
+    public void encode(Collection<AttributeEntry> extAttrs, JsonGenerator jGenerator)
+        throws SchemaManagerException;
+
     public AttributeEntry parse(String data)
+        throws SchemaManagerException;
+
+    public Collection<AttributeEntry> parse(JsonParser jParser)
         throws SchemaManagerException;
 
     /*

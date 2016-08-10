@@ -7,9 +7,7 @@ import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
-import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
-import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.scim.protocol.SCIMConstants;
@@ -47,7 +45,7 @@ public class SCIM2Encoder {
 
         jGenerator.writeEnd();
 
-        encodeExtensions(resource, jGenerator);
+        SchemaManagerFactory.getManager().encode(resource.getExtendedAttributes(), jGenerator);
 
     }
 
@@ -63,29 +61,6 @@ public class SCIM2Encoder {
             jGenerator.write(SCIMCoreConstants.VALUE, tuple.getValue());
             jGenerator.write(SCIMCoreConstants.TYPE, tuple.getType());
             jGenerator.writeEnd();
-        }
-        jGenerator.writeEnd();
-
-    }
-
-    /*
-     * TODO move into SPID package
-     */
-    private static void encodeExtensions(SCIM2Resource resource, JsonGenerator jGenerator)
-        throws DataSourceException, SchemaManagerException {
-        Collection<AttributeEntry> extAttrs = resource.getExtendedAttributes();
-
-        if (extAttrs == null || extAttrs.size() == 0)
-            return;
-
-        jGenerator.writeStartArray(SchemaManagerFactory.getManager().getSCIMSchema()); // to be changed
-        for (AttributeEntry attr : extAttrs) {
-            for (AttributeValueInterface attrVal : attr) {
-                jGenerator.writeStartObject();
-                jGenerator.write(SPIDSchemaManager.NAME_ATTR_ID, attr.getName().getNameId());
-                jGenerator.write(SPIDSchemaManager.VALUE_ATTR_ID, attrVal.getValue().toString());
-                jGenerator.writeEnd();
-            }
         }
         jGenerator.writeEnd();
 

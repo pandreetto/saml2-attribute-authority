@@ -8,12 +8,15 @@ import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
+import it.infn.security.scim.core.SCIM2Decoder;
 import it.infn.security.scim.core.SCIMCoreConstants;
 
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -156,6 +159,25 @@ public class SPIDSchemaManager
 
     }
 
+    public void encode(Collection<AttributeEntry> extAttrs, JsonGenerator jGenerator)
+        throws SchemaManagerException {
+
+        if (extAttrs == null || extAttrs.size() == 0)
+            return;
+
+        jGenerator.writeStartArray(SPID_SCHEMA);
+        for (AttributeEntry attr : extAttrs) {
+            for (AttributeValueInterface attrVal : attr) {
+                jGenerator.writeStartObject();
+                jGenerator.write(SPIDSchemaManager.NAME_ATTR_ID, attr.getName().getNameId());
+                jGenerator.write(SPIDSchemaManager.VALUE_ATTR_ID, attrVal.getValue().toString());
+                jGenerator.writeEnd();
+            }
+        }
+        jGenerator.writeEnd();
+
+    }
+
     private boolean checkSchema(JsonParser jParser)
         throws SchemaManagerException {
 
@@ -275,6 +297,66 @@ public class SPIDSchemaManager
             logger.log(Level.SEVERE, ex.getMessage(), ex);
             throw new SchemaManagerException(ex.getMessage());
         }
+    }
+
+    public Collection<AttributeEntry> parse(JsonParser jParser)
+        throws SchemaManagerException {
+
+        String kName = null;
+        String attrName = null;
+        String attrValue = null;
+        boolean inObj = false;
+        HashMap<String, AttributeEntry> extMap = new HashMap<String, AttributeEntry>();
+        boolean init = false;
+
+        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
+
+            if (evn == JsonParser.Event.START_OBJECT) {
+
+                attrName = null;
+                attrValue = null;
+                inObj = true;
+
+            } else if (evn == JsonParser.Event.END_OBJECT) {
+
+                if (attrName == null)
+                    throw new JsonParsingException("Missing attribute name", jParser.getLocation());
+                if (attrValue == null)
+                    throw new JsonParsingException("Missing attribute value", jParser.getLocation());
+                if (!extMap.containsKey(attrName)) {
+                    extMap.put(attrName, new AttributeEntry(new SPIDAttributeName(attrName, null)));
+                }
+                extMap.get(attrName).add(new SPIDAttributeValue(attrValue, ""));
+                inObj = false;
+
+            } else if (evn == JsonParser.Event.KEY_NAME) {
+
+                if (!inObj)
+                    throw new JsonParsingException("Unrelated property", jParser.getLocation());
+                kName = SCIM2Decoder.getKeyName(jParser);
+
+            } else if (evn == JsonParser.Event.VALUE_STRING) {
+
+                if (SPIDSchemaManager.NAME_ATTR_ID.equals(kName)) {
+                    attrName = jParser.getString();
+                } else if (SPIDSchemaManager.VALUE_ATTR_ID.equals(kName)) {
+                    attrValue = jParser.getString();
+                }
+
+                kName = null;
+
+            } else if (evn == JsonParser.Event.START_ARRAY) {
+
+                if (init)
+                    throw new SchemaManagerException("Illegal nested array");
+                init = true;
+
+            } else {
+                throw new SchemaManagerException("Wrong SPID definitions");
+            }
+        }
+
+        return extMap.values();
     }
 
     /*
