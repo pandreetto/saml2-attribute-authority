@@ -13,6 +13,7 @@ import it.infn.security.scim.core.SCIMCoreConstants;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -36,10 +37,6 @@ public class SPIDSchemaManager
     implements SchemaManager {
 
     private static final Logger logger = Logger.getLogger(SPIDSchemaManager.class.getName());
-
-    public static final String SPID_ATTR_URI = "urn:it:infn:security:spid:attributes:1.0";
-
-    public static final String SPID_SCHEMA_URI = "urn:it:infn:security:spid:attributes:1.0";
 
     public static final String NAME_ATTR_ID = "name";
 
@@ -85,11 +82,23 @@ public class SPIDSchemaManager
                 jGenerator.write(NAME_FRIEND_ID, attribute.getName().getFriendlyName());
 
             jGenerator.writeStartArray(VALUES_ATTR_ID);
-            for (AttributeValueInterface value : attribute) {
+            for (AttributeValueInterface attrValue : attribute) {
+
+                String strValue = null;
+                String objType = attrValue.getType();
+                if (objType.equals(SPIDAttributeValue.SPID_STRING_TYPE)) {
+                    strValue = (String) attrValue.getValue();
+                } else if (objType.equals(SPIDAttributeValue.SPID_DATE_TYPE)) {
+                    /*
+                     * TODO verify encoding
+                     */
+                    strValue = Long.toString(((Date) attrValue.getValue()).getTime());
+                }
+
                 jGenerator.writeStartObject();
-                jGenerator.write(VALUE_ATTR_ID, value.encode(format));
-                jGenerator.write(VALUE_TYPE_ID, value.getType());
-                jGenerator.write(DESCR_ATTR_ID, value.getDescription());
+                jGenerator.write(VALUE_ATTR_ID, strValue);
+                jGenerator.write(VALUE_TYPE_ID, objType);
+                jGenerator.write(DESCR_ATTR_ID, attrValue.getDescription());
                 jGenerator.writeEnd();
             }
             jGenerator.writeEnd();

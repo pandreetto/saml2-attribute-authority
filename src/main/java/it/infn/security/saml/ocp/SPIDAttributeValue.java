@@ -72,25 +72,6 @@ public class SPIDAttributeValue
         return value;
     }
 
-    public String encode(String format)
-        throws SchemaManagerException {
-
-        if (type.equals(SPID_STRING_TYPE)) {
-
-            return (String) value;
-
-        } else if (type.equals(SPID_DATE_TYPE)) {
-
-            /*
-             * TODO verify encoding
-             */
-            return Long.toString(((Date) value).getTime());
-
-        }
-
-        return null;
-    }
-
     public String getDescription() {
         return description;
     }

@@ -8,9 +8,6 @@ public interface AttributeValueInterface {
 
     public Object getValue();
 
-    public String encode(String format)
-        throws SchemaManagerException;
-
     public String getDescription();
 
 }
