@@ -7,6 +7,8 @@ import it.infn.security.saml.ocp.SPIDAttributeName;
 import it.infn.security.saml.ocp.SPIDAttributeValue;
 import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
+import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -387,7 +389,7 @@ public class SCIM2Decoder {
     }
 
     public static SCIM2User decodeUser(String inStr)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
         SCIM2User result = new SCIM2User();
@@ -436,7 +438,7 @@ public class SCIM2Decoder {
                         checkAddresses(jParser, result);
                     } else if (SCIMCoreConstants.GROUPS.equals(keyName)) {
                         checkGroup(jParser, result);
-                    } else if (SCIMCoreConstants.SPID_SCHEMA.equals(keyName)) {
+                    } else if (SchemaManagerFactory.getManager().getSCIMSchema().equals(keyName)) {
                         checkExtensions(jParser, result);
                     } else {
                         checkStdMultiValue(jParser, result, keyName);
@@ -458,7 +460,7 @@ public class SCIM2Decoder {
     }
 
     public static SCIM2Group decodeGroup(String inStr)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
         SCIM2Group result = new SCIM2Group();
@@ -499,7 +501,7 @@ public class SCIM2Decoder {
                         checkSchemas(jParser, schemas);
                     } else if (SCIMCoreConstants.MEMBERS.equals(keyName)) {
                         checkMembers(jParser, result);
-                    } else if (SCIMCoreConstants.SPID_SCHEMA.equals(keyName)) {
+                    } else if (SchemaManagerFactory.getManager().getSCIMSchema().equals(keyName)) {
                         checkExtensions(jParser, result);
                     } else {
                         throw new JsonParsingException("Attribute not recognized " + keyName, jParser.getLocation());

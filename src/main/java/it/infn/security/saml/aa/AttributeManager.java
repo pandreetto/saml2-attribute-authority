@@ -35,9 +35,8 @@ public class AttributeManager {
 
     @GET
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributeNames(@HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization) {
+    public Response getAttributeNames(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
         Response result = null;
         try {
@@ -52,7 +51,7 @@ public class AttributeManager {
             DataSource dataSource = DataSourceFactory.getDataSource();
             SchemaManager schemaManager = SchemaManagerFactory.getManager();
 
-            String encodedKeys = schemaManager.encode(dataSource.getAttributeNames(), outputFormat);
+            String encodedKeys = schemaManager.encode(dataSource.getAttributeNames());
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
@@ -71,10 +70,9 @@ public class AttributeManager {
     @GET
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response getAttributeSet(@PathParam("attrName")
-    String attrName, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization) {
+    public Response getAttributeSet(@PathParam("attrName") String attrName,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
         Response result = null;
         try {
@@ -89,7 +87,7 @@ public class AttributeManager {
             DataSource dataSource = DataSourceFactory.getDataSource();
             SchemaManager schemaManager = SchemaManagerFactory.getManager();
             AttributeEntry attrEntry = dataSource.getAttribute(attrName);
-            String encodedAttr = schemaManager.encode(attrEntry, outputFormat);
+            String encodedAttr = schemaManager.encode(attrEntry);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
@@ -108,10 +106,9 @@ public class AttributeManager {
     @DELETE
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response deleteAttributeSet(@PathParam("attrName")
-    String attrName, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization) {
+    public Response deleteAttributeSet(@PathParam("attrName") String attrName,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
         Response result = null;
         try {
@@ -143,11 +140,10 @@ public class AttributeManager {
     @PUT
     @Path("{attrName}")
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response updateAttributeSet(@PathParam("attrName")
-    String attrName, @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
-    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization, String payload) {
+    public Response updateAttributeSet(@PathParam("attrName") String attrName,
+            @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
 
         Response result = null;
         try {
@@ -161,7 +157,7 @@ public class AttributeManager {
             accessManager.authorizeCreateAttribute(requester);
 
             SchemaManager schemaManager = SchemaManagerFactory.getManager();
-            AttributeEntry attrItem = schemaManager.parse(payload, inputFormat);
+            AttributeEntry attrItem = schemaManager.parse(payload);
             DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.updateAttribute(attrItem);
 
@@ -180,10 +176,9 @@ public class AttributeManager {
 
     @POST
     @Produces(SCIMConstants.APPLICATION_JSON)
-    public Response createAttributeSet(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER)
-    String inputFormat, @HeaderParam(SCIMConstants.ACCEPT_HEADER)
-    String outputFormat, @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER)
-    String authorization, String payload) {
+    public Response createAttributeSet(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
 
         Response result = null;
         try {
@@ -197,7 +192,7 @@ public class AttributeManager {
             accessManager.authorizeCreateAttribute(requester);
 
             SchemaManager schemaManager = SchemaManagerFactory.getManager();
-            AttributeEntry attrItem = schemaManager.parse(payload, inputFormat);
+            AttributeEntry attrItem = schemaManager.parse(payload);
 
             DataSource dataSource = DataSourceFactory.getDataSource();
             dataSource.createAttribute(attrItem);

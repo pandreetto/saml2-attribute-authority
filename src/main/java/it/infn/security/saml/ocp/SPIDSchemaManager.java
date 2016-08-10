@@ -38,6 +38,8 @@ public class SPIDSchemaManager
 
     private static final Logger logger = Logger.getLogger(SPIDSchemaManager.class.getName());
 
+    public static final String SPID_SCHEMA = "urn:it:infn:security:spid:attributes:1.0";
+
     public static final String NAME_ATTR_ID = "name";
 
     public static final String NAME_FORMAT_ID = "format";
@@ -59,10 +61,16 @@ public class SPIDSchemaManager
     }
 
     /*
+     * *************************************************************************************************************
      * SCIM section
+     * *************************************************************************************************************
      */
 
-    public String encode(AttributeEntry attribute, String format)
+    public String getSCIMSchema() {
+        return SPID_SCHEMA;
+    }
+
+    public String encode(AttributeEntry attribute)
         throws SchemaManagerException {
 
         try {
@@ -73,7 +81,7 @@ public class SPIDSchemaManager
             jGenerator.writeStartObject();
 
             jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
-            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+            jGenerator.write(SPID_SCHEMA);
             jGenerator.writeEnd();
 
             jGenerator.write(NAME_ATTR_ID, attribute.getName().getNameId());
@@ -113,7 +121,7 @@ public class SPIDSchemaManager
         }
     }
 
-    public String encode(List<AttributeNameInterface> names, String format)
+    public String encode(List<AttributeNameInterface> names)
         throws SchemaManagerException {
 
         try {
@@ -123,7 +131,7 @@ public class SPIDSchemaManager
             jGenerator.writeStartObject();
 
             jGenerator.writeStartArray(SCIMCoreConstants.SCHEMAS);
-            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+            jGenerator.write(SPID_SCHEMA);
             jGenerator.writeEnd();
 
             jGenerator.writeStartArray(NAMES_ATTR_ID);
@@ -153,7 +161,7 @@ public class SPIDSchemaManager
 
         for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
             if (evn == JsonParser.Event.VALUE_STRING) {
-                if (SCIMCoreConstants.SPID_SCHEMA.equals(jParser.getString()))
+                if (SPID_SCHEMA.equals(jParser.getString()))
                     return true;
             } else {
                 throw new JsonParsingException("Bad schema definition", jParser.getLocation());
@@ -203,7 +211,7 @@ public class SPIDSchemaManager
         }
     }
 
-    public AttributeEntry parse(String data, String format)
+    public AttributeEntry parse(String data)
         throws SchemaManagerException {
 
         try {
@@ -270,7 +278,9 @@ public class SPIDSchemaManager
     }
 
     /*
+     * *************************************************************************************************************
      * SAML2 section
+     * *************************************************************************************************************
      */
 
     public String getAuthorityIDFormat() {
@@ -296,9 +306,6 @@ public class SPIDSchemaManager
         if (issuer == null) {
             throw new SchemaManagerException("Issuer in request is mandatory");
         }
-        /*
-         * TODO check if the issuer of the query is a SPID-registered SP (retrieve metadata via AGID registry)
-         */
 
         String queryDest = query.getDestination();
         if (queryDest == null || queryDest.length() == 0) {

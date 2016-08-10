@@ -10,6 +10,8 @@ import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.saml.schema.AttributeValueInterface;
+import it.infn.security.saml.schema.SchemaManagerException;
+import it.infn.security.saml.schema.SchemaManagerFactory;
 import it.infn.security.scim.protocol.SCIMConstants;
 
 import java.io.StringWriter;
@@ -23,7 +25,7 @@ import javax.json.stream.JsonGenerator;
 public class SCIM2Encoder {
 
     private static void encodeResource(SCIM2Resource resource, String resUrl, JsonGenerator jGenerator)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
 
@@ -70,13 +72,13 @@ public class SCIM2Encoder {
      * TODO move into SPID package
      */
     private static void encodeExtensions(SCIM2Resource resource, JsonGenerator jGenerator)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
         Collection<AttributeEntry> extAttrs = resource.getExtendedAttributes();
 
         if (extAttrs == null || extAttrs.size() == 0)
             return;
 
-        jGenerator.writeStartArray(SCIMCoreConstants.SPID_SCHEMA);
+        jGenerator.writeStartArray(SchemaManagerFactory.getManager().getSCIMSchema()); // to be changed
         for (AttributeEntry attr : extAttrs) {
             for (AttributeValueInterface attrVal : attr) {
                 jGenerator.writeStartObject();
@@ -90,7 +92,7 @@ public class SCIM2Encoder {
     }
 
     public static String encodeUser(SCIM2User user, String sitePrefix)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
         JsonGenerator jGenerator = Json.createGenerator(result);
@@ -101,7 +103,7 @@ public class SCIM2Encoder {
 
         Collection<AttributeEntry> extAttrs = user.getExtendedAttributes();
         if (extAttrs != null && extAttrs.size() > 0) {
-            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+            jGenerator.write(SchemaManagerFactory.getManager().getSCIMSchema());
         }
 
         jGenerator.writeEnd();
@@ -114,7 +116,7 @@ public class SCIM2Encoder {
     }
 
     private static void streamUser(SCIM2User user, String sitePrefix, JsonGenerator jGenerator)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         String resUrl = sitePrefix + "/Users/" + user.getResourceId();
         encodeResource(user, resUrl, jGenerator);
@@ -233,7 +235,7 @@ public class SCIM2Encoder {
     }
 
     public static String encodeUserList(UserSearchResult searchResult, String sitePrefix)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
         JsonGenerator jGenerator = Json.createGenerator(result);
@@ -265,7 +267,7 @@ public class SCIM2Encoder {
     }
 
     public static String encodeGroup(SCIM2Group group, String sitePrefix)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
         JsonGenerator jGenerator = Json.createGenerator(result);
@@ -276,7 +278,7 @@ public class SCIM2Encoder {
 
         Collection<AttributeEntry> extAttrs = group.getExtendedAttributes();
         if (extAttrs != null && extAttrs.size() > 0) {
-            jGenerator.write(SCIMCoreConstants.SPID_SCHEMA);
+            jGenerator.write(SchemaManagerFactory.getManager().getSCIMSchema());
         }
 
         jGenerator.writeEnd();
@@ -290,7 +292,7 @@ public class SCIM2Encoder {
     }
 
     private static void streamGroup(SCIM2Group group, String sitePrefix, JsonGenerator jGenerator)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         String resUrl = sitePrefix + "/Groups/" + group.getResourceId();
         encodeResource(group, resUrl, jGenerator);
@@ -322,7 +324,7 @@ public class SCIM2Encoder {
     }
 
     public static String encodeGroupList(GroupSearchResult searchResult, String sitePrefix)
-        throws DataSourceException {
+        throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
         JsonGenerator jGenerator = Json.createGenerator(result);

@@ -15,20 +15,26 @@ public interface SchemaManager {
         throws SchemaManagerException;
 
     /*
+     * *************************************************************************************************************
      * SCIM section
+     * *************************************************************************************************************
      */
 
-    public String encode(AttributeEntry attribute, String format)
+    public String getSCIMSchema();
+
+    public String encode(AttributeEntry attribute)
         throws SchemaManagerException;
 
-    public String encode(List<AttributeNameInterface> names, String format)
+    public String encode(List<AttributeNameInterface> names)
         throws SchemaManagerException;
 
-    public AttributeEntry parse(String data, String format)
+    public AttributeEntry parse(String data)
         throws SchemaManagerException;
 
     /*
+     * *************************************************************************************************************
      * SAML2 section
+     * *************************************************************************************************************
      */
 
     public String getAuthorityIDFormat();
