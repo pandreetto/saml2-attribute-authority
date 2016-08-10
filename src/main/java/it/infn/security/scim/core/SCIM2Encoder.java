@@ -10,6 +10,7 @@ import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.ocp.SPIDSchemaManager;
 import it.infn.security.saml.schema.AttributeEntry;
 import it.infn.security.saml.schema.AttributeValueInterface;
+import it.infn.security.scim.protocol.SCIMConstants;
 
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -353,6 +354,14 @@ public class SCIM2Encoder {
     }
 
     public static String encodeException(int code, String message) {
+
+        if (code >= 600) {
+            code = SCIMConstants.CODE_INTERNAL_SERVER_ERROR;
+        }
+
+        if (message == null) {
+            message = "Internal server error";
+        }
 
         StringWriter result = new StringWriter();
         JsonGenerator jGenerator = Json.createGenerator(result);

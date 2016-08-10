@@ -154,12 +154,9 @@ public class SCIMProtocolCodec {
         if (ex instanceof CodedException) {
             CodedException cEx = (CodedException) ex;
             code = cEx.getCode();
-            if (code >= 600) {
-                code = SCIMConstants.CODE_INTERNAL_SERVER_ERROR;
-            }
             message = cEx.getMessage();
         } else {
-            message = "Internal server error: " + ex.getMessage();
+            message = "Internal server error";
         }
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
