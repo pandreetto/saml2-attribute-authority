@@ -43,6 +43,8 @@ public class SPIDSchemaManager
 
     public static final String SPID_SCHEMA = "urn:it:infn:security:spid:attributes:1.0";
 
+    public static final String SPID_ATTR_ID = "spidattributes";
+
     public static final String NAME_ATTR_ID = "name";
 
     public static final String NAME_FORMAT_ID = "format";
@@ -165,7 +167,8 @@ public class SPIDSchemaManager
         if (extAttrs == null || extAttrs.size() == 0)
             return;
 
-        jGenerator.writeStartArray(SPID_SCHEMA);
+        jGenerator.writeStartObject(SPID_SCHEMA);
+        jGenerator.writeStartArray(SPID_ATTR_ID);
         for (AttributeEntry attr : extAttrs) {
             for (AttributeValueInterface attrVal : attr) {
                 jGenerator.writeStartObject();
@@ -174,7 +177,7 @@ public class SPIDSchemaManager
                 jGenerator.writeEnd();
             }
         }
-        jGenerator.writeEnd();
+        jGenerator.writeEnd().writeEnd();
 
     }
 
@@ -309,7 +312,17 @@ public class SPIDSchemaManager
         HashMap<String, AttributeEntry> extMap = new HashMap<String, AttributeEntry>();
         boolean init = false;
 
-        for (JsonParser.Event evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
+        JsonParser.Event evn = jParser.next();
+        if (evn != JsonParser.Event.START_OBJECT) {
+            throw new SchemaManagerException("Missing SPID namespace");
+        }
+
+        evn = jParser.next();
+        if (evn != JsonParser.Event.KEY_NAME && !SCIM2Decoder.getKeyName(jParser).equals(SPID_ATTR_ID)) {
+            throw new SchemaManagerException("Undefined attribute " + SPID_ATTR_ID);
+        }
+
+        for (evn = jParser.next(); evn != JsonParser.Event.END_ARRAY; evn = jParser.next()) {
 
             if (evn == JsonParser.Event.START_OBJECT) {
 
@@ -354,6 +367,11 @@ public class SPIDSchemaManager
             } else {
                 throw new SchemaManagerException("Wrong SPID definitions");
             }
+        }
+
+        evn = jParser.next();
+        if (evn != JsonParser.Event.END_OBJECT) {
+            throw new SchemaManagerException("SPID namespace is not closed");
         }
 
         return extMap.values();

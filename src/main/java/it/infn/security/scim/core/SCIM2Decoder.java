@@ -12,10 +12,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.json.Json;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
+
+import org.apache.commons.codec.binary.Base64;
 
 public class SCIM2Decoder {
 
@@ -66,6 +72,32 @@ public class SCIM2Decoder {
         }
     }
 
+    private static String getPwdHash(String pwd)
+        throws DataSourceException {
+
+        // https://www.owasp.org/index.php/Hashing_Java
+        // man 3 crypt
+        try {
+            String salt = UUID.randomUUID().toString();
+            SecretKeyFactory skf = null;
+            String algPrefix = null;
+            try {
+                skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+                algPrefix = "$6$";
+            } catch (Exception ex) {
+                skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+                algPrefix = "$3$";
+            }
+            PBEKeySpec spec = new PBEKeySpec(pwd.toCharArray(), salt.getBytes(), 5, 256);
+            SecretKey key = skf.generateSecret(spec);
+            String encPwd = Base64.encodeBase64String(key.getEncoded());
+            return new String(algPrefix + salt + "$" + encPwd);
+
+        } catch (Exception ex) {
+            throw new DataSourceException("Cannot create hash for password", ex);
+        }
+    }
+
     private static void checkAttribute(JsonParser jParser, SCIM2User user, String kName, String value)
         throws DataSourceException {
 
@@ -88,7 +120,7 @@ public class SCIM2Decoder {
         } else if (SCIMCoreConstants.TIME_ZONE.equals(kName)) {
             user.setUserTimezone(value);
         } else if (SCIMCoreConstants.PASSWORD.equals(kName)) {
-            user.setUserPwd(value);
+            user.setUserPwd(getPwdHash(value));
         } else {
 
             checkResAttribute(jParser, user, kName, value);

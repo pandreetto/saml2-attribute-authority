@@ -150,10 +150,6 @@ public class SCIM2Encoder {
         if (tz != null)
             jGenerator.write(SCIMCoreConstants.TIME_ZONE, tz);
 
-        String pwd = user.getUserPwd();
-        if (pwd != null)
-            jGenerator.write(SCIMCoreConstants.PASSWORD, pwd);
-
         encodeMultiValue(SCIMCoreConstants.EMAILS, user.getUserEmails(), jGenerator);
 
         encodeMultiValue(SCIMCoreConstants.PHONE_NUMBERS, user.getUserPhones(), jGenerator);
