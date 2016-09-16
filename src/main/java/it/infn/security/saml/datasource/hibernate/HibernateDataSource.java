@@ -113,8 +113,8 @@ public abstract class HibernateDataSource
             }
 
             Query query = session.createQuery(queryStr.toString());
-            if (startIndex >= 0)
-                query.setFirstResult(startIndex);
+            if (startIndex > 0)
+                query.setFirstResult(startIndex - 1);
             if (count > 0)
                 query.setMaxResults(count);
 
@@ -131,6 +131,12 @@ public abstract class HibernateDataSource
             if (totalUser.hasNext()) {
                 result.setTotalResults(totalUser.next().intValue());
             }
+            if (startIndex < 1)
+                result.setStartIndex(1);
+            else
+                result.setStartIndex(startIndex);
+            if (count > 0)
+                result.setPageSize(count);
 
             session.getTransaction().commit();
             nocommit = false;
@@ -347,8 +353,8 @@ public abstract class HibernateDataSource
             }
 
             Query query = session.createQuery(queryStr.toString());
-            if (startIndex >= 0)
-                query.setFirstResult(startIndex);
+            if (startIndex > 0)
+                query.setFirstResult(startIndex - 1);
             if (count > 0)
                 query.setMaxResults(count);
 
@@ -365,6 +371,12 @@ public abstract class HibernateDataSource
             if (totalGroup.hasNext()) {
                 result.setTotalResults(totalGroup.next().intValue());
             }
+            if (startIndex < 1)
+                result.setStartIndex(1);
+            else
+                result.setStartIndex(startIndex);
+            if (count > 0)
+                result.setPageSize(count);
 
             session.getTransaction().commit();
             nocommit = false;

@@ -394,4 +394,8 @@ public class SCIM2User
         return addresses;
     }
 
+    public String getType() {
+        return SCIMCoreConstants.USER_TAG;
+    }
+
 }

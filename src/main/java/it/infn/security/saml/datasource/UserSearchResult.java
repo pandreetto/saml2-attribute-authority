@@ -7,10 +7,16 @@ public class UserSearchResult {
 
     private int total;
 
+    private int startIdx;
+
+    private int pageSize;
+
     private List<UserResource> users;
 
     public UserSearchResult() {
         total = 0;
+        startIdx = 0;
+        pageSize = 0;
         users = new ArrayList<UserResource>();
     }
 
@@ -37,5 +43,21 @@ public class UserSearchResult {
 
     public int getTotalResults() {
         return total;
+    }
+
+    public void setStartIndex(int st) {
+        startIdx = st;
+    }
+
+    public int getStartIndex() {
+        return startIdx;
+    }
+
+    public void setPageSize(int ps) {
+        pageSize = ps;
+    }
+
+    public int getPageSize() {
+        return pageSize;
     }
 }

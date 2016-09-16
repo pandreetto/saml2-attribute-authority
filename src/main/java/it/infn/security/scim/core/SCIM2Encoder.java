@@ -34,6 +34,7 @@ public class SCIM2Encoder {
             jGenerator.write(SCIMCoreConstants.EXTERNAL_ID, extId);
         jGenerator.writeStartObject(SCIMCoreConstants.META);
 
+        jGenerator.write(SCIMCoreConstants.RESOURCE_TYPE, resource.getType());
         jGenerator.write(SCIMCoreConstants.CREATED, dFormatter.format(resource.getResourceCreationDate()));
         jGenerator.write(SCIMCoreConstants.MODIFIED, dFormatter.format(resource.getResourceChangeDate()));
 
@@ -219,10 +220,9 @@ public class SCIM2Encoder {
         if (searchResult == null || searchResult.isEmpty()) {
             jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, 0);
         } else {
-            /*
-             * TODO missing START_INDEX and ITEM_PER_PAGE
-             */
             jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, searchResult.getTotalResults());
+            jGenerator.write(SCIMCoreConstants.START_INDEX, searchResult.getStartIndex());
+            jGenerator.write(SCIMCoreConstants.ITEM_PER_PAGE, searchResult.getPageSize());
             jGenerator.writeStartArray(SCIMCoreConstants.RESOURCES);
             for (UserResource user : searchResult.getUserList()) {
                 jGenerator.writeStartObject();
@@ -308,10 +308,9 @@ public class SCIM2Encoder {
         if (searchResult == null || searchResult.isEmpty()) {
             jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, 0);
         } else {
-            /*
-             * TODO missing START_INDEX and ITEM_PER_PAGE
-             */
             jGenerator.write(SCIMCoreConstants.TOTAL_RESULTS, searchResult.getTotalResults());
+            jGenerator.write(SCIMCoreConstants.START_INDEX, searchResult.getStartIndex());
+            jGenerator.write(SCIMCoreConstants.ITEM_PER_PAGE, searchResult.getPageSize());
             jGenerator.writeStartArray(SCIMCoreConstants.RESOURCES);
             for (GroupResource user : searchResult.getGroupList()) {
                 jGenerator.writeStartObject();

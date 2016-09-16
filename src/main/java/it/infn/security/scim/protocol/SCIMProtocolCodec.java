@@ -146,7 +146,7 @@ public class SCIMProtocolCodec {
 
     public static Response responseFromException(Exception ex) {
 
-        logger.log(Level.INFO, "Detected exception " + ex.getMessage(), ex);
+        logger.log(Level.FINE, "Detected exception " + ex.getMessage(), ex);
 
         int code = SCIMConstants.CODE_INTERNAL_SERVER_ERROR;
         String message = null;

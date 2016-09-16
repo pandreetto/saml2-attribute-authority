@@ -7,6 +7,10 @@ public class GroupSearchResult {
 
     private int total;
 
+    private int startIdx;
+
+    private int pageSize;
+
     private List<GroupResource> users;
 
     public GroupSearchResult() {
@@ -37,5 +41,21 @@ public class GroupSearchResult {
 
     public int getTotalResults() {
         return total;
+    }
+
+    public void setStartIndex(int st) {
+        startIdx = st;
+    }
+
+    public int getStartIndex() {
+        return startIdx;
+    }
+
+    public void setPageSize(int ps) {
+        pageSize = ps;
+    }
+
+    public int getPageSize() {
+        return pageSize;
     }
 }

@@ -79,4 +79,8 @@ public class SCIM2Group
         return result;
     }
 
+    public String getType() {
+        return SCIMCoreConstants.GROUP_TAG;
+    }
+
 }

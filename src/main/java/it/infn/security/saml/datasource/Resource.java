@@ -43,4 +43,6 @@ public interface Resource {
     public void setExtendedAttributes(Collection<AttributeEntry> xAttributes)
         throws DataSourceException;
 
+    public String getType();
+
 }

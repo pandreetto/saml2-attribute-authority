@@ -128,4 +128,8 @@ public class SCIMCoreConstants {
 
     public static final String STATUS = "status";
 
+    public static final String USER_TAG = "User";
+
+    public static final String GROUP_TAG = "Group";
+
 }

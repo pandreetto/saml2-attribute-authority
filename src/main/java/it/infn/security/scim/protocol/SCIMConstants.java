@@ -6,10 +6,7 @@ public class SCIMConstants {
 
     public static final String USER_ENDPOINT = "/Users";
 
-    /*
-     * TODO change to application/scim+json
-     */
-    public static final String APPLICATION_JSON = "application/json";
+    public static final String APPLICATION_JSON = "application/scim+json";
 
     public static final String TEXT_XML = "text/xml";
 
