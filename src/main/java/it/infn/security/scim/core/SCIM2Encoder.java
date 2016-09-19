@@ -5,6 +5,7 @@ import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
 import it.infn.security.saml.datasource.GroupResource;
 import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.datasource.Resource;
 import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.datasource.UserSearchResult;
 import it.infn.security.saml.schema.AttributeEntry;
@@ -22,7 +23,7 @@ import javax.json.stream.JsonGenerator;
 
 public class SCIM2Encoder {
 
-    private static void encodeResource(SCIM2Resource resource, String resUrl, JsonGenerator jGenerator)
+    private static void encodeResource(Resource resource, String resUrl, JsonGenerator jGenerator)
         throws DataSourceException, SchemaManagerException {
 
         SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
@@ -67,7 +68,7 @@ public class SCIM2Encoder {
 
     }
 
-    public static String encodeUser(SCIM2User user, String sitePrefix)
+    public static String encodeUser(UserResource user, String sitePrefix)
         throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
@@ -91,7 +92,7 @@ public class SCIM2Encoder {
         return result.toString();
     }
 
-    private static void streamUser(SCIM2User user, String sitePrefix, JsonGenerator jGenerator)
+    private static void streamUser(UserResource user, String sitePrefix, JsonGenerator jGenerator)
         throws DataSourceException, SchemaManagerException {
 
         String resUrl = sitePrefix + "/Users/" + user.getResourceId();
@@ -237,7 +238,7 @@ public class SCIM2Encoder {
 
     }
 
-    public static String encodeGroup(SCIM2Group group, String sitePrefix)
+    public static String encodeGroup(GroupResource group, String sitePrefix)
         throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
@@ -262,7 +263,7 @@ public class SCIM2Encoder {
 
     }
 
-    private static void streamGroup(SCIM2Group group, String sitePrefix, JsonGenerator jGenerator)
+    private static void streamGroup(GroupResource group, String sitePrefix, JsonGenerator jGenerator)
         throws DataSourceException, SchemaManagerException {
 
         String resUrl = sitePrefix + "/Groups/" + group.getResourceId();

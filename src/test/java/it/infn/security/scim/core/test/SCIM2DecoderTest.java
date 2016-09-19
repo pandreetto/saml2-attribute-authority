@@ -6,15 +6,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
-import it.infn.security.saml.datasource.AddrValueTuple;
-import it.infn.security.saml.datasource.AttrValueTuple;
-import it.infn.security.scim.core.SCIM2Decoder;
-import it.infn.security.scim.core.SCIM2Group;
-import it.infn.security.scim.core.SCIM2User;
-import it.infn.security.scim.core.SCIMCoreConstants;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import it.infn.security.saml.datasource.AddrValueTuple;
+import it.infn.security.saml.datasource.AttrValueTuple;
+import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.UserResource;
+import it.infn.security.scim.core.SCIM2Decoder;
+import it.infn.security.scim.core.SCIMCoreConstants;
 
 public class SCIM2DecoderTest {
 
@@ -100,7 +100,7 @@ public class SCIM2DecoderTest {
 
         try {
 
-            SCIM2User user = SCIM2Decoder.decodeUser(jUser.toString());
+            UserResource user = SCIM2Decoder.decodeUser(jUser.toString());
 
             Assert.assertEquals("External ID", extId, user.getResourceExtId());
 
@@ -189,7 +189,7 @@ public class SCIM2DecoderTest {
 
         try {
 
-            SCIM2Group group = SCIM2Decoder.decodeGroup(jGroup.toString());
+            GroupResource group = SCIM2Decoder.decodeGroup(jGroup.toString());
 
             Assert.assertEquals("External ID", extId, group.getResourceExtId());
             Assert.assertEquals("Display name", dName, group.getName());

@@ -1,18 +1,6 @@
 package it.infn.security.saml.aa;
 
-import it.infn.security.saml.configuration.AuthorityConfiguration;
-import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
-import it.infn.security.saml.datasource.DataSource;
-import it.infn.security.saml.datasource.DataSourceFactory;
-import it.infn.security.saml.datasource.GroupResource;
-import it.infn.security.saml.datasource.GroupSearchResult;
-import it.infn.security.saml.iam.AccessManager;
-import it.infn.security.saml.iam.AccessManagerFactory;
-import it.infn.security.saml.iam.IdentityManager;
-import it.infn.security.saml.iam.IdentityManagerFactory;
-import it.infn.security.scim.protocol.SCIMConstants;
-import it.infn.security.scim.protocol.SCIMProtocolCodec;
-
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -28,6 +16,21 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
+
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
+import it.infn.security.saml.datasource.DataSource;
+import it.infn.security.saml.datasource.DataSourceFactory;
+import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.GroupSearchResult;
+import it.infn.security.saml.iam.AccessManager;
+import it.infn.security.saml.iam.AccessManagerFactory;
+import it.infn.security.saml.iam.IdentityManager;
+import it.infn.security.saml.iam.IdentityManagerFactory;
+import it.infn.security.scim.core.SCIM2Decoder;
+import it.infn.security.scim.core.SCIM2Encoder;
+import it.infn.security.scim.protocol.SCIMConstants;
+import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
 @Path(SCIMConstants.GROUP_ENDPOINT)
 public class GroupResourceManager {
@@ -50,6 +53,9 @@ public class GroupResourceManager {
 
             SCIMProtocolCodec.checkAcceptedFormat(format);
 
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
@@ -59,7 +65,7 @@ public class GroupResourceManager {
 
             GroupResource group = dataSource.getGroup(id);
 
-            String encodedGroup = SCIMProtocolCodec.encodeGroup(group);
+            String encodedGroup = SCIM2Encoder.encodeGroup(group, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
@@ -88,6 +94,7 @@ public class GroupResourceManager {
             SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -96,15 +103,14 @@ public class GroupResourceManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
-            GroupResource group = SCIMProtocolCodec.decodeGroup(resourceString);
+            GroupResource group = SCIM2Decoder.decodeGroup(resourceString);
 
             GroupResource createdGroup = dataSource.createGroup(group);
 
-            String encodedGroup = SCIMProtocolCodec.encodeGroup(createdGroup);
+            String encodedGroup = SCIM2Encoder.encodeGroup(createdGroup, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.GROUP_ENDPOINT + "/"
-                    + createdGroup.getResourceId();
+            String locStr = managerURL + SCIMConstants.GROUP_ENDPOINT + "/" + createdGroup.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
@@ -166,6 +172,9 @@ public class GroupResourceManager {
 
             SCIMProtocolCodec.checkAcceptedFormat(format);
 
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
@@ -182,7 +191,7 @@ public class GroupResourceManager {
 
                 GroupSearchResult returnedGroups = dataSource.listGroups(filter, sortBy, sortOrder, sIdx, cnt);
 
-                String encodedListedResource = SCIMProtocolCodec.encodeGroupSearchResult(returnedGroups);
+                String encodedListedResource = SCIM2Encoder.encodeGroupList(returnedGroups, managerURL);
 
                 Map<String, String> httpHeaders = new HashMap<String, String>();
                 httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
@@ -214,6 +223,7 @@ public class GroupResourceManager {
             SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -223,16 +233,19 @@ public class GroupResourceManager {
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
             GroupResource oldGroup = dataSource.getGroup(id);
-            GroupResource newGroup = SCIMProtocolCodec.decodeGroup(resourceString);
-            GroupResource validatedGroup = SCIMProtocolCodec.checkGroupUpdate(oldGroup, newGroup);
+            GroupResource newGroup = SCIM2Decoder.decodeGroup(resourceString);
 
-            GroupResource updatedGroup = dataSource.updateGroup(oldGroup, validatedGroup);
+            newGroup.setResourceId(oldGroup.getResourceId());
+            newGroup.setResourceCreationDate(oldGroup.getResourceCreationDate());
+            newGroup.setResourceChangeDate(new Date());
+            newGroup.setResourceVersion(oldGroup.getResourceVersion());
 
-            String encodedGroup = SCIMProtocolCodec.encodeGroup(updatedGroup);
+            GroupResource updatedGroup = dataSource.updateGroup(oldGroup, newGroup);
+
+            String encodedGroup = SCIM2Encoder.encodeGroup(updatedGroup, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.GROUP_ENDPOINT + "/"
-                    + updatedGroup.getResourceId();
+            String locStr = managerURL + SCIMConstants.GROUP_ENDPOINT + "/" + updatedGroup.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 

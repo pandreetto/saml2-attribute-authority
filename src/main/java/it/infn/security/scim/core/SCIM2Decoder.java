@@ -3,6 +3,8 @@ package it.infn.security.scim.core;
 import it.infn.security.saml.datasource.AddrValueTuple;
 import it.infn.security.saml.datasource.AttrValueTuple;
 import it.infn.security.saml.datasource.DataSourceException;
+import it.infn.security.saml.datasource.GroupResource;
+import it.infn.security.saml.datasource.UserResource;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.schema.SchemaManagerFactory;
@@ -360,7 +362,7 @@ public class SCIM2Decoder {
 
     }
 
-    public static SCIM2User decodeUser(String inStr)
+    public static UserResource decodeUser(String inStr)
         throws DataSourceException, SchemaManagerException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));
@@ -436,7 +438,7 @@ public class SCIM2Decoder {
         return result;
     }
 
-    public static SCIM2Group decodeGroup(String inStr)
+    public static GroupResource decodeGroup(String inStr)
         throws DataSourceException, SchemaManagerException {
 
         JsonParser jParser = Json.createParser(new StringReader(inStr));

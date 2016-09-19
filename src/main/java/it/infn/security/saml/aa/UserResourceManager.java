@@ -10,9 +10,12 @@ import it.infn.security.saml.iam.AccessManager;
 import it.infn.security.saml.iam.AccessManagerFactory;
 import it.infn.security.saml.iam.IdentityManager;
 import it.infn.security.saml.iam.IdentityManagerFactory;
+import it.infn.security.scim.core.SCIM2Decoder;
+import it.infn.security.scim.core.SCIM2Encoder;
 import it.infn.security.scim.protocol.SCIMConstants;
 import it.infn.security.scim.protocol.SCIMProtocolCodec;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -50,6 +53,9 @@ public class UserResourceManager {
 
             SCIMProtocolCodec.checkAcceptedFormat(format);
 
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
@@ -59,7 +65,7 @@ public class UserResourceManager {
 
             UserResource user = dataSource.getUser(id);
 
-            String encodedUser = SCIMProtocolCodec.encodeUser(user);
+            String encodedUser = SCIM2Encoder.encodeUser(user, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
@@ -88,6 +94,7 @@ public class UserResourceManager {
             SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -96,15 +103,14 @@ public class UserResourceManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
-            UserResource user = SCIMProtocolCodec.decodeUser(resourceString);
+            UserResource user = SCIM2Decoder.decodeUser(resourceString);
 
             UserResource createdUser = dataSource.createUser(user);
 
-            String encodedUser = SCIMProtocolCodec.encodeUser(createdUser);
+            String encodedUser = SCIM2Encoder.encodeUser(createdUser, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
-                    + createdUser.getResourceId();
+            String locStr = managerURL + SCIMConstants.USER_ENDPOINT + "/" + createdUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
@@ -165,6 +171,9 @@ public class UserResourceManager {
 
             SCIMProtocolCodec.checkAcceptedFormat(format);
 
+            AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
+
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
             Subject requester = identityManager.authenticate();
@@ -181,7 +190,7 @@ public class UserResourceManager {
 
                 UserSearchResult searchResult = dataSource.listUsers(filter, sortBy, sortOrder, sIdx, cnt);
 
-                String encodedListedResource = SCIMProtocolCodec.encodeUserSearchResult(searchResult);
+                String encodedListedResource = SCIM2Encoder.encodeUserList(searchResult, managerURL);
 
                 Map<String, String> httpHeaders = new HashMap<String, String>();
                 httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
@@ -214,6 +223,7 @@ public class UserResourceManager {
             SCIMProtocolCodec.checkAcceptedFormat(outputFormat);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
+            String managerURL = configuration.getAuthorityURL() + "/manager";
 
             IdentityManager identityManager = IdentityManagerFactory.getManager();
             AccessManager accessManager = AccessManagerFactory.getManager();
@@ -223,17 +233,19 @@ public class UserResourceManager {
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
             UserResource oldUser = dataSource.getUser(id);
-            UserResource newUser = SCIMProtocolCodec.decodeUser(resourceString);
+            UserResource newUser = SCIM2Decoder.decodeUser(resourceString);
 
-            UserResource validatedUser = SCIMProtocolCodec.checkUserUpdate(oldUser, newUser);
+            newUser.setResourceId(oldUser.getResourceId());
+            newUser.setResourceCreationDate(oldUser.getResourceCreationDate());
+            newUser.setResourceChangeDate(new Date());
+            newUser.setResourceVersion(oldUser.getResourceVersion());
 
-            UserResource updatedUser = dataSource.updateUser(validatedUser);
+            UserResource updatedUser = dataSource.updateUser(newUser);
 
-            String encodedUser = SCIMProtocolCodec.encodeUser(updatedUser);
+            String encodedUser = SCIM2Encoder.encodeUser(updatedUser, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
-                    + updatedUser.getResourceId();
+            String locStr = managerURL + SCIMConstants.USER_ENDPOINT + "/" + updatedUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
