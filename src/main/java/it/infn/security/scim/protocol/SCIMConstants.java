@@ -8,6 +8,8 @@ public class SCIMConstants {
 
     public static final String SELF_ENDPOINT = "/Me";
 
+    public static final String SRVCONFIG_ENDPOINT = "/ServiceProviderConfigs";
+
     public static final String APPLICATION_SCIM = "application/scim+json";
 
     public static final String APPLICATION_JSON = "application/json";

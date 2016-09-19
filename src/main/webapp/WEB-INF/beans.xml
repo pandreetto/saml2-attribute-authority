@@ -35,6 +35,8 @@
             <ref bean="groupManagerBean" />
             <ref bean="attributeManager" />
             <ref bean="metadataManager" />
+            <ref bean="serviceConfigManager" />
+            <ref bean="selfManager" />
         </jaxrs:serviceBeans>
     </jaxrs:server>
  
@@ -42,6 +44,8 @@
     <bean id="groupManagerBean" class="it.infn.security.saml.aa.GroupResourceManager" />
     <bean id="attributeManager" class="it.infn.security.saml.aa.AttributeManager" />
     <bean id="metadataManager" class="it.infn.security.saml.aa.MetadataManager" />
+    <bean id="serviceConfigManager" class="it.infn.security.saml.aa.ServiceConfigManager" />
+    <bean id="selfManager" class="it.infn.security.saml.aa.SelfManager" />
    
 </beans>
 

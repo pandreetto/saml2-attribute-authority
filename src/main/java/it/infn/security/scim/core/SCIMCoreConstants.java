@@ -10,6 +10,8 @@ public class SCIMCoreConstants {
 
     public static final String SCIM2_ERR_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:Error";
 
+    public static final String SCIM2_SRVCONF_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig";
+
     public static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     public static final String ID = "id";
@@ -131,5 +133,7 @@ public class SCIMCoreConstants {
     public static final String USER_TAG = "User";
 
     public static final String GROUP_TAG = "Group";
+
+    public static final String SUPPORTED = "supported";
 
 }

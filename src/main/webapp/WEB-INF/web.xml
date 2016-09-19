@@ -14,6 +14,8 @@
                 it.infn.security.saml.aa.UserResourceManager,
                 it.infn.security.saml.aa.GroupResourceManager,
                 it.infn.security.saml.aa.AttributeManager,
+                it.infn.security.saml.aa.SelfManager,
+                it.infn.security.saml.aa.ServiceConfigManager,
                 it.infn.security.saml.aa.MetadataManager
             </param-value>
         </init-param>
