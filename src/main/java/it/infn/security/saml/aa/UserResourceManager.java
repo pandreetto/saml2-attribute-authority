@@ -40,7 +40,7 @@ public class UserResourceManager {
 
     @GET
     @Path("{id}")
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response getUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
@@ -62,7 +62,7 @@ public class UserResourceManager {
             String encodedUser = SCIMProtocolCodec.encodeUser(user);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);
 
         } catch (Exception ex) {
@@ -76,7 +76,7 @@ public class UserResourceManager {
     }
 
     @POST
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response createUser(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
@@ -106,7 +106,7 @@ public class UserResourceManager {
             String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
                     + createdUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedUser);
 
@@ -122,7 +122,7 @@ public class UserResourceManager {
 
     @DELETE
     @Path("{id}")
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response deleteUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
@@ -140,7 +140,7 @@ public class UserResourceManager {
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
             dataSource.deleteUser(id);
 
-            return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, null, null);
+            return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_NO_CONTENT, null, null);
 
         } catch (Exception ex) {
 
@@ -153,7 +153,7 @@ public class UserResourceManager {
     }
 
     @GET
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response getUser(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
             @QueryParam("attributes") String searchAttribute, @QueryParam("filter") String filter,
@@ -184,7 +184,7 @@ public class UserResourceManager {
                 String encodedListedResource = SCIMProtocolCodec.encodeUserSearchResult(searchResult);
 
                 Map<String, String> httpHeaders = new HashMap<String, String>();
-                httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+                httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
                 result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedListedResource);
 
             }
@@ -201,7 +201,7 @@ public class UserResourceManager {
 
     @PUT
     @Path("{id}")
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response updateUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
@@ -235,7 +235,7 @@ public class UserResourceManager {
             String locStr = configuration.getAuthorityURL() + "/manager" + SCIMConstants.USER_ENDPOINT + "/"
                     + updatedUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);
 

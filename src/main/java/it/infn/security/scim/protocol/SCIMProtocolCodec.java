@@ -160,7 +160,7 @@ public class SCIMProtocolCodec {
         }
 
         Map<String, String> httpHeaders = new HashMap<String, String>();
-        httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+        httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
         return buildResponse(code, httpHeaders, SCIM2Encoder.encodeException(code, message));
     }
 
@@ -185,7 +185,7 @@ public class SCIMProtocolCodec {
         throws SchemaManagerException {
         if (format == null || format.equals("*/*"))
             return;
-        if (!format.contains(SCIMConstants.APPLICATION_JSON)) {
+        if (!format.contains(SCIMConstants.APPLICATION_SCIM) || !format.contains(SCIMConstants.APPLICATION_JSON)) {
             logger.severe("Wrong accepted format: " + format);
             throw new SchemaManagerException("Unsupported accepted format " + format);
         }
@@ -195,7 +195,7 @@ public class SCIMProtocolCodec {
         throws SchemaManagerException {
         if (format == null)
             throw new SchemaManagerException("Missing content type format");
-        if (!format.contains(SCIMConstants.APPLICATION_JSON)) {
+        if (!format.contains(SCIMConstants.APPLICATION_SCIM) || !format.contains(SCIMConstants.APPLICATION_JSON)) {
             logger.severe("Wrong content type format: " + format);
             throw new SchemaManagerException("Unsupported content type format " + format);
         }

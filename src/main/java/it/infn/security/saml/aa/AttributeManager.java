@@ -34,7 +34,7 @@ public class AttributeManager {
     }
 
     @GET
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response getAttributeNames(@HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
 
@@ -54,7 +54,7 @@ public class AttributeManager {
             String encodedKeys = schemaManager.encode(dataSource.getAttributeNames());
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedKeys);
 
         } catch (Exception ex) {
@@ -69,7 +69,7 @@ public class AttributeManager {
 
     @GET
     @Path("{attrName}")
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response getAttributeSet(@PathParam("attrName") String attrName,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
@@ -90,7 +90,7 @@ public class AttributeManager {
             String encodedAttr = schemaManager.encode(attrEntry);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedAttr);
 
         } catch (Exception ex) {
@@ -105,7 +105,7 @@ public class AttributeManager {
 
     @DELETE
     @Path("{attrName}")
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response deleteAttributeSet(@PathParam("attrName") String attrName,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
@@ -124,7 +124,7 @@ public class AttributeManager {
             dataSource.removeAttribute(attrName);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
             return SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, null);
 
         } catch (Exception ex) {
@@ -139,7 +139,7 @@ public class AttributeManager {
 
     @PUT
     @Path("{attrName}")
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response updateAttributeSet(@PathParam("attrName") String attrName,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
@@ -162,7 +162,7 @@ public class AttributeManager {
             dataSource.updateAttribute(attrItem);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
 
         } catch (Exception ex) {
@@ -175,7 +175,7 @@ public class AttributeManager {
     }
 
     @POST
-    @Produces(SCIMConstants.APPLICATION_JSON)
+    @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response createAttributeSet(@HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
             @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String payload) {
@@ -198,7 +198,7 @@ public class AttributeManager {
             dataSource.createAttribute(attrItem);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_JSON);
+            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, payload);
 
         } catch (Exception ex) {
