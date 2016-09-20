@@ -23,7 +23,8 @@ import javax.json.stream.JsonGenerator;
 
 public class SCIM2Encoder {
 
-    private static void encodeResource(Resource resource, String resUrl, JsonGenerator jGenerator)
+    private static void encodeResource(Resource resource, String resUrl, JsonGenerator jGenerator,
+            AttributeFilter aFilter)
         throws DataSourceException, SchemaManagerException {
 
         SimpleDateFormat dFormatter = new SimpleDateFormat(SCIMCoreConstants.DATE_PATTERN);
@@ -31,7 +32,7 @@ public class SCIM2Encoder {
         jGenerator.write(SCIMCoreConstants.ID, resource.getResourceId());
 
         String extId = resource.getResourceExtId();
-        if (extId != null)
+        if (extId != null && aFilter.canShow(SCIMCoreConstants.EXTERNAL_ID))
             jGenerator.write(SCIMCoreConstants.EXTERNAL_ID, extId);
         jGenerator.writeStartObject(SCIMCoreConstants.META);
 
@@ -47,7 +48,7 @@ public class SCIM2Encoder {
 
         jGenerator.writeEnd();
 
-        SchemaManagerFactory.getManager().encode(resource.getExtendedAttributes(), jGenerator);
+        SchemaManagerFactory.getManager().encode(resource.getExtendedAttributes(), jGenerator, aFilter);
 
     }
 
@@ -70,6 +71,11 @@ public class SCIM2Encoder {
 
     public static String encodeUser(UserResource user, String sitePrefix)
         throws DataSourceException, SchemaManagerException {
+        return encodeUser(user, sitePrefix, new AttributeFilter());
+    }
+
+    public static String encodeUser(UserResource user, String sitePrefix, AttributeFilter aFilter)
+        throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
         JsonGenerator jGenerator = Json.createGenerator(result);
@@ -85,27 +91,30 @@ public class SCIM2Encoder {
 
         jGenerator.writeEnd();
 
-        streamUser(user, sitePrefix, jGenerator);
+        streamUser(user, sitePrefix, jGenerator, aFilter);
 
         jGenerator.writeEnd().close();
 
         return result.toString();
     }
 
-    private static void streamUser(UserResource user, String sitePrefix, JsonGenerator jGenerator)
+    private static void streamUser(UserResource user, String sitePrefix, JsonGenerator jGenerator,
+            AttributeFilter aFilter)
         throws DataSourceException, SchemaManagerException {
 
         String resUrl = sitePrefix + "/Users/" + user.getResourceId();
-        encodeResource(user, resUrl, jGenerator);
+        encodeResource(user, resUrl, jGenerator, aFilter);
 
-        jGenerator.write(SCIMCoreConstants.USER_NAME, user.getName());
+        String loginName = user.getName();
+        if (loginName != null && aFilter.canShow(SCIMCoreConstants.USER_NAME))
+            jGenerator.write(SCIMCoreConstants.USER_NAME, loginName);
 
         String gName = user.getUserGivenName();
         String mName = user.getUserMiddleName();
         String fName = user.getUserFamilyName();
         String hPrefix = user.getUserHonorPrefix();
         String hSuffix = user.getUserHonorSuffix();
-        if (gName != null || mName != null || fName != null) {
+        if ((gName != null || mName != null || fName != null) && aFilter.canShow(SCIMCoreConstants.NAME)) {
             jGenerator.writeStartObject(SCIMCoreConstants.NAME);
             if (gName != null)
                 jGenerator.write(SCIMCoreConstants.GIVEN_NAME, gName);
@@ -121,54 +130,63 @@ public class SCIM2Encoder {
         }
 
         String dName = user.getUserDisplayName();
-        if (dName != null)
+        if (dName != null && aFilter.canShow(SCIMCoreConstants.DISPLAY_NAME))
             jGenerator.write(SCIMCoreConstants.DISPLAY_NAME, dName);
 
         String nName = user.getUserNickName();
-        if (nName != null)
-            jGenerator.write(SCIMCoreConstants.DISPLAY_NAME, nName);
+        if (nName != null && aFilter.canShow(SCIMCoreConstants.NICK_NAME))
+            jGenerator.write(SCIMCoreConstants.NICK_NAME, nName);
 
         String pUrl = user.getUserURL();
-        if (pUrl != null)
+        if (pUrl != null && aFilter.canShow(SCIMCoreConstants.PROFILE_URL))
             jGenerator.write(SCIMCoreConstants.PROFILE_URL, pUrl);
 
         String title = user.getUserTitle();
-        if (title != null)
+        if (title != null && aFilter.canShow(SCIMCoreConstants.TITLE))
             jGenerator.write(SCIMCoreConstants.TITLE, title);
 
         String posType = user.getUserPosition();
-        if (posType != null)
+        if (posType != null && aFilter.canShow(SCIMCoreConstants.USER_TYPE))
             jGenerator.write(SCIMCoreConstants.USER_TYPE, posType);
 
         String lang = user.getUserLang();
-        if (lang != null)
+        if (lang != null && aFilter.canShow(SCIMCoreConstants.PREFERRED_LANGUAGE))
             jGenerator.write(SCIMCoreConstants.PREFERRED_LANGUAGE, lang);
 
         String locale = user.getUserLocale();
-        if (locale != null)
+        if (locale != null && aFilter.canShow(SCIMCoreConstants.LOCALE))
             jGenerator.write(SCIMCoreConstants.LOCALE, locale);
 
         String tz = user.getUserTimezone();
-        if (tz != null)
+        if (tz != null && aFilter.canShow(SCIMCoreConstants.TIME_ZONE))
             jGenerator.write(SCIMCoreConstants.TIME_ZONE, tz);
 
-        encodeMultiValue(SCIMCoreConstants.EMAILS, user.getUserEmails(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.EMAILS))
+            encodeMultiValue(SCIMCoreConstants.EMAILS, user.getUserEmails(), jGenerator);
 
-        encodeMultiValue(SCIMCoreConstants.PHONE_NUMBERS, user.getUserPhones(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.PHONE_NUMBERS))
+            encodeMultiValue(SCIMCoreConstants.PHONE_NUMBERS, user.getUserPhones(), jGenerator);
 
-        encodeMultiValue(SCIMCoreConstants.IMS, user.getUserIMs(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.IMS))
+            encodeMultiValue(SCIMCoreConstants.IMS, user.getUserIMs(), jGenerator);
 
-        encodeMultiValue(SCIMCoreConstants.PHOTOS, user.getUserPhotos(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.PHOTOS))
+            encodeMultiValue(SCIMCoreConstants.PHOTOS, user.getUserPhotos(), jGenerator);
 
-        encodeMultiValue(SCIMCoreConstants.ENTITLEMENTS, user.getUserEntitles(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.ENTITLEMENTS))
+            encodeMultiValue(SCIMCoreConstants.ENTITLEMENTS, user.getUserEntitles(), jGenerator);
 
-        encodeMultiValue(SCIMCoreConstants.ROLES, user.getUserRoles(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.ROLES))
+            encodeMultiValue(SCIMCoreConstants.ROLES, user.getUserRoles(), jGenerator);
 
-        encodeMultiValue(SCIMCoreConstants.X509CERTIFICATES, user.getUserCertificates(), jGenerator);
+        if (aFilter.canShow(SCIMCoreConstants.X509CERTIFICATES))
+            encodeMultiValue(SCIMCoreConstants.X509CERTIFICATES, user.getUserCertificates(), jGenerator);
 
         List<String> dGroup = user.getLinkedResources();
         List<String> uGroup = user.getAncestorResources();
-        boolean showGroup = dGroup != null && uGroup != null && (dGroup.size() + uGroup.size()) > 0;
+        boolean showGroup = dGroup != null && uGroup != null;
+        showGroup = showGroup && (dGroup.size() + uGroup.size()) > 0;
+        showGroup = showGroup && aFilter.canShow(SCIMCoreConstants.GROUPS);
         if (showGroup) {
             jGenerator.writeStartArray(SCIMCoreConstants.GROUPS);
         }
@@ -191,7 +209,7 @@ public class SCIM2Encoder {
         }
 
         List<AddrValueTuple> addresses = user.getUserAddresses();
-        if (addresses != null && addresses.size() > 0) {
+        if (addresses != null && addresses.size() > 0 && aFilter.canShow(SCIMCoreConstants.ADDRESSES)) {
             jGenerator.writeStartArray(SCIMCoreConstants.ADDRESSES);
             for (AddrValueTuple addr : addresses) {
                 jGenerator.writeStartObject();
@@ -207,7 +225,7 @@ public class SCIM2Encoder {
 
     }
 
-    public static String encodeUserList(UserSearchResult searchResult, String sitePrefix)
+    public static String encodeUserList(UserSearchResult searchResult, String sitePrefix, AttributeFilter aFilter)
         throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
@@ -227,7 +245,7 @@ public class SCIM2Encoder {
             jGenerator.writeStartArray(SCIMCoreConstants.RESOURCES);
             for (UserResource user : searchResult.getUserList()) {
                 jGenerator.writeStartObject();
-                streamUser((SCIM2User) user, sitePrefix, jGenerator);
+                streamUser((SCIM2User) user, sitePrefix, jGenerator, aFilter);
                 jGenerator.writeEnd();
             }
             jGenerator.writeEnd();
@@ -239,6 +257,11 @@ public class SCIM2Encoder {
     }
 
     public static String encodeGroup(GroupResource group, String sitePrefix)
+        throws DataSourceException, SchemaManagerException {
+        return encodeGroup(group, sitePrefix, new AttributeFilter());
+    }
+
+    public static String encodeGroup(GroupResource group, String sitePrefix, AttributeFilter aFilter)
         throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
@@ -255,7 +278,7 @@ public class SCIM2Encoder {
 
         jGenerator.writeEnd();
 
-        streamGroup(group, sitePrefix, jGenerator);
+        streamGroup(group, sitePrefix, jGenerator, aFilter);
 
         jGenerator.writeEnd().close();
 
@@ -263,15 +286,18 @@ public class SCIM2Encoder {
 
     }
 
-    private static void streamGroup(GroupResource group, String sitePrefix, JsonGenerator jGenerator)
+    private static void streamGroup(GroupResource group, String sitePrefix, JsonGenerator jGenerator,
+            AttributeFilter aFilter)
         throws DataSourceException, SchemaManagerException {
 
         String resUrl = sitePrefix + "/Groups/" + group.getResourceId();
-        encodeResource(group, resUrl, jGenerator);
+        encodeResource(group, resUrl, jGenerator, aFilter);
 
-        jGenerator.write(SCIMCoreConstants.DISPLAY_NAME, group.getName());
+        String gName = group.getName();
+        if (gName != null && aFilter.canShow(SCIMCoreConstants.DISPLAY_NAME))
+            jGenerator.write(SCIMCoreConstants.DISPLAY_NAME, gName);
 
-        if (group.getAllMembers().size() > 0) {
+        if (group.getAllMembers().size() > 0 && aFilter.canShow(SCIMCoreConstants.MEMBERS)) {
             jGenerator.writeStartArray(SCIMCoreConstants.MEMBERS);
 
             List<String> members = group.getUMembers();
@@ -295,7 +321,7 @@ public class SCIM2Encoder {
 
     }
 
-    public static String encodeGroupList(GroupSearchResult searchResult, String sitePrefix)
+    public static String encodeGroupList(GroupSearchResult searchResult, String sitePrefix, AttributeFilter aFilter)
         throws DataSourceException, SchemaManagerException {
 
         StringWriter result = new StringWriter();
@@ -315,7 +341,7 @@ public class SCIM2Encoder {
             jGenerator.writeStartArray(SCIMCoreConstants.RESOURCES);
             for (GroupResource user : searchResult.getGroupList()) {
                 jGenerator.writeStartObject();
-                streamGroup((SCIM2Group) user, sitePrefix, jGenerator);
+                streamGroup((SCIM2Group) user, sitePrefix, jGenerator, aFilter);
                 jGenerator.writeEnd();
             }
             jGenerator.writeEnd();

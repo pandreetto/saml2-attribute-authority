@@ -8,6 +8,7 @@ import it.infn.security.saml.schema.AttributeValueInterface;
 import it.infn.security.saml.schema.SchemaManager;
 import it.infn.security.saml.schema.SchemaManagerException;
 import it.infn.security.saml.utils.SAML2ObjectBuilder;
+import it.infn.security.scim.core.AttributeFilter;
 import it.infn.security.scim.core.SCIM2Decoder;
 import it.infn.security.scim.core.SCIMCoreConstants;
 
@@ -161,10 +162,13 @@ public class SPIDSchemaManager
 
     }
 
-    public void encode(Collection<AttributeEntry> extAttrs, JsonGenerator jGenerator)
+    public void encode(Collection<AttributeEntry> extAttrs, JsonGenerator jGenerator, AttributeFilter attrFilter)
         throws SchemaManagerException {
 
         if (extAttrs == null || extAttrs.size() == 0)
+            return;
+
+        if (!attrFilter.canShowNS(SPID_SCHEMA, SPID_ATTR_ID))
             return;
 
         jGenerator.writeStartObject(SPID_SCHEMA);

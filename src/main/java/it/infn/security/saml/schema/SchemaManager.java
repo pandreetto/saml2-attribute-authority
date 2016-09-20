@@ -12,6 +12,8 @@ import org.opensaml.saml2.core.Advice;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Audience;
 
+import it.infn.security.scim.core.AttributeFilter;
+
 public interface SchemaManager {
 
     public void init()
@@ -31,7 +33,7 @@ public interface SchemaManager {
     public String encode(List<AttributeNameInterface> names)
         throws SchemaManagerException;
 
-    public void encode(Collection<AttributeEntry> extAttrs, JsonGenerator jGenerator)
+    public void encode(Collection<AttributeEntry> extAttrs, JsonGenerator jGenerator, AttributeFilter attrFilter)
         throws SchemaManagerException;
 
     public AttributeEntry parse(String data)
