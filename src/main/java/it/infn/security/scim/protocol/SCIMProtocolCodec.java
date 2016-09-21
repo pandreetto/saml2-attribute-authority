@@ -56,7 +56,7 @@ public class SCIMProtocolCodec {
         throws SchemaManagerException {
         if (format == null || format.equals("*/*"))
             return;
-        if (!format.contains(SCIMConstants.APPLICATION_SCIM) || !format.contains(SCIMConstants.APPLICATION_JSON)) {
+        if (!format.contains(SCIMConstants.APPLICATION_SCIM) && !format.contains(SCIMConstants.APPLICATION_JSON)) {
             logger.severe("Wrong accepted format: " + format);
             throw new SchemaManagerException("Unsupported accepted format " + format);
         }
@@ -66,7 +66,7 @@ public class SCIMProtocolCodec {
         throws SchemaManagerException {
         if (format == null)
             throw new SchemaManagerException("Missing content type format");
-        if (!format.contains(SCIMConstants.APPLICATION_SCIM) || !format.contains(SCIMConstants.APPLICATION_JSON)) {
+        if (!format.contains(SCIMConstants.APPLICATION_SCIM) && !format.contains(SCIMConstants.APPLICATION_JSON)) {
             logger.severe("Wrong content type format: " + format);
             throw new SchemaManagerException("Unsupported content type format " + format);
         }

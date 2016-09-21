@@ -18,6 +18,7 @@ import it.infn.security.scim.core.SCIM2User;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -166,9 +167,19 @@ public abstract class HibernateDataSource
             if (eUser == null) {
                 throw new DataSourceException(userId + " not found", DataSourceException.NOT_FOUND);
             }
-            eUser.setModifyDate(userRes.getResourceChangeDate());
-            eUser.setVersion(HibernateUtils.generateNewVersion(eUser.getVersion()));
-            eUser.setUserName(userRes.getName());
+
+            Date now = new Date();
+            eUser.setModifyDate(now);
+            userRes.setResourceChangeDate(now);
+
+            String newVer = HibernateUtils.generateNewVersion(eUser.getVersion());
+            eUser.setVersion(newVer);
+            userRes.setResourceVersion(newVer);
+
+            userRes.setResourceCreationDate(eUser.getCreateDate());
+
+            if (userRes.getName() != null)
+                eUser.setUserName(userRes.getName());
 
             cleanSCIMAttributes(session, eUser);
             HibernateUtils.copyAttributesInEntity(userRes, eUser);
@@ -443,7 +454,7 @@ public abstract class HibernateDataSource
 
     }
 
-    public GroupResource updateGroup(GroupResource oldGroup, GroupResource groupRes)
+    public GroupResource updateGroup(GroupResource groupRes)
         throws DataSourceException {
         Session session = sessionFactory.getCurrentSession();
         boolean nocommit = true;
@@ -457,9 +468,19 @@ public abstract class HibernateDataSource
             if (eGroup == null) {
                 throw new DataSourceException(groupId + " not found", DataSourceException.NOT_FOUND);
             }
-            eGroup.setModifyDate(groupRes.getResourceChangeDate());
-            eGroup.setVersion(HibernateUtils.generateNewVersion(eGroup.getVersion()));
-            eGroup.setDisplayName(groupRes.getName());
+
+            Date now = new Date();
+            eGroup.setModifyDate(now);
+            groupRes.setResourceChangeDate(now);
+
+            String newVer = HibernateUtils.generateNewVersion(eGroup.getVersion());
+            eGroup.setVersion(newVer);
+            groupRes.setResourceVersion(newVer);
+
+            groupRes.setResourceCreationDate(eGroup.getCreateDate());
+
+            if (groupRes.getName() != null)
+                eGroup.setDisplayName(groupRes.getName());
 
             cleanGroupExtAttributes(session, eGroup);
             fillinGroupExtAttributes(session, groupRes, eGroup);

@@ -117,7 +117,7 @@ public class HibernateUtils {
     }
 
     public static String generateNewVersion(String currVer) {
-        return UUID.randomUUID().toString();
+        return "W/\"" + UUID.randomUUID().toString() + "\"";
     }
 
     public static void copyAttributesInEntity(UserResource userRes, UserEntity eUser)
@@ -299,8 +299,8 @@ public class HibernateUtils {
 
         for (UserAddressEntity addEnt : eUser.getUserAddresses()) {
 
-            userRes.addUserAddress(addEnt.getStreet(), addEnt.getLocality(), addEnt.getRegion(),
-                    addEnt.getPostalCode(), addEnt.getCountry(), addEnt.getType());
+            userRes.addUserAddress(addEnt.getStreet(), addEnt.getLocality(), addEnt.getRegion(), addEnt.getPostalCode(),
+                    addEnt.getCountry(), addEnt.getType());
         }
 
     }

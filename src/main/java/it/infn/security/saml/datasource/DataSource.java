@@ -72,7 +72,7 @@ public interface DataSource {
     public List<GroupResource> listGroupsWithPagination(int startIndex, int count)
         throws DataSourceException;
 
-    public GroupResource updateGroup(GroupResource oldGroup, GroupResource newGroup)
+    public GroupResource updateGroup(GroupResource group)
         throws DataSourceException;
 
     public void deleteGroup(String groupId)

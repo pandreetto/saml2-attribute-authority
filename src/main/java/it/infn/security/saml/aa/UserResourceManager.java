@@ -1,5 +1,21 @@
 package it.infn.security.saml.aa;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import javax.security.auth.Subject;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
+
 import it.infn.security.saml.configuration.AuthorityConfiguration;
 import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
 import it.infn.security.saml.datasource.DataSource;
@@ -16,23 +32,6 @@ import it.infn.security.scim.core.SCIM2Decoder;
 import it.infn.security.scim.core.SCIM2Encoder;
 import it.infn.security.scim.protocol.SCIMConstants;
 import it.infn.security.scim.protocol.SCIMProtocolCodec;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
-
-import javax.security.auth.Subject;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Response;
 
 @Path(SCIMConstants.USER_ENDPOINT)
 public class UserResourceManager {
@@ -247,13 +246,8 @@ public class UserResourceManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
-            UserResource oldUser = dataSource.getUser(id);
             UserResource newUser = SCIM2Decoder.decodeUser(resourceString);
-
-            newUser.setResourceId(oldUser.getResourceId());
-            newUser.setResourceCreationDate(oldUser.getResourceCreationDate());
-            newUser.setResourceChangeDate(new Date());
-            newUser.setResourceVersion(oldUser.getResourceVersion());
+            newUser.setResourceId(id);
 
             UserResource updatedUser = dataSource.updateUser(newUser);
 

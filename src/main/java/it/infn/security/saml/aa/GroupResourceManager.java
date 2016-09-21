@@ -1,6 +1,5 @@
 package it.infn.security.saml.aa;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -248,15 +247,10 @@ public class GroupResourceManager {
 
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
-            GroupResource oldGroup = dataSource.getGroup(id);
             GroupResource newGroup = SCIM2Decoder.decodeGroup(resourceString);
+            newGroup.setResourceId(id);
 
-            newGroup.setResourceId(oldGroup.getResourceId());
-            newGroup.setResourceCreationDate(oldGroup.getResourceCreationDate());
-            newGroup.setResourceChangeDate(new Date());
-            newGroup.setResourceVersion(oldGroup.getResourceVersion());
-
-            GroupResource updatedGroup = dataSource.updateGroup(oldGroup, newGroup);
+            GroupResource updatedGroup = dataSource.updateGroup(newGroup);
 
             String encodedGroup = SCIM2Encoder.encodeGroup(updatedGroup, managerURL);
 
