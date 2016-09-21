@@ -17,7 +17,11 @@ public class SCIMProtocolCodec {
 
     public static Response responseFromException(Exception ex) {
 
-        logger.log(Level.FINE, "Detected exception " + ex.getMessage(), ex);
+        if (logger.getLevel().equals(Level.FINE)) {
+            logger.log(Level.FINE, "Detected exception " + ex.getMessage(), ex);
+        } else {
+            logger.log(Level.INFO, "Detected exception " + ex.getMessage());
+        }
 
         int code = SCIMConstants.CODE_INTERNAL_SERVER_ERROR;
         String message = null;
@@ -71,13 +75,13 @@ public class SCIMProtocolCodec {
             throw new SchemaManagerException("Unsupported content type format " + format);
         }
     }
-    
+
     public static String[] parseIfMatch(String mList) {
-        if(mList!=null && mList.length()>0)
+        if (mList != null && mList.length() > 0)
             return mList.split(",");
         return null;
     }
-    
+
     public static boolean checkIfNoneMatch(String version, String mList) {
 
         return !checkIfMatch(version, mList);
@@ -85,12 +89,10 @@ public class SCIMProtocolCodec {
     }
 
     public static boolean checkIfMatch(String version, String mList) {
-        logger.info("Called check match with " + mList);
         if (mList == null || mList.length() == 0)
             return false;
 
         for (String tmps : mList.split(",")) {
-            logger.info("Checking " + tmps + " against " + version);
             if (tmps.trim().equals(version))
                 return true;
         }
