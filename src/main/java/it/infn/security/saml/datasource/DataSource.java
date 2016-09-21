@@ -42,7 +42,7 @@ public interface DataSource {
     public List<UserResource> listUsersWithPagination(int startIndex, int count)
         throws DataSourceException;
 
-    public UserResource updateUser(UserResource user)
+    public UserResource updateUser(UserResource user, String[] versions)
         throws DataSourceException;
 
     public void deleteUser(String userId)
@@ -72,7 +72,7 @@ public interface DataSource {
     public List<GroupResource> listGroupsWithPagination(int startIndex, int count)
         throws DataSourceException;
 
-    public GroupResource updateGroup(GroupResource group)
+    public GroupResource updateGroup(GroupResource group, String[] versions)
         throws DataSourceException;
 
     public void deleteGroup(String groupId)

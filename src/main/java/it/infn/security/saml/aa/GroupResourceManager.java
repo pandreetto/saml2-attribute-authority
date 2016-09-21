@@ -47,9 +47,10 @@ public class GroupResourceManager {
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response getGroup(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format, @QueryParam("attributes") String reqAttributes,
-            @QueryParam("excludedAttributes") String exclAttributes,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
+            @HeaderParam(SCIMConstants.IF_NONE_HEADER) String ifNoneStr, @QueryParam("attributes") String reqAttributes,
+            @QueryParam("excludedAttributes") String exclAttributes) {
 
         Response result = null;
         try {
@@ -68,12 +69,20 @@ public class GroupResourceManager {
 
             GroupResource group = dataSource.getGroup(id);
 
-            AttributeFilter aFilter = new AttributeFilter(reqAttributes, exclAttributes);
-            String encodedGroup = SCIM2Encoder.encodeGroup(group, managerURL, aFilter);
+            if (SCIMProtocolCodec.checkIfNoneMatch(group.getResourceVersion(), ifNoneStr)) {
 
-            Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
-            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);
+                AttributeFilter aFilter = new AttributeFilter(reqAttributes, exclAttributes);
+                String encodedGroup = SCIM2Encoder.encodeGroup(group, managerURL, aFilter);
+
+                Map<String, String> httpHeaders = new HashMap<String, String>();
+                httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
+                result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);
+
+            } else {
+
+                result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_NOT_MOD, null, null);
+
+            }
 
         } catch (Exception ex) {
 
@@ -116,6 +125,7 @@ public class GroupResourceManager {
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = managerURL + SCIMConstants.GROUP_ENDPOINT + "/" + createdGroup.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.ETAG_HEADER, createdGroup.getResourceVersion());
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedGroup);
@@ -229,7 +239,8 @@ public class GroupResourceManager {
     public Response updateGroup(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
+            @HeaderParam(SCIMConstants.IF_MATCH_HEADER) String ifMatchStr, String resourceString) {
 
         Response result = null;
         try {
@@ -250,13 +261,14 @@ public class GroupResourceManager {
             GroupResource newGroup = SCIM2Decoder.decodeGroup(resourceString);
             newGroup.setResourceId(id);
 
-            GroupResource updatedGroup = dataSource.updateGroup(newGroup);
+            GroupResource updatedGroup = dataSource.updateGroup(newGroup, SCIMProtocolCodec.parseIfMatch(ifMatchStr));
 
             String encodedGroup = SCIM2Encoder.encodeGroup(updatedGroup, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = managerURL + SCIMConstants.GROUP_ENDPOINT + "/" + updatedGroup.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.ETAG_HEADER, updatedGroup.getResourceVersion());
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedGroup);

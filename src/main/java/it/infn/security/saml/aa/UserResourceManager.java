@@ -47,9 +47,10 @@ public class UserResourceManager {
     @Path("{id}")
     @Produces(SCIMConstants.APPLICATION_SCIM)
     public Response getUser(@PathParam(SCIMConstants.ID) String id,
-            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format, @QueryParam("attributes") String reqAttributes,
-            @QueryParam("excludedAttributes") String exclAttributes,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization) {
+            @HeaderParam(SCIMConstants.ACCEPT_HEADER) String format,
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
+            @HeaderParam(SCIMConstants.IF_NONE_HEADER) String ifNoneStr, @QueryParam("attributes") String reqAttributes,
+            @QueryParam("excludedAttributes") String exclAttributes) {
 
         Response result = null;
         try {
@@ -67,13 +68,20 @@ public class UserResourceManager {
             DataSource dataSource = DataSourceFactory.getDataSource().getProxyDataSource(requester);
 
             UserResource user = dataSource.getUser(id);
+            if (SCIMProtocolCodec.checkIfNoneMatch(user.getResourceVersion(), ifNoneStr)) {
 
-            AttributeFilter aFilter = new AttributeFilter(reqAttributes, exclAttributes);
-            String encodedUser = SCIM2Encoder.encodeUser(user, managerURL, aFilter);
+                AttributeFilter aFilter = new AttributeFilter(reqAttributes, exclAttributes);
+                String encodedUser = SCIM2Encoder.encodeUser(user, managerURL, aFilter);
 
-            Map<String, String> httpHeaders = new HashMap<String, String>();
-            httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
-            result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);
+                Map<String, String> httpHeaders = new HashMap<String, String>();
+                httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
+                result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);
+
+            } else {
+
+                result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_NOT_MOD, null, null);
+
+            }
 
         } catch (Exception ex) {
 
@@ -116,6 +124,7 @@ public class UserResourceManager {
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = managerURL + SCIMConstants.USER_ENDPOINT + "/" + createdUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.ETAG_HEADER, createdUser.getResourceVersion());
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_CREATED, httpHeaders, encodedUser);
@@ -228,7 +237,8 @@ public class UserResourceManager {
     public Response updateUser(@PathParam(SCIMConstants.ID) String id,
             @HeaderParam(SCIMConstants.CONTENT_TYPE_HEADER) String inputFormat,
             @HeaderParam(SCIMConstants.ACCEPT_HEADER) String outputFormat,
-            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization, String resourceString) {
+            @HeaderParam(SCIMConstants.AUTHORIZATION_HEADER) String authorization,
+            @HeaderParam(SCIMConstants.IF_MATCH_HEADER) String ifMatchStr, String resourceString) {
 
         Response result = null;
         try {
@@ -249,13 +259,14 @@ public class UserResourceManager {
             UserResource newUser = SCIM2Decoder.decodeUser(resourceString);
             newUser.setResourceId(id);
 
-            UserResource updatedUser = dataSource.updateUser(newUser);
+            UserResource updatedUser = dataSource.updateUser(newUser, SCIMProtocolCodec.parseIfMatch(ifMatchStr));
 
             String encodedUser = SCIM2Encoder.encodeUser(updatedUser, managerURL);
 
             Map<String, String> httpHeaders = new HashMap<String, String>();
             String locStr = managerURL + SCIMConstants.USER_ENDPOINT + "/" + updatedUser.getResourceId();
             httpHeaders.put(SCIMConstants.LOCATION_HEADER, locStr);
+            httpHeaders.put(SCIMConstants.ETAG_HEADER, updatedUser.getResourceVersion());
             httpHeaders.put(SCIMConstants.CONTENT_TYPE_HEADER, SCIMConstants.APPLICATION_SCIM);
 
             result = SCIMProtocolCodec.buildResponse(SCIMConstants.CODE_OK, httpHeaders, encodedUser);

@@ -24,6 +24,12 @@ public class SCIMConstants {
 
     public static final String LOCATION_HEADER = "Location";
 
+    public static final String ETAG_HEADER = "ETag";
+
+    public static final String IF_NONE_HEADER = "If-None-Match";
+
+    public static final String IF_MATCH_HEADER = "If-Match";
+
     public static final String ID = "id";
 
     public static final int CODE_INTERNAL_SERVER_ERROR = 500;
@@ -39,6 +45,8 @@ public class SCIMConstants {
     public static final int CODE_CREATED = 201;
 
     public static final int CODE_NO_CONTENT = 204;
+
+    public static final int CODE_NOT_MOD = 304;
 
     public static final String DESC_BAD_REQUEST_GET = "GET request does not support the "
             + "requested URL query parameter combination.";

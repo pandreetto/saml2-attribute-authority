@@ -71,5 +71,31 @@ public class SCIMProtocolCodec {
             throw new SchemaManagerException("Unsupported content type format " + format);
         }
     }
+    
+    public static String[] parseIfMatch(String mList) {
+        if(mList!=null && mList.length()>0)
+            return mList.split(",");
+        return null;
+    }
+    
+    public static boolean checkIfNoneMatch(String version, String mList) {
+
+        return !checkIfMatch(version, mList);
+
+    }
+
+    public static boolean checkIfMatch(String version, String mList) {
+        logger.info("Called check match with " + mList);
+        if (mList == null || mList.length() == 0)
+            return false;
+
+        for (String tmps : mList.split(",")) {
+            logger.info("Checking " + tmps + " against " + version);
+            if (tmps.trim().equals(version))
+                return true;
+        }
+
+        return false;
+    }
 
 }
