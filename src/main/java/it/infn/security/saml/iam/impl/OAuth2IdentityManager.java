@@ -1,7 +1,9 @@
 package it.infn.security.saml.iam.impl;
 
+import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.security.Principal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +26,7 @@ public class OAuth2IdentityManager
 
     private static final Logger logger = Logger.getLogger(TLSIdentityManager.class.getName());
 
-    public static final String AUTHZ_SERVER_URL = "authentication.oauth2.server.url";
+    public static final String AUTHZ_SERVER_URL = "authentication.oauth2.introspect.url";
 
     private String authzSrvUrl;
 
@@ -50,7 +52,8 @@ public class OAuth2IdentityManager
     }
 
     /*
-     * OpenAM as authz server https://backstage.forgerock.com/#!/docs/openam/13/admin-guide/chap-oauth2
+     * Implememtation based on RFC 7662 OpenAM as authz server
+     * https://backstage.forgerock.com/#!/docs/openam/13/admin-guide/chap-oauth2
      * http://stackoverflow.com/questions/12296017/how-to-validate-an-oauth-2-0-access-token-for-a-resource-server
      */
     private Subject validateToken(String token)
@@ -60,14 +63,25 @@ public class OAuth2IdentityManager
 
             HttpsURLConnection urlConn = null;
             JsonReader jReader = null;
+            DataOutputStream dataStream = null;
 
             try {
 
-                URI location = new URI(authzSrvUrl.replaceAll("%s", token));
+                URI location = new URI(authzSrvUrl);
 
                 urlConn = (HttpsURLConnection) location.toURL().openConnection();
-                urlConn.setRequestMethod("GET");
-                urlConn.connect();
+                urlConn.setRequestMethod("POST");
+                urlConn.setRequestProperty("User-Agent", "INFN SPID Attribute Authority");
+                urlConn.setDoOutput(true);
+
+                /*
+                 * TODO missing client authentication
+                 */
+
+                dataStream = new DataOutputStream(urlConn.getOutputStream());
+                dataStream.writeBytes("token=" + token + "&token_type_hint=access_token");
+                dataStream.flush();
+                dataStream.close();
 
                 int respCode = urlConn.getResponseCode();
                 if (respCode >= 400) {
@@ -77,15 +91,29 @@ public class OAuth2IdentityManager
                 jReader = Json.createReader(new InputStreamReader(urlConn.getInputStream()));
                 JsonObject response = jReader.readObject();
 
-                /*
-                 * TODO implemente for OpenAM
-                 */
+                if (response.getBoolean("active")) {
+                    String userName = response.getString("username", response.getString("sub", null));
+                    if (userName != null) {
+                        Subject result = new Subject();
+                        result.getPrincipals().add(new OAuth2Principal(userName));
+                        logger.info("User authenticated " + userName);
+                        return result;
+                    }
+                }
 
             } catch (Exception ex) {
 
                 logger.log(Level.SEVERE, ex.getMessage(), ex);
 
             } finally {
+
+                if (dataStream != null) {
+                    try {
+                        dataStream.close();
+                    } catch (Throwable th) {
+                        logger.log(Level.SEVERE, th.getMessage(), th);
+                    }
+                }
 
                 if (jReader != null) {
                     try {
@@ -129,6 +157,20 @@ public class OAuth2IdentityManager
     public void close()
         throws IdentityManagerException {
 
+    }
+
+    public class OAuth2Principal
+        implements Principal {
+
+        private String id;
+
+        public OAuth2Principal(String uName) {
+            id = uName;
+        }
+
+        public String getName() {
+            return id;
+        }
     }
 
 }
