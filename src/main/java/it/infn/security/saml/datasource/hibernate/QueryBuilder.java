@@ -1,13 +1,20 @@
 package it.infn.security.saml.datasource.hibernate;
 
+import java.util.HashMap;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+
 import it.infn.security.scim.protocol.SearchFilterNode;
 import it.infn.security.scim.protocol.SearchFilterParser;
 
-import java.util.HashMap;
+public class QueryBuilder {
 
-public class QueryFilterParser {
+    private static final String LABEL_FORMAT = "arg%05d";
 
-    private static final String labelFmt = "arg%05d";
+    private static final String USER_ENT = "qUser";
+
+    private static final String GROUP_ENT = "qGroup";
 
     private static void process(SearchFilterNode node, StringBuffer output, HashMap<String, Object> params,
             String parentAttr) {
@@ -23,7 +30,7 @@ public class QueryFilterParser {
                 return;
             }
 
-            String label = String.format(labelFmt, params.size());
+            String label = String.format(LABEL_FORMAT, params.size());
             params.put(label, node.getValue());
 
             switch (node.getOperator()) {
@@ -94,29 +101,56 @@ public class QueryFilterParser {
         }
     }
 
-    public static void main(String args[]) {
+    private static Query[] buildSearch(boolean isUser, Session session, String filter, String sortBy,
+            String sortOrder) {
 
-        try {
+        StringBuilder queryStr = new StringBuilder();
+        HashMap<String, Object> params = new HashMap<String, Object>();
+        StringBuffer output = new StringBuffer();
 
-            SearchFilterNode rootNode = SearchFilterParser.parse(args[0]);
+        if (isUser)
+            queryStr.append("FROM UserEntity as ").append(USER_ENT);
+        else
+            queryStr.append("FROM GroupEntity as ").append(GROUP_ENT);
+
+        if (filter != null && filter.length() > 0) {
+
+            SearchFilterNode rootNode = SearchFilterParser.parse(filter);
             if (rootNode != null) {
-                HashMap<String, Object> params = new HashMap<String, Object>();
-                StringBuffer output = new StringBuffer();
 
                 process(rootNode, output, params, null);
 
-                System.out.println(output.toString());
-                for (String key : params.keySet()) {
-                    System.out.println(key + " = " + params.get(key).toString());
-                }
-            } else {
-                System.out.println("Error parsing " + args[0]);
             }
 
-        } catch (Throwable th) {
-            th.printStackTrace();
         }
 
+        String countQuery = "SELECT COUNT(*) " + queryStr.toString();
+
+        if (sortBy != null) {
+            sortBy = HibernateUtils.convertSortedParam(sortBy, true);
+            queryStr.append(" ORDER BY ").append(sortBy);
+            if (sortOrder != null && sortOrder.equalsIgnoreCase("descending")) {
+                queryStr.append(" DESC");
+            } else {
+                queryStr.append(" ASC");
+            }
+        }
+
+        Query query1 = session.createQuery(queryStr.toString());
+        for (HashMap.Entry<String, Object> pItem : params.entrySet()) {
+            query1.setParameter(pItem.getKey(), pItem.getValue());
+        }
+
+        Query query2 = session.createQuery(countQuery);
+        return new Query[] { query1, query2 };
+    }
+
+    public static Query[] buildSearchUsers(Session session, String filter, String sortBy, String sortOrder) {
+        return buildSearch(true, session, filter, sortBy, sortOrder);
+    }
+
+    public static Query[] buildSearchGroups(Session session, String filter, String sortBy, String sortOrder) {
+        return buildSearch(false, session, filter, sortBy, sortOrder);
     }
 
 }

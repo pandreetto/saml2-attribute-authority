@@ -101,34 +101,22 @@ public abstract class HibernateDataSource
 
             session.beginTransaction();
 
-            StringBuffer queryStr = new StringBuffer("FROM UserEntity as qUser");
+            Query[] queries = QueryBuilder.buildSearchUsers(session, filter, sortBy, sortOrder);
 
-            if (sortBy != null) {
-                sortBy = HibernateUtils.convertSortedParam(sortBy, true);
-                queryStr.append(" ORDER BY ").append(sortBy);
-                if (sortOrder != null && sortOrder.equalsIgnoreCase("descending")) {
-                    queryStr.append(" DESC");
-                } else {
-                    queryStr.append(" ASC");
-                }
-            }
-
-            Query query = session.createQuery(queryStr.toString());
             if (startIndex > 0)
-                query.setFirstResult(startIndex - 1);
+                queries[0].setFirstResult(startIndex - 1);
             if (count > 0)
-                query.setMaxResults(count);
+                queries[0].setMaxResults(count);
 
             @SuppressWarnings("unchecked")
-            List<UserEntity> usersFound = query.list();
+            List<UserEntity> usersFound = queries[0].list();
 
             for (UserEntity usrEnt : usersFound) {
                 result.add(userFromEntity(session, usrEnt));
             }
 
-            Query query2 = session.createQuery("SELECT COUNT(*) FROM UserEntity as qUser");
             @SuppressWarnings("unchecked")
-            Iterator<Long> totalUser = query2.list().iterator();
+            Iterator<Long> totalUser = queries[1].list().iterator();
             if (totalUser.hasNext()) {
                 result.setTotalResults(totalUser.next().intValue());
             }
@@ -354,34 +342,22 @@ public abstract class HibernateDataSource
 
             session.beginTransaction();
 
-            StringBuffer queryStr = new StringBuffer("FROM GroupEntity as qGroup");
+            Query[] queries = QueryBuilder.buildSearchGroups(session, filter, sortBy, sortOrder);
 
-            if (sortBy != null) {
-                sortBy = HibernateUtils.convertSortedParam(sortBy, false);
-                queryStr.append(" ORDER BY ").append(sortBy);
-                if (sortOrder != null && sortOrder.equalsIgnoreCase("descending")) {
-                    queryStr.append(" DESC");
-                } else {
-                    queryStr.append(" ASC");
-                }
-            }
-
-            Query query = session.createQuery(queryStr.toString());
             if (startIndex > 0)
-                query.setFirstResult(startIndex - 1);
+                queries[0].setFirstResult(startIndex - 1);
             if (count > 0)
-                query.setMaxResults(count);
+                queries[0].setMaxResults(count);
 
             @SuppressWarnings("unchecked")
-            List<GroupEntity> groupsFound = query.list();
+            List<GroupEntity> groupsFound = queries[0].list();
 
             for (GroupEntity grpEnt : groupsFound) {
                 result.add(groupFromEntity(session, grpEnt));
             }
 
-            Query query2 = session.createQuery("SELECT COUNT(*) FROM GroupEntity as qGroup");
             @SuppressWarnings("unchecked")
-            Iterator<Long> totalGroup = query2.list().iterator();
+            Iterator<Long> totalGroup = queries[1].list().iterator();
             if (totalGroup.hasNext()) {
                 result.setTotalResults(totalGroup.next().intValue());
             }
