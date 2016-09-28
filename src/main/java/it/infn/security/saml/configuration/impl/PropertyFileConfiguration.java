@@ -349,7 +349,10 @@ public class PropertyFileConfiguration
     public int getDataSourceParamAsInt(String name, int defValue)
         throws ConfigurationException {
         try {
-            return Integer.parseInt(getDataSourceParam(name));
+            String result = properties.getProperty(name);
+            if (result == null)
+                return defValue;
+            return Integer.parseInt(result);
         } catch (Exception ex) {
             logger.warning("Missing or wrong attribute " + name + "; used default value");
             return defValue;
@@ -400,7 +403,10 @@ public class PropertyFileConfiguration
     public int getAccessManagerParamAsInt(String name, int defValue)
         throws ConfigurationException {
         try {
-            return Integer.parseInt(getAccessManagerParam(name));
+            String result = properties.getProperty(name);
+            if (result == null)
+                return defValue;
+            return Integer.parseInt(result);
         } catch (Exception ex) {
             logger.warning("Missing or wrong attribute " + name + "; used default value");
             return defValue;
@@ -442,7 +448,10 @@ public class PropertyFileConfiguration
     public int getMetadataSourceParamAsInt(String name, int defValue)
         throws ConfigurationException {
         try {
-            return Integer.parseInt(getMetadataSourceParam(name));
+            String result = properties.getProperty(name);
+            if (result == null)
+                return defValue;
+            return Integer.parseInt(result);
         } catch (Exception ex) {
             logger.warning("Missing or wrong attribute " + name + "; used default value");
             return defValue;

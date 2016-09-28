@@ -45,6 +45,20 @@
         <url-pattern>/query</url-pattern>
     </servlet-mapping>
     
+    <servlet>
+        <servlet-name>AgidEmulator</servlet-name>
+        <display-name>Emulator for AgID registry</display-name>
+        <servlet-class>
+            it.infn.security.saml.ocp.emulators.AgidEmulator
+        </servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>AgidEmulator</servlet-name>
+        <url-pattern>/registry</url-pattern>
+    </servlet-mapping>
+
     <listener>
         <listener-class>
             it.infn.security.saml.listener.ChainListener

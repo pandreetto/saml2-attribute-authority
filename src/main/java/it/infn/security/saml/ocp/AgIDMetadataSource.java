@@ -1,12 +1,5 @@
 package it.infn.security.saml.ocp;
 
-import it.infn.security.saml.configuration.AuthorityConfiguration;
-import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
-import it.infn.security.saml.spmetadata.MetadataSource;
-import it.infn.security.saml.spmetadata.MetadataSourceException;
-import it.infn.security.saml.spmetadata.SPMetadata;
-import it.infn.security.saml.utils.SAML2ObjectBuilder;
-
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
@@ -33,6 +26,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import it.infn.security.saml.configuration.AuthorityConfiguration;
+import it.infn.security.saml.configuration.AuthorityConfigurationFactory;
+import it.infn.security.saml.spmetadata.MetadataSource;
+import it.infn.security.saml.spmetadata.MetadataSourceException;
+import it.infn.security.saml.spmetadata.SPMetadata;
+import it.infn.security.saml.utils.SAML2ObjectBuilder;
+
 public class AgIDMetadataSource
     implements MetadataSource {
 
@@ -42,21 +42,13 @@ public class AgIDMetadataSource
 
     private static final String AGID_NS = "http://www.agid.gov.it/spid";
 
-    private static final String REGISTRY_HOST = "agid.registry.host";
-
-    private static final String REGISTRY_PORT = "agid.registry.port";
-
-    private static final String REGISTRY_PATH = "agid.registry.path";
+    private static final String REGISTRY_URL = "agid.registry.url";
 
     private static final String CACHE_DURATION = "agid.cache.duration";
 
     private static final Logger logger = Logger.getLogger(AgIDMetadataSource.class.getName());
 
-    private String registryHost;
-
-    private int registryPort;
-
-    private String registryPath;
+    private String registryURL;
 
     private DocumentBuilderFactory dbf;
 
@@ -74,9 +66,8 @@ public class AgIDMetadataSource
             dbf.setNamespaceAware(true);
 
             AuthorityConfiguration configuration = AuthorityConfigurationFactory.getConfiguration();
-            registryHost = configuration.getMetadataSourceParam(REGISTRY_HOST);
-            registryPort = configuration.getMetadataSourceParamAsInt(REGISTRY_PORT, 443);
-            registryPath = configuration.getMetadataSourceParam(REGISTRY_PATH, "");
+            String localURL = configuration.getAuthorityURL() + "/registry";
+            registryURL = configuration.getMetadataSourceParam(REGISTRY_URL, localURL);
 
             cManager = Caching.getCachingProvider().getCacheManager();
             logger.fine("Using cache manager implementation: " + cManager.getClass().getName());
@@ -131,10 +122,12 @@ public class AgIDMetadataSource
 
         try {
 
-            String queryStr = "entityId=" + entityId;
-            URI queryURI = new URI("https", null, registryHost, registryPort, registryPath, queryStr, null);
+            URI queryURI = new URI(registryURL + "?entityId=" + entityId);
 
-            logger.fine("Contacting registry " + queryURI.toString());
+            /*
+             * TODO set to fine
+             */
+            logger.info("Contacting registry " + queryURI.toString());
 
             Element fedRegistry = getXMLDocument(queryURI).getDocumentElement();
 
