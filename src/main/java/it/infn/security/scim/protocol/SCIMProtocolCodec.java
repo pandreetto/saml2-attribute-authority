@@ -17,7 +17,7 @@ public class SCIMProtocolCodec {
 
     public static Response responseFromException(Exception ex) {
 
-        if (logger.getLevel().equals(Level.FINE)) {
+        if (logger.getLevel() != null && logger.getLevel().equals(Level.FINE)) {
             logger.log(Level.FINE, "Detected exception " + ex.getMessage(), ex);
         } else {
             logger.log(Level.INFO, "Detected exception " + ex.getMessage());
