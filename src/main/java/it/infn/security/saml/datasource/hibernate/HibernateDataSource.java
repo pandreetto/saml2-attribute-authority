@@ -731,7 +731,7 @@ public abstract class HibernateDataSource
 
     private boolean matchVersion(String version, String[] candidates) {
         if (candidates == null)
-            return false;
+            return true;
         for (String tmps : candidates) {
             if (version.equals(tmps))
                 return true;
